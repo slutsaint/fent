@@ -775,6 +775,307 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-sched-test-date{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);font-weight:300;}
 .cal-sched-empty{font-size:9px;color:var(--t3);opacity:.5;letter-spacing:.04em;}
 
+/* ═══════════════════════════════════════════════
+   FOCUS TAB — Pomodoro Clock
+═══════════════════════════════════════════════ */
+@keyframes focusPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes sessionDot{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1)}}
+@keyframes timerGlow{0%,100%{box-shadow:0 0 0 0 rgba(107,158,131,0)}50%{box-shadow:0 0 40px 6px rgba(107,158,131,0.08)}}
+@keyframes breakGlow{0%,100%{box-shadow:0 0 0 0 rgba(144,139,176,0)}50%{box-shadow:0 0 40px 6px rgba(144,139,176,0.08)}}
+@keyframes longBreakGlow{0%,100%{box-shadow:0 0 0 0 rgba(194,163,89,0)}50%{box-shadow:0 0 40px 6px rgba(194,163,89,0.08)}}
+@keyframes waveRing{from{transform:scale(1);opacity:0.5}to{transform:scale(1.25);opacity:0}}
+
+.focus-wrap{display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 0 24px;}
+
+/* Clock Arc */
+.focus-clock-outer{position:relative;width:220px;height:220px;flex-shrink:0;margin:0 auto;}
+.focus-arc-svg{position:absolute;inset:0;width:100%;height:100%;}
+.focus-arc-bg{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:3;}
+.focus-arc-fill{fill:none;stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset 0.5s linear,stroke 0.8s var(--ease);}
+.focus-clock-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
+.focus-time-big{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:300;letter-spacing:-.06em;color:var(--t1);line-height:1;transition:color 0.5s;}
+.focus-mode-lbl{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);transition:color 0.5s;}
+.focus-session-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);font-weight:300;margin-top:2px;}
+
+/* Wave ring animation on running */
+.focus-clock-outer.running::after{
+  content:'';position:absolute;inset:8px;border-radius:50%;
+  border:1px solid rgba(107,158,131,0.25);
+  animation:waveRing 2.8s ease-out infinite;
+  pointer-events:none;
+}
+.focus-clock-outer.break-mode::after{border-color:rgba(144,139,176,0.25);}
+.focus-clock-outer.long-break-mode::after{border-color:rgba(194,163,89,0.25);}
+
+/* Controls */
+.focus-controls{display:flex;gap:12px;align-items:center;margin-top:20px;justify-content:center;}
+.focus-btn-main{
+  width:52px;height:52px;border-radius:50%;
+  border:1px solid var(--b2);background:var(--s2);
+  color:var(--t1);cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .25s var(--ease);
+}
+.focus-btn-main:hover{background:var(--s3);border-color:rgba(255,255,255,0.25);transform:scale(1.05);}
+.focus-btn-main.running{border-color:rgba(107,158,131,0.5);background:rgba(107,158,131,0.08);}
+.focus-btn-main.running:hover{background:rgba(107,158,131,0.15);}
+.focus-btn-sm{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid var(--b1);background:transparent;
+  color:var(--t3);cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.focus-btn-sm:hover{color:var(--t2);border-color:var(--b2);background:var(--s2);}
+
+/* Session dots */
+.focus-sessions-row{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:16px;}
+.focus-sess-dot{width:7px;height:7px;border-radius:50%;border:1px solid var(--b2);background:transparent;transition:all .3s var(--ease);}
+.focus-sess-dot.done{background:var(--c);border-color:var(--c);}
+.focus-sess-dot.active{background:transparent;border-color:var(--c);animation:sessionDot 1.2s ease-in-out infinite;}
+.focus-sess-dot.long-break-marker{width:10px;height:4px;border-radius:2px;border-color:rgba(194,163,89,0.4);}
+
+/* Session stats strip */
+.focus-stats-strip{display:flex;gap:0;margin-top:20px;width:100%;border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;}
+.focus-stat-cell{flex:1;padding:14px 12px;text-align:center;border-right:1px solid var(--b1);}
+.focus-stat-cell:last-child{border-right:none;}
+.focus-stat-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;}
+.focus-stat-lbl{font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-top:5px;}
+
+/* Log section */
+.focus-log-section{width:100%;margin-top:20px;}
+.focus-log-label{font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;}
+
+/* Beautiful log selector — new design */
+.focus-selector-wrap{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;transition:border-color .3s;}
+.focus-selector-wrap.active-log{border-color:rgba(107,158,131,0.35);background:rgba(107,158,131,0.02);}
+
+/* Active log bar */
+.focus-active-bar{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;transition:background .2s;}
+.focus-active-bar:hover{background:rgba(255,255,255,0.02);}
+.focus-active-indicator{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:background .3s;}
+.focus-active-name{flex:1;font-size:13px;color:var(--t1);font-weight:400;letter-spacing:-.01em;}
+.focus-active-tag{font-size:9px;padding:3px 9px;border-radius:20px;border:1px solid;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;transition:all .3s;}
+.focus-active-tag.theory{border-color:rgba(194,163,89,0.45);color:var(--m);background:rgba(194,163,89,0.07);}
+.focus-active-tag.module{border-color:rgba(107,158,131,0.45);color:var(--c);background:rgba(107,158,131,0.07);}
+.focus-active-tag.pyq{border-color:rgba(144,139,176,0.45);color:var(--p);background:rgba(144,139,176,0.07);}
+.focus-active-tag.revision{border-color:rgba(196,100,100,0.45);color:var(--red);background:rgba(196,100,100,0.07);}
+.focus-active-timer{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);font-weight:300;}
+.focus-active-edit{font-size:10px;color:var(--t3);background:none;border:none;cursor:pointer;padding:4px;transition:color .2s;flex-shrink:0;}
+.focus-active-edit:hover{color:var(--t2);}
+
+/* Subtask pills — shown when chapter selected but no task */
+.focus-subtask-bar{display:flex;gap:6px;padding:10px 18px 14px;flex-wrap:wrap;border-top:1px solid var(--b1);animation:slideDown .2s var(--ease) both;}
+.focus-subtask-btn{
+  font-size:10px;padding:5px 13px;border-radius:20px;
+  border:1px solid var(--b1);background:transparent;color:var(--t3);
+  cursor:pointer;letter-spacing:.05em;transition:all .22s;text-transform:uppercase;font-weight:400;
+}
+.focus-subtask-btn:hover{border-color:var(--b2);color:var(--t2);background:var(--s2);}
+.focus-subtask-btn.on{background:var(--s3);border-color:var(--b2);color:var(--t1);}
+.focus-subtask-btn.on.theory{border-color:rgba(194,163,89,0.5);color:var(--m);background:rgba(194,163,89,0.06);}
+.focus-subtask-btn.on.module{border-color:rgba(107,158,131,0.5);color:var(--c);background:rgba(107,158,131,0.06);}
+.focus-subtask-btn.on.pyq{border-color:rgba(144,139,176,0.5);color:var(--p);background:rgba(144,139,176,0.06);}
+.focus-subtask-btn.on.revision{border-color:rgba(196,100,100,0.5);color:var(--red);background:rgba(196,100,100,0.06);}
+
+/* Search + dropdown panel */
+.focus-search-panel{border-top:1px solid var(--b1);animation:slideDown .2s var(--ease) both;}
+.focus-search-header{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.04);}
+.focus-search-ico{font-size:11px;color:var(--t3);flex-shrink:0;}
+.focus-search-inp{flex:1;background:transparent;border:none;outline:none;font-family:'Inter',sans-serif;font-size:13px;color:var(--t1);font-weight:400;}
+.focus-search-inp::placeholder{color:rgba(255,255,255,0.18);}
+.focus-search-clear{font-size:10px;color:var(--t3);background:transparent;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;transition:all .15s;flex-shrink:0;}
+.focus-search-clear:hover{color:var(--t2);background:var(--s2);}
+
+/* Chapter list */
+.focus-chap-scroll{max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.08) transparent;}
+.focus-chap-scroll::-webkit-scrollbar{width:3px;}
+.focus-chap-scroll::-webkit-scrollbar-track{background:transparent;}
+.focus-chap-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:99px;}
+.focus-chap-item{display:flex;align-items:center;gap:12px;padding:11px 18px;cursor:pointer;transition:background .15s;}
+.focus-chap-item:hover{background:rgba(255,255,255,0.03);}
+.focus-chap-item.selected{background:rgba(255,255,255,0.05);}
+.focus-chap-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.focus-chap-name{flex:1;font-size:12px;color:var(--t1);font-weight:400;letter-spacing:-.005em;}
+.focus-chap-subj{font-size:8px;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,0.05);color:var(--t3);letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;}
+.focus-chap-empty{font-size:11px;color:var(--t3);text-align:center;padding:20px 0;}
+
+/* Select prompt bar */
+.focus-select-prompt{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;transition:background .2s;}
+.focus-select-prompt:hover{background:rgba(255,255,255,0.02);}
+.focus-select-prompt-ico{font-size:14px;color:var(--t3);}
+.focus-select-prompt-text{flex:1;font-size:12px;color:var(--t3);font-weight:400;}
+.focus-select-prompt-hint{font-size:10px;color:rgba(255,255,255,0.12);font-family:'JetBrains Mono',monospace;}
+
+/* Today's focus log list */
+.focus-today-log{margin-top:20px;width:100%;}
+.focus-log-entry{display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--s1);border-radius:var(--r);border:1px solid var(--b1);margin-bottom:3px;transition:border-color .2s;animation:fadeUp .3s var(--ease) backwards;}
+.focus-log-entry:hover{border-color:var(--b2);}
+.focus-log-entry-chap{flex:1;font-size:11px;color:var(--t2);}
+.focus-log-entry-dur{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);font-weight:300;}
+
+/* Questions input — only visible during break */
+.focus-ques-box{
+  width:100%;
+  margin-top:16px;
+  padding:14px 16px;
+  background:var(--s1);
+  border:1px solid var(--b1);
+  border-radius:var(--r);
+  display:flex;
+  align-items:center;
+  gap:14px;
+  animation:fadeUp .35s var(--ease) both;
+  transition:border-color .2s;
+}
+.focus-ques-box:hover{border-color:var(--b2);}
+.focus-ques-icon{font-size:16px;flex-shrink:0;opacity:.7;}
+.focus-ques-mid{flex:1;}
+.focus-ques-label{font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;}
+.focus-ques-inp-row{display:flex;align-items:center;gap:8px;}
+.focus-ques-inp{
+  font-family:'JetBrains Mono',monospace;
+  font-size:20px;
+  font-weight:300;
+  letter-spacing:-.04em;
+  color:var(--t1);
+  background:transparent;
+  border:none;
+  outline:none;
+  width:70px;
+  line-height:1;
+}
+.focus-ques-inp::placeholder{color:var(--t3);font-size:16px;}
+.focus-ques-add-btn{
+  padding:4px 12px;
+  border:1px solid var(--b2);
+  border-radius:4px;
+  background:transparent;
+  color:var(--t2);
+  font-size:11px;
+  font-family:'Inter',sans-serif;
+  cursor:pointer;
+  transition:all .2s;
+  letter-spacing:.02em;
+}
+.focus-ques-add-btn:hover{background:var(--s2);color:var(--t1);}
+.focus-ques-total{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);font-weight:300;flex-shrink:0;text-align:right;}
+
+/* Scroll wheel for settings */
+.focus-settings-strip{display:flex;gap:10px;margin-top:16px;width:100%;flex-wrap:wrap;}
+.focus-setting-card{flex:1;min-width:100px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;transition:border-color .2s;}
+.focus-setting-card:hover{border-color:var(--b2);}
+.focus-setting-lbl{font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;}
+.focus-setting-val{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;}
+.focus-setting-unit{font-size:9px;color:var(--t3);margin-top:3px;letter-spacing:.04em;}
+.focus-wheel-controls{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.focus-wheel-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--b1);background:transparent;color:var(--t3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.focus-wheel-btn:hover{border-color:var(--b2);color:var(--t2);background:var(--s2);}
+
+/* ─── OVERVIEW VISUAL ENHANCEMENTS ─── */
+@keyframes ovwRingFill{from{stroke-dashoffset:var(--od)}to{stroke-dashoffset:var(--of)}}
+@keyframes ovwCountIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ovwBarGrow{from{width:0}to{width:var(--w)}}
+@keyframes ovwCardIn{from{opacity:0;transform:translateY(8px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes shimmerSlide{0%{left:-80%}100%{left:120%}}
+
+.ovw-visual-section{margin-top:16px;display:flex;flex-direction:column;gap:12px;}
+.ovw-vis-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;transition:border-color .25s;animation:ovwCardIn .5s var(--ease) backwards;}
+.ovw-vis-card:hover{border-color:var(--b2);}
+.ovw-vis-head{padding:16px 20px 12px;display:flex;align-items:baseline;justify-content:space-between;}
+.ovw-vis-title{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);}
+.ovw-vis-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);font-weight:300;}
+.ovw-vis-body{padding:0 20px 20px;}
+
+/* 3 rings row */
+.ovw-rings-row{display:flex;gap:0;border-top:1px solid var(--b1);}
+.ovw-ring-cell{flex:1;display:flex;flex-direction:column;align-items:center;padding:20px 12px 18px;border-right:1px solid var(--b1);position:relative;transition:background .2s;}
+.ovw-ring-cell:last-child{border-right:none;}
+.ovw-ring-cell:hover{background:rgba(255,255,255,0.01);}
+.ovw-ring-label{font-size:8px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-top:12px;}
+.ovw-ring-frac{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);margin-top:3px;font-weight:300;}
+
+/* Task type bars */
+.ovw-task-bars{display:flex;flex-direction:column;gap:10px;padding:0 20px 18px;}
+.ovw-task-bar-row{display:flex;align-items:center;gap:12px;}
+.ovw-task-bar-name{font-size:10px;color:var(--t3);letter-spacing:.05em;text-transform:uppercase;width:56px;flex-shrink:0;}
+.ovw-task-bar-track{flex:1;height:3px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;position:relative;}
+.ovw-task-bar-fill{height:100%;border-radius:99px;width:0%;transition:width 1.2s cubic-bezier(.16,1,.3,1);}
+.ovw-task-bar-pct{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);width:28px;text-align:right;flex-shrink:0;font-weight:300;}
+
+/* Weekly heat dots */
+.ovw-week-dots{display:flex;gap:6px;justify-content:space-between;padding:0 20px 18px;}
+.ovw-day-col{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;}
+.ovw-day-dot{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);transition:all .3s var(--ease);cursor:default;position:relative;}
+.ovw-day-dot.has-work{background:rgba(107,158,131,0.15);color:var(--c);}
+.ovw-day-dot.today-dot{border:1px solid rgba(255,255,255,0.2);}
+.ovw-day-dot.sunday-dot{background:rgba(255,255,255,0.02);color:rgba(255,255,255,0.1);}
+.ovw-day-name{font-size:8px;color:var(--t3);letter-spacing:.04em;}
+
+/* ═══════════════════════════════════════════════
+   ANALYTICS — Focus/Activity Sections (moved from Stats)
+═══════════════════════════════════════════════ */
+.stats-section{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:22px;margin-bottom:14px;transition:border-color .25s;animation:fadeUp .4s var(--ease) backwards;}
+.stats-section:hover{border-color:var(--b2);}
+.stats-sect-title{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin-bottom:16px;}
+
+/* Subject time bars */
+.subj-time-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.subj-time-name{font-size:11px;color:var(--t2);width:80px;flex-shrink:0;font-weight:400;}
+.subj-time-track{flex:1;height:4px;background:var(--s3);border-radius:99px;overflow:hidden;}
+.subj-time-fill{height:100%;border-radius:99px;width:0%;transition:width 1.1s var(--ease);}
+.subj-time-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t2);width:48px;text-align:right;flex-shrink:0;font-weight:300;}
+
+/* Task type time cells */
+.task-time-cell{background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:14px;transition:border-color .2s;}
+.task-time-cell:hover{border-color:var(--b2);}
+.task-time-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;}
+.task-time-lbl{font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-top:5px;}
+.task-time-sub{font-size:9px;color:var(--t3);margin-top:4px;opacity:.6;}
+
+/* ─── MONTH HEATMAP (Analytics) ─── */
+@keyframes hmCellIn{from{opacity:0;transform:scale(0.6)}to{opacity:1;transform:scale(1)}}
+.month-hm-wrap{user-select:none;}
+.month-hm-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.month-hm-title{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:300;color:var(--t1);letter-spacing:-.01em;}
+.month-hm-btn{width:24px;height:24px;border-radius:5px;border:1px solid var(--b1);background:transparent;color:var(--t3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.month-hm-btn:hover{border-color:var(--b2);color:var(--t2);background:var(--s2);}
+.month-hm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.month-hm-day-label{font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.15);text-align:center;padding-bottom:3px;letter-spacing:.03em;}
+.month-hm-cell{aspect-ratio:1;border-radius:4px;cursor:default;transition:transform .12s,filter .12s,opacity .12s;position:relative;}
+.month-hm-cell.clickable{cursor:pointer;}
+.month-hm-cell.clickable:hover{transform:scale(1.15);filter:brightness(1.35);z-index:3;}
+.month-hm-cell.today-cell{box-shadow:0 0 0 1.5px rgba(255,255,255,0.35);}
+.month-hm-cell.sunday-cell{background:rgba(255,255,255,0.012)!important;}
+.month-hm-cell.empty-cell{background:transparent!important;pointer-events:none;}
+.month-hm-day-num{font-size:7px;color:rgba(255,255,255,0.22);position:absolute;bottom:2px;right:3px;line-height:1;font-family:'JetBrains Mono',monospace;}
+
+/* Day detail popup */
+.month-hm-detail{background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:16px 18px;margin-top:14px;animation:fadeUp .2s var(--ease) both;}
+.month-hm-detail-date{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin-bottom:10px;}
+.month-hm-detail-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--b1);}
+.month-hm-detail-row:last-child{border-bottom:none;}
+
+/* Sessions chart */
+.sess-chart-wrap{margin-top:4px;}
+.sess-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.sess-bar-label{font-size:9px;color:var(--t3);width:28px;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-weight:300;}
+.sess-bar-track{flex:1;height:18px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;position:relative;}
+.sess-bar-fill{height:100%;border-radius:4px;transition:width 1s var(--ease);position:relative;display:flex;align-items:center;padding-left:8px;}
+.sess-bar-num{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,0.7);font-weight:300;}
+.sess-target-line{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.25);pointer-events:none;}
+
+/* Overview summary */
+.ovw-summary-box{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;margin-top:16px;}
+.ovw-summary-head{padding:14px 20px;border-bottom:1px solid var(--b1);display:flex;align-items:baseline;justify-content:space-between;}
+.ovw-summary-title{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);}
+.ovw-summary-content{padding:16px 20px;display:flex;flex-direction:column;gap:14px;}
+.ovw-sum-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.ovw-sum-label{font-size:11px;color:var(--t3);}
+.ovw-sum-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t2);font-weight:300;}
+.ovw-sum-val.highlight{color:var(--t1);}
+.ovw-subj-bars{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+
 </style>
 </head>
 <body>
@@ -809,6 +1110,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="tab" onclick="go('chem',this)">Chem<span class="tbadge" id="bC">0/23</span></button>
     <button class="tab" onclick="go('phys',this)">Physics<span class="tbadge" id="bP">0/22</span></button>
     <button class="tab" onclick="go('tests',this)">Tests<span class="tbadge" id="bT">—</span></button>
+    <button class="tab" onclick="go('focus',this)">Focus<span class="tbadge" id="bFocus">—</span></button>
     <button class="tab" onclick="go('ana',this)">Analytics</button>
   </div>
 
@@ -820,6 +1122,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <button class="pulse-nav-btn" onclick="shiftPulse(1)">Next →</button>
     </div>
     <div class="pulse-box" id="pulseBox"></div>
+    <div id="ovwWeeklySummary" style="margin-top:16px;"></div>
+  </div>
+
+  <!-- FOCUS TAB -->
+  <div class="panel" id="p-focus">
+    <div id="focusContent"></div>
   </div>
 
   <!-- MATHS -->
@@ -983,8 +1291,9 @@ function go(tab,btn){
      c.style.animation = '';
   });
 
-  if(tab==='overview'){pulseOffset=0;renderPulse();}
+  if(tab==='overview'){pulseOffset=0;renderPulse();renderOverviewSummary();}
   if(tab==='tests') renderTests();
+  if(tab==='focus'){renderFocus();}
   if(tab==='ana'){renderAnalytics(); renderDeckAndLog();}
 }
 
@@ -1504,6 +1813,7 @@ function renderAnalytics(){
   const allEndDates=allSubjs.map(({ch})=>parseDate(ch.e));
   const finalDeadline=new Date(Math.max(...allEndDates.map(d=>d.getTime())));
   const daysLeft=Math.max(0,Math.round((finalDeadline-today)/(1000*60*60*24)));
+  const finalDeadlineLbl=fmtDate(finalDeadline); // e.g. "14 Oct"
   const chapsLeft=totalChaps-totalDone;
   const backlog=allSubjs.filter(({s,ch})=>parseDate(ch.e)<today&&!isDone(s,ch.n));
   const mBack=backlog.filter(({s})=>s==='math').length;
@@ -1689,7 +1999,10 @@ function renderAnalytics(){
   html+=buildHeatmap(weeks,today);
 
   /* 6 ── Syllabus tracker + backlog */
-  html+=buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackStatus,trackColor,trackDesc,today);
+  html+=buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackStatus,trackColor,trackDesc,today,finalDeadlineLbl);
+
+  /* ── Focus & Activity Sections (integrated from Stats) ── */
+  html+=buildFocusActivitySections(today);
 
   el.innerHTML=html;
 
@@ -1705,6 +2018,10 @@ function renderAnalytics(){
       });
       el.querySelectorAll('.cbt-halo[data-w]').forEach(h=>{
         if(parseFloat(h.dataset.w)>2) h.style.opacity='1';
+      });
+      // Focus activity bars
+      el.querySelectorAll('.subj-time-fill[data-w],.sess-bar-fill[data-w]').forEach(b=>{
+        b.style.width=b.dataset.w+'%';
       });
     },80);
   });
@@ -1996,7 +2313,7 @@ function buildHeatmap(weeks,today){
 }
 
 /* ─── Syllabus Tracker + Backlog ─── */
-function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackStatus,trackColor,trackDesc,today){
+function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackStatus,trackColor,trackDesc,today,finalDeadlineLbl){
   const subjRows=[
     {l:'Mathematics',count:mBack,total:MATH.length,c:'var(--m)'},
     {l:'Chemistry',count:cBack,total:CHEM.length,c:'var(--c)'},
@@ -2017,6 +2334,7 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
       <div class="track-stat-item">
         <div class="track-stat-num">${daysLeft}</div>
         <div class="track-stat-lbl">days left</div>
+        ${finalDeadlineLbl?`<div style="font-size:8px;color:var(--t3);opacity:.6;margin-top:2px;font-family:'JetBrains Mono',monospace;">until ${finalDeadlineLbl}</div>`:''}
       </div>
       <div class="track-stat-div"></div>
       <div class="track-stat-item">
@@ -2075,12 +2393,627 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
   return html;
 }
 
-/* ═══════════════════════════════════════════════
-   TOAST & INIT
-═══════════════════════════════════════════════ */
+/* ─── 30-Day Progress Dashboard ─── */
+function buildSessLineChart(last30, target, today){
+  const qTarget=focusSettings.dailyQuesTarget||70;
+
+  // Enrich each day with focus time and questions
+  const days=last30.map(d=>{
+    const focusLog=(() => {try{return JSON.parse(localStorage.getItem('fent_focuslog_'+d.k)||'[]');}catch{return[];}})();
+    const focusMins=Math.round(focusLog.reduce((a,e)=>a+(e.durationSecs||0),0)/60);
+    return {...d, ques:parseInt(localStorage.getItem('fent_ques_'+d.k)||'0'), focusMins};
+  });
+
+  // ── Stats ──
+  const workDays=days.filter(d=>!d.isSun);
+  const pastWork=workDays.filter(d=>d.d<=today);
+  const metDays=pastWork.filter(d=>d.sess>=target).length;
+  const totalSess30=days.reduce((a,d)=>a+d.sess,0);
+  const totalQues30=days.reduce((a,d)=>a+d.ques,0);
+  const totalFocusMins30=days.reduce((a,d)=>a+d.focusMins,0);
+  const avgSess=pastWork.length?+(totalSess30/pastWork.length).toFixed(1):0;
+  const hasQues=totalQues30>0;
+  const hasAnyData=totalSess30>0||totalFocusMins30>0;
+
+  // Streak
+  let streak=0;
+  for(let i=days.length-1;i>=0;i--){
+    const d=days[i];
+    if(d.isSun||d.d>today) continue;
+    if(d.sess>=target) streak++;
+    else break;
+  }
+  let bestStreak=0,curS=0;
+  days.forEach(d=>{
+    if(d.isSun||d.d>today) return;
+    if(d.sess>=target){curS++;bestStreak=Math.max(bestStreak,curS);}
+    else curS=0;
+  });
+
+  // ── Top stat pills ──
+  const streakCol=streak>=5?'var(--c)':streak>=2?'var(--m)':'var(--t3)';
+  const targetPct=pastWork.length?Math.round(metDays/pastWork.length*100):0;
+  const statPills=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px;">
+    ${[
+      [streak, streak>=5?'🔥':'·', 'Streak', streakCol],
+      [bestStreak, '·', 'Best', bestStreak>=7?'var(--c)':bestStreak>=3?'var(--m)':'var(--t3)'],
+      [targetPct+'%', '·', 'On target', targetPct>=80?'var(--c)':targetPct>=50?'var(--m)':'var(--t3)'],
+      [avgSess, '·', 'Avg/day', 'var(--t1)']
+    ].map(([val,icon,lbl,col])=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px 8px;text-align:center;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;color:${col};letter-spacing:-.03em;line-height:1;">${val}</div>
+      <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.05em;text-transform:uppercase;">${lbl}</div>
+    </div>`).join('')}
+  </div>`;
+
+  // ── Main sessions rhythm chart ──
+  // Design: each day = a thin vertical column whose height = fill %, coloured by performance
+  // A smooth SVG path connects the session counts as a line floating above the columns
+  // Sundays are ghost columns (no target)
+  const W=560, H=130, PL=28, PR=8, PT=14, PB=28;
+  const plotW=W-PL-PR, plotH=H-PT-PB;
+  const N=days.length;
+  const colW=plotW/N;
+  const gap=colW>12?2:1;
+  const maxSess=Math.max(target*1.5,...days.map(d=>d.sess),1);
+
+  function xMid(i){ return PL + i*colW + colW/2; }
+  function yV(v){ return PT + plotH - Math.min(1,v/maxSess)*plotH; }
+
+  // Columns (filled rectangles — the "rhythm bars")
+  const colsHTML=days.map((d,i)=>{
+    const cx=PL+i*colW+gap/2;
+    const cw=Math.max(colW-gap,1);
+    if(d.isSun){
+      return `<rect x="${cx.toFixed(1)}" y="${(PT+plotH-4).toFixed(1)}" width="${cw.toFixed(1)}" height="4" rx="1" fill="rgba(255,255,255,0.02)"><title>Sunday — rest</title></rect>`;
+    }
+    if(d.d>today){
+      return `<rect x="${cx.toFixed(1)}" y="${(PT+plotH-2).toFixed(1)}" width="${cw.toFixed(1)}" height="2" rx="1" fill="rgba(255,255,255,0.05)"/>`;
+    }
+    const isToday=d.d.toDateString()===today.toDateString();
+    const met=d.sess>=target, partial=d.sess>0&&!met, missed=d.sess===0;
+    const fillColor=met?'rgba(107,158,131,0.55)':partial?'rgba(194,163,89,0.45)':'rgba(196,100,100,0.22)';
+    const topColor=met?'rgba(107,158,131,1)':partial?'rgba(194,163,89,0.9)':'rgba(196,100,100,0.6)';
+    const h=Math.max(missed?2:(d.sess/maxSess)*plotH,2);
+    const by=PT+plotH-h;
+    const todayGlow=isToday?`<rect x="${cx.toFixed(1)}" y="${PT}" width="${cw.toFixed(1)}" height="${plotH}" rx="2" fill="${topColor}" opacity="0.07"/>`:' ';
+    const topCap=`<rect x="${cx.toFixed(1)}" y="${by.toFixed(1)}" width="${cw.toFixed(1)}" height="1.5" rx="0.75" fill="${topColor}" opacity="${missed?0.5:0.9}"/>`;
+    return `${todayGlow}<rect x="${cx.toFixed(1)}" y="${by.toFixed(1)}" width="${cw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${fillColor}"/>
+    ${topCap}<title>${DAYS[d.d.getDay()]} ${d.d.getDate()}/${d.d.getMonth()+1}: ${d.sess} sess${d.ques?', '+d.ques+'q':''}${d.focusMins?', '+d.focusMins+'m':''}</title>`;
+  }).join('');
+
+  // Smooth bezier line through session midpoints (past work days only)
+  const linePts=days.map((d,i)=>d.isSun||d.d>today?null:{x:xMid(i),y:yV(d.sess)}).filter(Boolean);
+  let sessPath='';
+  if(linePts.length>1){
+    let d='M'+linePts[0].x.toFixed(1)+','+linePts[0].y.toFixed(1);
+    for(let i=1;i<linePts.length;i++){
+      const p0=linePts[i-1], p1=linePts[i];
+      const cpx=(p0.x+p1.x)/2;
+      d+=` C${cpx.toFixed(1)},${p0.y.toFixed(1)} ${cpx.toFixed(1)},${p1.y.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+    }
+    // Area fill
+    const areaD=d+` L${linePts[linePts.length-1].x.toFixed(1)},${(PT+plotH).toFixed(1)} L${linePts[0].x.toFixed(1)},${(PT+plotH).toFixed(1)} Z`;
+    sessPath=`<defs>
+      <linearGradient id="sessGrad30" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(107,158,131,0.25)"/>
+        <stop offset="100%" stop-color="rgba(107,158,131,0)"/>
+      </linearGradient>
+    </defs>
+    <path d="${areaD}" fill="url(#sessGrad30)" class="chart-area-anim"/>
+    <path d="${d}" fill="none" stroke="rgba(107,158,131,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="chart-line-anim"/>`;
+  }
+
+  // Highlight dots on the line (today + any day with max sessions)
+  const dotMaxSess=Math.max(...days.filter(d=>!d.isSun&&d.d<=today).map(d=>d.sess),0);
+  const dotsHTML=days.map((d,i)=>{
+    if(d.isSun||d.d>today) return '';
+    const isToday=d.d.toDateString()===today.toDateString();
+    const isPeak=d.sess===dotMaxSess&&dotMaxSess>0;
+    if(!isToday&&!isPeak) return '';
+    const col=d.sess>=target?'rgba(107,158,131,1)':d.sess>0?'rgba(194,163,89,1)':'rgba(196,100,100,0.8)';
+    const r=isToday?3.5:2.5;
+    return `<circle cx="${xMid(i).toFixed(1)}" cy="${yV(d.sess).toFixed(1)}" r="${r}" fill="${col}" stroke="var(--bg)" stroke-width="1.5" class="chart-dot-anim"/>
+    ${isToday?`<text x="${xMid(i).toFixed(1)}" y="${(yV(d.sess)-7).toFixed(1)}" font-size="7.5" font-family="JetBrains Mono,monospace" fill="${col}" text-anchor="middle" font-weight="500">today</text>`:''}`;
+  }).join('');
+
+  // Target line
+  const tyLine=yV(target);
+  const targetLineHTML=`<line x1="${PL}" y1="${tyLine.toFixed(1)}" x2="${(W-PR).toFixed(1)}" y2="${tyLine.toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="0.8" stroke-dasharray="4,3"/>
+  <text x="${(PL-3).toFixed(1)}" y="${(tyLine+3).toFixed(1)}" font-size="7" font-family="JetBrains Mono,monospace" fill="rgba(255,255,255,0.25)" text-anchor="end">${target}</text>`;
+
+  // Week separators (subtle)
+  const weekSepsHTML=days.filter((_,i)=>i>0&&days[i].d.getDay()===1).map((_,i,arr)=>{
+    const idx=days.findIndex(d=>d===arr[i]);
+    const x=PL+idx*colW;
+    return `<line x1="${x.toFixed(1)}" y1="${PT}" x2="${x.toFixed(1)}" y2="${(PT+plotH).toFixed(1)}" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>`;
+  }).join('');
+
+  // Date labels (Mon of each week + first + last)
+  const showDateIdx=new Set([0,N-1,...days.map((d,i)=>d.d.getDay()===1?i:-1).filter(i=>i>=0)]);
+  const dateLabsHTML=[...showDateIdx].sort((a,b)=>a-b).map(i=>{
+    const d=days[i];
+    return `<text x="${xMid(i).toFixed(1)}" y="${(H-4).toFixed(1)}" font-size="7.5" font-family="JetBrains Mono,monospace" fill="rgba(255,255,255,0.18)" text-anchor="middle">${d.d.getDate()}/${d.d.getMonth()+1}</text>`;
+  }).join('');
+
+  const sessChartSVG=`<svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;overflow:visible;">
+    ${weekSepsHTML}
+    ${targetLineHTML}
+    ${colsHTML}
+    ${sessPath}
+    ${dotsHTML}
+    ${dateLabsHTML}
+  </svg>`;
+
+  // ── Focus time mini sparkline (below sessions, always visible if data) ──
+  let focusSparkHTML='';
+  const hasFocusData=days.some(d=>d.focusMins>0);
+  if(hasFocusData){
+    const maxFm=Math.max(...days.map(d=>d.focusMins),1);
+    const SH=40,SPT=4,SPB=10,SPL=PL,SPR=PR;
+    const sPlotH=SH-SPT-SPB;
+    function yFm(v){return SPT+sPlotH-(v/maxFm)*sPlotH;}
+    const fmPts=days.map((d,i)=>d.isSun||d.d>today?null:{x:xMid(i),y:yFm(d.focusMins)}).filter(Boolean);
+    let fmPath='';
+    if(fmPts.length>1){
+      let pd='M'+fmPts[0].x.toFixed(1)+','+fmPts[0].y.toFixed(1);
+      for(let i=1;i<fmPts.length;i++){
+        const p0=fmPts[i-1],p1=fmPts[i];
+        const cx=(p0.x+p1.x)/2;
+        pd+=` C${cx.toFixed(1)},${p0.y.toFixed(1)} ${cx.toFixed(1)},${p1.y.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+      }
+      const aD=pd+` L${fmPts[fmPts.length-1].x.toFixed(1)},${(SPT+sPlotH).toFixed(1)} L${fmPts[0].x.toFixed(1)},${(SPT+sPlotH).toFixed(1)} Z`;
+      fmPath=`<defs><linearGradient id="focusGrad30" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(144,139,176,0.3)"/><stop offset="100%" stop-color="rgba(144,139,176,0)"/></linearGradient></defs>
+      <path d="${aD}" fill="url(#focusGrad30)" class="chart-area-anim"/>
+      <path d="${pd}" fill="none" stroke="rgba(144,139,176,0.7)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="chart-line-anim"/>`;
+    }
+    const totalFocusH=Math.floor(totalFocusMins30/60);
+    const totalFocusM=totalFocusMins30%60;
+    const focusStr=totalFocusH>0?`${totalFocusH}h ${totalFocusM}m`:`${totalFocusMins30}m`;
+    focusSparkHTML=`<div style="margin-top:6px;">
+      <div style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(144,139,176,0.5);letter-spacing:.05em;margin-bottom:2px;">FOCUS TIME <span style="color:rgba(255,255,255,0.12);margin-left:8px;">${focusStr} / 30d</span></div>
+      <svg viewBox="0 0 ${W} ${SH}" style="display:block;width:100%;overflow:visible;">${fmPath}</svg>
+    </div>`;
+  }
+
+  // ── Questions line (only if data) ──
+  let quesPanel='';
+  if(hasQues){
+    const QH=55,QPT=6,QPB=12;
+    const qPlotH=QH-QPT-QPB;
+    const maxQ=Math.max(qTarget,...days.map(d=>d.ques),1);
+    function yQ(v){return QPT+qPlotH-(v/maxQ)*qPlotH;}
+    const qPts=days.map((d,i)=>d.isSun||d.d>today?null:{x:xMid(i),y:yQ(d.ques),v:d.ques}).filter(Boolean);
+    let qPath='';
+    if(qPts.length>1){
+      let qd='M'+qPts[0].x.toFixed(1)+','+qPts[0].y.toFixed(1);
+      for(let i=1;i<qPts.length;i++){
+        const p0=qPts[i-1],p1=qPts[i];
+        const cx=(p0.x+p1.x)/2;
+        qd+=` C${cx.toFixed(1)},${p0.y.toFixed(1)} ${cx.toFixed(1)},${p1.y.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+      }
+      const qaD=qd+` L${qPts[qPts.length-1].x.toFixed(1)},${(QPT+qPlotH).toFixed(1)} L${qPts[0].x.toFixed(1)},${(QPT+qPlotH).toFixed(1)} Z`;
+      const qTy=yQ(qTarget);
+      qPath=`<defs><linearGradient id="quesGrad30" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(194,163,89,0.25)"/><stop offset="100%" stop-color="rgba(194,163,89,0)"/></linearGradient></defs>
+      <line x1="${PL}" y1="${qTy.toFixed(1)}" x2="${(W-PR).toFixed(1)}" y2="${qTy.toFixed(1)}" stroke="rgba(194,163,89,0.12)" stroke-width="0.8" stroke-dasharray="3,3"/>
+      <text x="${(PL-3).toFixed(1)}" y="${(qTy+3).toFixed(1)}" font-size="7" font-family="JetBrains Mono,monospace" fill="rgba(194,163,89,0.3)" text-anchor="end">${qTarget}</text>
+      <path d="${qaD}" fill="url(#quesGrad30)" class="chart-area-anim"/>
+      <path d="${qd}" fill="none" stroke="rgba(194,163,89,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="chart-line-anim"/>
+      ${qPts.filter(p=>p.v>=qTarget).map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.5" fill="rgba(107,158,131,0.9)" stroke="var(--bg)" stroke-width="1" class="chart-dot-anim"/>`).join('')}`;
+    }
+    const totalQStr=totalQues30>=1000?(totalQues30/1000).toFixed(1)+'k':totalQues30;
+    quesPanel=`<div style="margin-top:6px;">
+      <div style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(194,163,89,0.5);letter-spacing:.05em;margin-bottom:2px;">QUESTIONS / DAY <span style="color:rgba(255,255,255,0.12);margin-left:8px;">${totalQStr} total</span></div>
+      <svg viewBox="0 0 ${W} ${QH}" style="display:block;width:100%;overflow:visible;">${qPath}</svg>
+    </div>`;
+  }
+
+  // ── Legend ──
+  const legend=`<div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:rgba(107,158,131,0.55);"></div><span style="font-size:8px;color:var(--t3);font-family:'JetBrains Mono',monospace;">met target</span></div>
+    <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:rgba(194,163,89,0.45);"></div><span style="font-size:8px;color:var(--t3);font-family:'JetBrains Mono',monospace;">partial</span></div>
+    <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:2px;background:rgba(196,100,100,0.22);"></div><span style="font-size:8px;color:var(--t3);font-family:'JetBrains Mono',monospace;">missed</span></div>
+    <div style="display:flex;align-items:center;gap:4px;"><div style="width:20px;height:1.5px;background:rgba(107,158,131,0.9);border-radius:1px;"></div><span style="font-size:8px;color:var(--t3);font-family:'JetBrains Mono',monospace;">sessions</span></div>
+    ${hasFocusData?`<div style="display:flex;align-items:center;gap:4px;"><div style="width:20px;height:1.5px;background:rgba(144,139,176,0.7);border-radius:1px;"></div><span style="font-size:8px;color:var(--t3);font-family:'JetBrains Mono',monospace;">focus</span></div>`:''}
+    ${hasQues?`<div style="display:flex;align-items:center;gap:4px;"><div style="width:20px;height:1.5px;background:rgba(194,163,89,0.8);border-radius:1px;"></div><span style="font-size:8px;color:var(--t3);font-family:'JetBrains Mono',monospace;">questions</span></div>`:''}
+    <span style="margin-left:auto;font-size:8px;color:var(--t3);opacity:.5;">${pastWork.length} study days</span>
+  </div>`;
+
+  const sessLabel=`<div style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(107,158,131,0.5);letter-spacing:.05em;margin-bottom:4px;">SESSIONS / DAY <span style="color:rgba(255,255,255,0.13);margin-left:8px;">target ${target} · 30d total ${totalSess30}</span></div>`;
+
+  return `<div class="ana-section">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+    <span class="ana-sect-title" style="margin-bottom:0;">Progress — Last 30 Days</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);">${metDays}/${pastWork.length} targets hit</span>
+  </div>
+  ${statPills}
+  ${sessLabel}
+  ${sessChartSVG}
+  ${focusSparkHTML}
+  ${quesPanel}
+  ${legend}
+</div>`;
+}
+
+/* ─── Focus & Activity Analytics Sections ─── */
+// State for month heatmap navigation
+let anaHmMonth = null; // null = current month
+
+function buildFocusActivitySections(today){
+  const todayKey=today.toISOString().split('T')[0];
+  const allSubjs=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
+  const TK_KEYS=['theory','module','pyq','revision'];
+
+  // Build day → tasks map
+  const dayMap={};
+  allSubjs.forEach(({s,ch})=>{
+    const taskState=gs(s,ch.n);
+    TK_KEYS.forEach(k=>{
+      if(taskState[k]){
+        const tsKey=`ts_${s}_${ch.n}_${k}`;
+        const dateKey=ST[tsKey]||todayKey;
+        if(!dayMap[dateKey])dayMap[dateKey]={total:0,subj:{math:0,chem:0,phys:0},task:{theory:0,module:0,pyq:0,revision:0},sessions:0};
+        dayMap[dateKey].total++;
+        dayMap[dateKey].subj[s]++;
+        dayMap[dateKey].task[k]++;
+      }
+    });
+  });
+
+  // Add sessions to dayMap
+  try{
+    Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{
+      const d=k.replace('fent_sessions_','');
+      const n=parseInt(localStorage.getItem(k)||'0');
+      if(!dayMap[d])dayMap[d]={total:0,subj:{math:0,chem:0,phys:0},task:{},sessions:0};
+      dayMap[d].sessions=n;
+    });
+  }catch{}
+
+  // Focus logs aggregation
+  const focusLogs={};
+  try{
+    Object.keys(localStorage).filter(k=>k.startsWith('fent_focuslog_')).forEach(k=>{
+      const d=k.replace('fent_focuslog_','');
+      const entries=JSON.parse(localStorage.getItem(k)||'[]');
+      if(!focusLogs[d])focusLogs[d]={totalSecs:0,subj:{math:0,chem:0,phys:0},task:{theory:0,module:0,pyq:0,revision:0}};
+      entries.forEach(e=>{
+        focusLogs[d].totalSecs+=e.durationSecs||0;
+        if(focusLogs[d].subj[e.subj]!==undefined)focusLogs[d].subj[e.subj]+=e.durationSecs||0;
+        if(focusLogs[d].task[e.task]!==undefined)focusLogs[d].task[e.task]+=e.durationSecs||0;
+      });
+    });
+  }catch{}
+
+  // Total focus time
+  const totalFocusSecs=Object.values(focusLogs).reduce((a,d)=>a+d.totalSecs,0);
+  const tfm=Math.floor(totalFocusSecs/60);
+  const tfh=Math.floor(tfm/60);
+  const focusTimeStr=tfh>0?`${tfh}h ${tfm%60}m`:`${tfm}m`;
+
+  // Total sessions
+  let totalSessions=0;
+  try{Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{totalSessions+=parseInt(localStorage.getItem(k)||'0');});}catch{}
+
+  // Focus target daily
+  const target=focusSettings.dailyTarget;
+
+  function fmtSecs(s){const m=Math.floor(s/60);const h=Math.floor(m/60);return h>0?`${h}h ${m%60}m`:`${m}m`;}
+
+  // ── Month Heatmap ──
+  // Which month to show
+  if(anaHmMonth===null) anaHmMonth=today.getMonth(); // default = current month
+  const hmYear=2026;
+  const hmMonth=anaHmMonth;
+  const {start:trackerStart,end:trackerEnd}=getTrackerRange();
+
+  // First/last day of month
+  const mFirst=new Date(hmYear,hmMonth,1);
+  const mLast=new Date(hmYear,hmMonth+1,0);
+  // Grid start = Sunday before or on mFirst
+  const gridFirst=new Date(mFirst);
+  gridFirst.setDate(gridFirst.getDate()-gridFirst.getDay());
+  // Grid end = Saturday after or on mLast
+  const gridLast=new Date(mLast);
+  const daysToSat=6-gridLast.getDay();
+  if(daysToSat>0)gridLast.setDate(gridLast.getDate()+daysToSat);
+
+  // Build all cells
+  const cells=[];
+  const ptr=new Date(gridFirst);
+  let maxCellTasks=1;
+  while(ptr<=gridLast){
+    const d=new Date(ptr);
+    const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const inMonth=d.getMonth()===hmMonth;
+    const inTracker=d>=trackerStart&&d<=trackerEnd;
+    const isPast=d<today;
+    const isToday=d.toDateString()===today.toDateString();
+    const isSun=d.getDay()===0;
+    const tasks=dayMap[k]||{total:0,subj:{},task:{},sessions:0};
+    const focus=focusLogs[k]||{totalSecs:0};
+    if(tasks.total>maxCellTasks)maxCellTasks=tasks.total;
+    cells.push({d,k,inMonth,inTracker,isPast,isToday,isSun,tasks,focus});
+    ptr.setDate(ptr.getDate()+1);
+  }
+
+  // Color scale for month heatmap
+  // Past with 0 tasks = red (missed), partial = amber, good/great = green
+  // Sunday = near-invisible (no goal), future = subtle outline
+  function hmTaskColor(cell){
+    if(!cell.inMonth) return 'rgba(255,255,255,0.0)';
+    if(cell.isSun)    return 'rgba(255,255,255,0.018)'; // Sunday: no goal, ghost
+    if(!cell.isPast&&!cell.isToday) return 'rgba(255,255,255,0.04)'; // future: muted
+    if(cell.tasks.total===0) return 'rgba(196,100,100,0.38)'; // MISSED — red
+    const r=cell.tasks.total/maxCellTasks;
+    if(r<0.2)  return 'rgba(194,163,89,0.45)';  // very low — amber
+    if(r<0.45) return 'rgba(194,163,89,0.7)';   // low — amber
+    if(r<0.7)  return 'rgba(107,158,131,0.6)';  // decent — green
+    if(r<0.9)  return 'rgba(107,158,131,0.82)'; // good — green
+    return 'rgba(107,158,131,1.0)';              // great — full green
+  }
+
+  // Build 7 weeks × 7 days grid
+  const dayLbls=['S','M','T','W','T','F','S'];
+  const dayLabelsHTML=dayLbls.map((l,i)=>`<div class="month-hm-day-label" style="${i===0?'color:rgba(255,255,255,0.1);':''}">${l}</div>`).join('');
+
+  // Detail state
+  const hmDetailId=`anhmdet`;
+  let detHTML='';
+  if(anaHmSelectedDay){
+    const lp=anaHmSelectedDay.split('-');
+    const dateLbl=MONTHS[parseInt(lp[1])-1]+' '+parseInt(lp[2])+', '+lp[0];
+    const isSun=new Date(anaHmSelectedDay).getDay()===0;
+    const dm=dayMap[anaHmSelectedDay];
+    const fl=focusLogs[anaHmSelectedDay]; // focus log for that day
+    const daySess=parseInt(localStorage.getItem('fent_sessions_'+anaHmSelectedDay)||'0');
+    const dayQues=parseInt(localStorage.getItem('fent_ques_'+anaHmSelectedDay)||'0');
+    // Load individual focus log entries
+    let dayLogEntries=[];
+    try{dayLogEntries=JSON.parse(localStorage.getItem('fent_focuslog_'+anaHmSelectedDay)||'[]');}catch{}
+
+    function fmtS(s){const m=Math.floor(s/60);const h=Math.floor(m/60);return h>0?`${h}h ${m%60}m`:`${m}m`;}
+
+    if(isSun){
+      detHTML=`<div class="month-hm-detail" id="${hmDetailId}">
+        <div class="month-hm-detail-date">${dateLbl} · Sunday</div>
+        <div style="font-size:11px;color:var(--t3);padding:4px 0;">${daySess>0||dayLogEntries.length>0?'Chose to study on rest day.':'Rest day — no sessions logged.'}</div>
+        ${daySess>0?`<div class="month-hm-detail-row"><span style="font-size:11px;color:var(--t2);flex:1;">Sessions</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--p);">${daySess}</span></div>`:''}
+        ${fl&&fl.totalSecs>0?`<div class="month-hm-detail-row"><span style="font-size:11px;color:var(--t2);flex:1;">Focus time</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c);">${fmtS(fl.totalSecs)}</span></div>`:''}
+      </div>`;
+    } else {
+      // Has session/focus data or task data
+      const focusSecs=fl?fl.totalSecs:0;
+      const hasFocus=focusSecs>0||daySess>0;
+      const hasTasks=dm&&dm.total>0;
+
+      // Mini focus log entries
+      const logEntriesHTML=dayLogEntries.slice(0,6).map(e=>{
+        const chapCol={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'}[e.subj]||'var(--t3)';
+        const taskCol={theory:'var(--m)',module:'var(--c)',pyq:'var(--p)',revision:'var(--red)'}[e.task]||'var(--t3)';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="width:4px;height:4px;border-radius:50%;background:${chapCol};flex-shrink:0;"></div>
+          <span style="flex:1;font-size:10px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.chapName}</span>
+          <span style="font-size:9px;color:${taskCol};padding:1px 5px;border-radius:3px;background:rgba(255,255,255,0.04);flex-shrink:0;">${e.task}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);flex-shrink:0;">${fmtS(e.durationSecs)}</span>
+        </div>`;
+      }).join('');
+
+      const statRowsHTML=`
+        ${hasFocus?`<div class="month-hm-detail-row">
+          <span style="font-size:10px;color:var(--t3);flex:1;">Focus time</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c);">${focusSecs>0?fmtS(focusSecs):'—'}</span>
+        </div>`:''}
+        ${daySess>0?`<div class="month-hm-detail-row">
+          <span style="font-size:10px;color:var(--t3);flex:1;">Sessions</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--p);">${daySess}</span>
+        </div>`:''}
+        ${dayQues>0?`<div class="month-hm-detail-row">
+          <span style="font-size:10px;color:var(--t3);flex:1;">Questions done</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--m);">${dayQues}</span>
+        </div>`:''}
+        ${hasTasks?`<div class="month-hm-detail-row">
+          <span style="font-size:10px;color:var(--t3);flex:1;">Tasks completed</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t2);">${dm.total}</span>
+        </div>`:''}
+      `;
+
+      detHTML=`<div class="month-hm-detail" id="${hmDetailId}">
+        <div class="month-hm-detail-date">${dateLbl}</div>
+        ${!hasFocus&&!hasTasks?`<div style="font-size:11px;color:var(--t3);padding:4px 0;">Nothing logged this day.</div>`:''}
+        ${statRowsHTML}
+        ${logEntriesHTML?`<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;">${logEntriesHTML}</div>`:''}
+        ${dayLogEntries.length>6?`<div style="font-size:9px;color:var(--t3);padding:4px 0;text-align:right;">+${dayLogEntries.length-6} more entries</div>`:''}
+      </div>`;
+    }
+  }
+
+  const cellsHTML=cells.map((cell,ci)=>{
+    const bg=hmTaskColor(cell);
+    const isActive=anaHmSelectedDay===cell.k&&cell.inMonth;
+    const hasData=cell.tasks.total>0||cell.focus.totalSecs>0;
+    const textColor=cell.tasks.total>0?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.15)';
+    const extraStyle=isActive?'outline:1px solid rgba(255,255,255,0.5);outline-offset:1px;':'';
+    return `<div class="month-hm-cell${!cell.inMonth?' empty-cell':cell.isSun?' sunday-cell':cell.isToday?' today-cell':hasData?' clickable':cell.isPast?' clickable':''}"
+      style="background:${bg};${extraStyle}"
+      ${cell.inMonth?`onclick="anaHmClick('${cell.k}')"`:''}
+      title="${cell.inMonth?(cell.isSun?'Sunday':cell.tasks.total?cell.tasks.total+' tasks':cell.isPast?'—':''):''}"
+    ><span class="month-hm-day-num" style="${!cell.inMonth?'display:none;':''}">${cell.d.getDate()}</span></div>`;
+  }).join('');
+
+  // Month nav
+  const canPrev=hmMonth>trackerStart.getMonth()||(hmYear>trackerStart.getFullYear());
+  const canNext=hmMonth<trackerEnd.getMonth()||(hmYear<trackerEnd.getFullYear());
+  const hmHTML=`<div class="ana-section" style="padding:16px 18px;">
+  <div class="month-hm-wrap">
+    <div class="month-hm-nav">
+      <button class="month-hm-btn" onclick="anaHmNav(-1)" ${!canPrev?'disabled style="opacity:.3;cursor:default"':''}>‹</button>
+      <span class="month-hm-title">${MONTHS[hmMonth]} ${hmYear}</span>
+      <button class="month-hm-btn" onclick="anaHmNav(1)" ${!canNext?'disabled style="opacity:.3;cursor:default"':''}>›</button>
+    </div>
+    <div class="month-hm-grid">${dayLabelsHTML}${cellsHTML}</div>
+    ${detHTML}
+    <div style="display:flex;align-items:center;gap:5px;margin-top:12px;flex-wrap:wrap;">
+      <span style="font-size:8px;color:rgba(255,255,255,0.2);font-family:'JetBrains Mono',monospace;">Missed</span>
+      ${['rgba(196,100,100,0.38)','rgba(194,163,89,0.45)','rgba(194,163,89,0.7)','rgba(107,158,131,0.55)','rgba(107,158,131,0.82)','rgba(107,158,131,1.0)'].map(c=>`<div style="width:10px;height:10px;border-radius:3px;background:${c};flex-shrink:0;"></div>`).join('')}
+      <span style="font-size:8px;color:rgba(255,255,255,0.2);font-family:'JetBrains Mono',monospace;">Great</span>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+        <div style="width:10px;height:10px;border-radius:3px;background:rgba(255,255,255,0.02);flex-shrink:0;"></div>
+        <span style="font-size:8px;color:rgba(255,255,255,0.15);font-family:'JetBrains Mono',monospace;">Sunday</span>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+  // ── Sessions over time chart (last 30 days) ──
+  const last30=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const sess=parseInt(localStorage.getItem('fent_sessions_'+k)||'0');
+    const tasks=(dayMap[k]||{total:0}).total;
+    const isSun=d.getDay()===0;
+    last30.push({d,k,sess,tasks,isSun});
+  }
+
+
+  // Sessions + Focus time summary cards
+  const todaySess=parseInt(localStorage.getItem('fent_sessions_'+todayKey)||'0');
+  const todayFocus=focusLogs[todayKey]||{totalSecs:0};
+  const todayFocusMins=Math.floor(todayFocus.totalSecs/60);
+  const last7=[...Array(7)].map((_,i)=>{
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return {d,k,sess:parseInt(localStorage.getItem('fent_sessions_'+k)||'0')};
+  }).reverse();
+  const metTarget7=last7.filter(d=>d.d.getDay()!==0&&d.sess>=target).length;
+  const workDays7=last7.filter(d=>d.d.getDay()!==0).length;
+
+  // Subject focus breakdown
+  const subjFocusSecs={math:0,chem:0,phys:0};
+  Object.values(focusLogs).forEach(d=>{Object.keys(subjFocusSecs).forEach(s=>{subjFocusSecs[s]+=d.subj[s]||0;});});
+  const totalSubjSecs=Math.max(1,Object.values(subjFocusSecs).reduce((a,b)=>a+b,0));
+
+  // Task type focus
+  const taskFocusSecs={theory:0,module:0,pyq:0,revision:0};
+  Object.values(focusLogs).forEach(d=>{Object.keys(taskFocusSecs).forEach(k=>{taskFocusSecs[k]+=d.task[k]||0;});});
+  const taskCompletions={theory:0,module:0,pyq:0,revision:0};
+  allSubjs.forEach(({s,ch})=>{const t=gs(s,ch.n);TK_KEYS.forEach(k=>{if(t[k])taskCompletions[k]++;});});
+  const taskMax2=allSubjs.length;
+
+  // Total questions across all days + today
+  let totalQuesAll=0;
+  try{Object.keys(localStorage).filter(k=>k.startsWith('fent_ques_')).forEach(k=>{totalQuesAll+=parseInt(localStorage.getItem(k)||'0');});}catch{}
+  const todayQuesCount=parseInt(localStorage.getItem('fent_ques_'+todayKey)||'0');
+
+  // Subject-wise questions breakdown — distributed proportionally to focus time per subject
+  const subjQues={math:0,chem:0,phys:0};
+  try{
+    Object.keys(localStorage).filter(function(k){return k.startsWith('fent_focuslog_');}).forEach(function(key){
+      try{
+        var entries=JSON.parse(localStorage.getItem(key)||'[]');
+        var dateStr=key.replace('fent_focuslog_','');
+        var dayQ=parseInt(localStorage.getItem('fent_ques_'+dateStr)||'0');
+        if(dayQ>0){
+          var daySubjSecs={math:0,chem:0,phys:0};
+          entries.forEach(function(e){if(daySubjSecs[e.subj]!==undefined)daySubjSecs[e.subj]+=e.durationSecs||0;});
+          var dayTotal=Object.values(daySubjSecs).reduce(function(a,b){return a+b;},0)||1;
+          Object.keys(subjQues).forEach(function(s){subjQues[s]+=Math.round(dayQ*(daySubjSecs[s]/dayTotal));});
+        }
+      }catch(e2){}
+    });
+  }catch(e1){}
+  const totalSubjQues=Math.max(1,Object.values(subjQues).reduce((a,b)=>a+b,0));
+
+  return `
+${hmHTML}
+
+${buildSessLineChart(last30, target, today)}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+  <div class="stats-section" style="margin-bottom:0;">
+    <div class="stats-sect-title">Total Focus</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:300;letter-spacing:-.04em;color:var(--t1);line-height:1;margin-top:4px;">${focusTimeStr||'—'}</div>
+    <div style="font-size:10px;color:var(--t3);margin-top:6px;">${totalSessions} sessions total</div>
+    <div style="font-size:9px;color:var(--t3);margin-top:3px;opacity:.7;">Today: ${todayFocusMins}m · ${todaySess} sess</div>
+  </div>
+  <div class="stats-section" style="margin-bottom:0;">
+    <div class="stats-sect-title">Questions Done</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:300;letter-spacing:-.04em;color:${totalQuesAll>0?'var(--p)':'var(--t3)'};line-height:1;margin-top:4px;">${totalQuesAll||'—'}</div>
+    <div style="font-size:10px;color:var(--t3);margin-top:6px;">target ${focusSettings.dailyQuesTarget||70}/day</div>
+    <div style="font-size:9px;color:var(--t3);margin-top:3px;opacity:.7;">Today: ${todayQuesCount||'—'} ques</div>
+  </div>
+</div>
+
+<div class="stats-section">
+  <div class="stats-sect-title">Subject Focus Time</div>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;">
+    ${[['math','Math','var(--m)'],['chem','Chem','var(--c)'],['phys','Phys','var(--p)']].map(([s,name,color])=>{
+      const secs=subjFocusSecs[s]||0;
+      const pct=Math.round(secs/totalSubjSecs*100);
+      return `<div class="subj-time-bar-row">
+        <span class="subj-time-name" style="width:36px;">${name}</span>
+        <div class="subj-time-track"><div class="subj-time-fill" data-w="${pct}" style="background:${color};width:0%;"></div></div>
+        <span class="subj-time-val">${fmtSecs(secs)||'—'}</span>
+      </div>`;
+    }).join('')}
+  </div>
+</div>
+
+<div class="stats-section">
+  <div class="stats-sect-title">Subject Questions</div>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;">
+    ${[['math','Math','var(--m)'],['chem','Chem','var(--c)'],['phys','Phys','var(--p)']].map(([s,name,color])=>{
+      const q=subjQues[s]||0;
+      const pct=totalQuesAll>0?Math.round(q/totalSubjQues*100):0;
+      return `<div class="subj-time-bar-row">
+        <span class="subj-time-name" style="width:36px;">${name}</span>
+        <div class="subj-time-track"><div class="subj-time-fill" data-w="${pct}" style="background:${color};opacity:.75;width:0%;"></div></div>
+        <span class="subj-time-val">${q>0?q:'—'}</span>
+      </div>`;
+    }).join('')}
+  </div>
+  ${totalQuesAll===0?`<div style="font-size:9px;color:var(--t3);margin-top:10px;opacity:.5;">Log questions during breaks to see subject breakdown.</div>`:''}
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+  ${[['theory','Theory','var(--m)'],['module','Module','var(--c)'],['pyq','PYQ','var(--p)'],['revision','Revision','var(--red)']].map(([k,label,color])=>{
+    const secs=taskFocusSecs[k]||0;
+    const done=taskCompletions[k]||0;
+    const pct=Math.round(done/taskMax2*100);
+    return `<div class="task-time-cell">
+      <div class="task-time-val" style="color:${color};">${fmtSecs(secs)||'—'}</div>
+      <div class="task-time-lbl">${label} Focus</div>
+      <div class="task-time-sub">${done}/${taskMax2} chapters · ${pct}%</div>
+    </div>`;
+  }).join('')}
+</div>
+`;
+}
+
+// Month heatmap navigation
+let anaHmSelectedDay=null;
+function anaHmNav(dir){
+  const {start:ts,end:te}=getTrackerRange();
+  const cur=anaHmMonth!==null?anaHmMonth:new Date().getMonth();
+  let next=cur+dir;
+  const minM=ts.getMonth(),maxM=te.getMonth();
+  next=Math.max(minM,Math.min(maxM,next));
+  anaHmMonth=next;
+  anaHmSelectedDay=null;
+  if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
+}
+function anaHmClick(dateKey){
+  anaHmSelectedDay=(anaHmSelectedDay===dateKey)?null:dateKey;
+  if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
+}
 let tTmr;
 function toast(msg){
-  // Removed pop animation to keep it quiet
+  const t=document.getElementById('toast');
+  if(!t) return;
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(tTmr);
+  tTmr=setTimeout(()=>t.classList.remove('show'),2400);
 }
 
 /* ─── Heatmap interaction ─── */
@@ -2136,6 +3069,763 @@ function hmDayClick(el,dateKey,chapters){
   det.style.animation='none';void det.offsetWidth;det.style.animation='fadeUp .2s var(--ease) both';
 }
 
+/* ═══════════════════════════════════════════════
+   FOCUS TAB — Pomodoro System
+═══════════════════════════════════════════════ */
+
+// Focus state stored in localStorage under 'fent_focus'
+const FOCUS_KEY='fent_focus';
+function loadFocus(){try{return JSON.parse(localStorage.getItem(FOCUS_KEY)||'{}')}catch{return{}}}
+function saveFocus(d){try{localStorage.setItem(FOCUS_KEY,JSON.stringify(d))}catch{}}
+
+// Default settings
+let focusSettings = Object.assign({
+  sessionMins:90,
+  shortBreakMins:15,
+  longBreakMins:60,
+  sessionsPerCycle:3,
+  dailyTarget:4,
+  dailyQuesTarget:70
+}, loadFocus().settings||{});
+
+// Timer state (in-memory, NOT persisted)
+let focusTimer = {
+  running:false,
+  mode:'session', // 'session'|'short'|'long'
+  sessionCount:0,  // completed sessions today
+  cycleSessions:0, // sessions in current cycle (resets after long break)
+  secondsLeft:focusSettings.sessionMins*60,
+  totalSeconds:focusSettings.sessionMins*60,
+  intervalId:null,
+  // Log state
+  currentChap:null,  // {subj, n, name}
+  currentTask:null,  // 'theory'|'module'|'pyq'|'revision'
+  logSegments:[],    // [{chapName,subj,task,durationSecs,startedAt}]
+  segStart:null,     // Date.now() when current segment started
+};
+
+// Today's focus log (persisted per day)
+const TODAY_KEY='fent_focuslog_'+new Date().toISOString().split('T')[0];
+function getTodayLog(){try{return JSON.parse(localStorage.getItem(TODAY_KEY)||'[]')}catch{return[]}}
+function saveTodayLog(l){try{localStorage.setItem(TODAY_KEY,JSON.stringify(l))}catch{}}
+
+// Questions tracking — persisted per day under 'fent_ques_YYYY-MM-DD'
+const TODAY_QUES_KEY='fent_ques_'+new Date().toISOString().split('T')[0];
+function getTodayQues(){try{return parseInt(localStorage.getItem(TODAY_QUES_KEY)||'0');}catch{return 0;}}
+function addTodayQues(n){
+  const cur=getTodayQues();
+  const next=Math.max(0,cur+n);
+  try{localStorage.setItem(TODAY_QUES_KEY,next);}catch{}
+  return next;
+}
+
+// Build ALL chapters for search
+function getAllChapters(){
+  const all=[];
+  MATH.forEach(ch=>all.push({subj:'math',n:ch.n,name:ch.name}));
+  CHEM.forEach(ch=>all.push({subj:'chem',n:ch.n,name:ch.name}));
+  PHYS.forEach(ch=>all.push({subj:'phys',n:ch.n,name:ch.name}));
+  return all;
+}
+
+let focusChapSearch='';
+let focusSearchOpen=false;
+
+function renderFocus(){
+  const el=document.getElementById('focusContent');
+  if(!el) return;
+
+  const S=focusSettings;
+  const T=focusTimer;
+  const mins=Math.floor(T.secondsLeft/60);
+  const secs=T.secondsLeft%60;
+  const timeStr=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+
+  const modeColors={session:'var(--c)',short:'var(--p)',long:'var(--m)'};
+  const modeLabels={session:'Focus Session','short':'Short Break','long':'Long Break'};
+  const modeColor=modeColors[T.mode];
+  const modeCls={session:'',short:'break-mode',long:'long-break-mode'}[T.mode];
+
+  // Arc SVG
+  const R=97,CX=110,CY=110,SW=3;
+  const CIRC=(2*Math.PI*R).toFixed(2);
+  const progress=T.secondsLeft/T.totalSeconds;
+  const dashOffset=(progress*2*Math.PI*R).toFixed(2);
+  const arcStroke={session:'#6b9e83',short:'#908bb0',long:'#c2a359'}[T.mode];
+
+  // Session dots for cycle
+  const dots=[];
+  for(let i=0;i<S.sessionsPerCycle;i++){
+    let cls='focus-sess-dot';
+    if(i<T.cycleSessions&&T.mode==='session') cls+=' done';
+    else if(i===T.cycleSessions&&T.mode==='session'&&T.running) cls+=' active';
+    dots.push(`<div class="${cls}"></div>`);
+    if(i<S.sessionsPerCycle-1) dots.push(`<div class="focus-sess-dot long-break-marker"></div>`);
+  }
+
+  // Today's stats
+  const todayLog=getTodayLog();
+  const totalFocusSecs=todayLog.reduce((a,e)=>a+e.durationSecs,0);
+  const totalFocusMins=Math.floor(totalFocusSecs/60);
+  const totalFocusH=Math.floor(totalFocusMins/60);
+  const totalFocusM=totalFocusMins%60;
+  const focusTimeStr=totalFocusH>0?`${totalFocusH}h ${totalFocusM}m`:`${totalFocusM}m`;
+
+  // Today's session count from storage
+  const todaySessKey='fent_sessions_'+new Date().toISOString().split('T')[0];
+  const todaySessions=parseInt(localStorage.getItem(todaySessKey)||'0');
+  const sessionsToGo=Math.max(0,S.dailyTarget-todaySessions);
+
+  // Log section HTML — new beautiful selector
+  const logActive=T.currentChap&&T.currentTask;
+  const chapDotColors={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'};
+  const chapTagColors={math:'MTH',chem:'CHM',phys:'PHY'};
+
+  // Current log display
+  let selectorHTML='';
+  if(logActive){
+    const elapsed=T.segStart?Math.floor((Date.now()-T.segStart)/1000):0;
+    const em=Math.floor(elapsed/60);
+    const es=elapsed%60;
+    selectorHTML=`<div class="focus-selector-wrap active-log">
+      <div class="focus-active-bar" onclick="focusClearLog()">
+        <div class="focus-active-indicator" style="background:${chapDotColors[T.currentChap.subj]};box-shadow:0 0 6px ${chapDotColors[T.currentChap.subj]}66;"></div>
+        <span class="focus-active-name">${T.currentChap.name}</span>
+        <span class="focus-active-tag ${T.currentTask}">${T.currentTask}</span>
+        <span class="focus-active-timer">${String(em).padStart(2,'0')}:${String(es).padStart(2,'0')}</span>
+        <button class="focus-active-edit" title="Change chapter">✕</button>
+      </div>
+    </div>`;
+  } else if(T.currentChap&&!T.currentTask){
+    // Chapter selected, pick subtask
+    const allChaps2=getAllChapters();
+    const filtered2=focusChapSearch?allChaps2.filter(c=>c.name.toLowerCase().includes(focusChapSearch.toLowerCase())):allChaps2;
+    const chapListHTML2=filtered2.slice(0,14).map(c=>{
+      const isSel=T.currentChap&&T.currentChap.subj===c.subj&&T.currentChap.n===c.n;
+      return `<div class="focus-chap-item${isSel?' selected':''}" onclick="focusSelectChap(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+        <div class="focus-chap-dot" style="background:${chapDotColors[c.subj]};"></div>
+        <span class="focus-chap-name">${c.name}</span>
+        <span class="focus-chap-subj">${chapTagColors[c.subj]}</span>
+      </div>`;
+    }).join('');
+    selectorHTML=`<div class="focus-selector-wrap">
+      <div class="focus-active-bar" style="cursor:default;">
+        <div class="focus-active-indicator" style="background:${chapDotColors[T.currentChap.subj]};"></div>
+        <span class="focus-active-name">${T.currentChap.name}</span>
+        <button class="focus-active-edit" onclick="focusClearLog()" title="Change chapter">✕</button>
+      </div>
+      <div class="focus-subtask-bar">
+        ${['theory','module','pyq','revision'].map(k=>`<button class="focus-subtask-btn ${k}" onclick="focusSelectTask('${k}')">${k}</button>`).join('')}
+      </div>
+    </div>`;
+  } else {
+    // No chapter — show search + list
+    const allChaps=getAllChapters();
+    const filtered=focusChapSearch?allChaps.filter(c=>c.name.toLowerCase().includes(focusChapSearch.toLowerCase())):allChaps;
+    const chapListHTML=filtered.slice(0,14).map(c=>{
+      return `<div class="focus-chap-item" onclick="focusSelectChap(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+        <div class="focus-chap-dot" style="background:${chapDotColors[c.subj]};"></div>
+        <span class="focus-chap-name">${c.name}</span>
+        <span class="focus-chap-subj">${chapTagColors[c.subj]}</span>
+      </div>`;
+    }).join('');
+    selectorHTML=`<div class="focus-selector-wrap">
+      <div class="focus-search-panel" style="border-top:none;">
+        <div class="focus-search-header">
+          <span class="focus-search-ico">◎</span>
+          <input class="focus-search-inp" id="focusSearchInp" type="text" placeholder="Search chapter to log…" value="${focusChapSearch}" oninput="focusSearchLive(this.value)" autocomplete="off" spellcheck="false">
+          ${focusChapSearch?`<button class="focus-search-clear" onclick="focusSearchClear()">✕</button>`:''}
+        </div>
+        <div class="focus-chap-scroll">${chapListHTML||'<div class="focus-chap-empty">No chapters found</div>'}</div>
+      </div>
+    </div>`;
+  }
+
+  // Today's log entries
+  const todayLogHTML=todayLog.length>0?`<div class="focus-today-log">
+    <div class="focus-log-label">Today's Focus Log</div>
+    ${todayLog.slice().reverse().slice(0,8).map((e,ei)=>{
+      const dm=Math.floor(e.durationSecs/60);
+      const ds=e.durationSecs%60;
+      const durStr=dm>0?`${dm}m ${ds}s`:`${ds}s`;
+      return `<div class="focus-log-entry" style="animation-delay:${ei*30}ms">
+        <div style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:${chapDotColors[e.subj]||'var(--t3)'};"></div>
+        <span class="focus-log-entry-chap">${e.chapName} · <span style="color:var(--t3);font-size:9px;">${e.task}</span></span>
+        <span class="focus-log-entry-dur">${durStr}</span>
+      </div>`;
+    }).join('')}
+  </div>`:'';
+
+  // Questions box — only during break (short or long), minimal and clean
+  const isBreak=T.mode==='short'||T.mode==='long';
+  const todayQues=getTodayQues();
+  const qTarget=focusSettings.dailyQuesTarget||70;
+  const qPct=Math.min(100,Math.round(todayQues/qTarget*100));
+  const questionsBoxHTML=isBreak?`
+  <div class="focus-ques-box" id="focusQuesBox">
+    <div class="focus-ques-icon">✎</div>
+    <div class="focus-ques-mid">
+      <div class="focus-ques-label">Questions done this session?</div>
+      <div class="focus-ques-inp-row">
+        <input class="focus-ques-inp" id="focusQuesInp" type="number" min="0" max="999" placeholder="0"
+          onkeydown="if(event.key==='Enter'){focusLogQues();}"
+          autocomplete="off"/>
+        <button class="focus-ques-add-btn" onclick="focusLogQues()">Log</button>
+      </div>
+    </div>
+    <div class="focus-ques-total" style="text-align:right;min-width:60px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:300;color:${todayQues>=qTarget?'var(--c)':todayQues>0?'var(--p)':'var(--t3)'};letter-spacing:-.03em;line-height:1;">${todayQues||'0'}</div>
+      <div style="font-size:8px;color:var(--t3);margin-top:2px;letter-spacing:.02em;">/ ${qTarget} target</div>
+      <div style="width:52px;height:2px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px;">
+        <div style="width:${qPct}%;height:100%;background:${todayQues>=qTarget?'var(--c)':'var(--p)'};border-radius:2px;transition:width .5s cubic-bezier(.16,1,.3,1);max-width:100%;"></div>
+      </div>
+    </div>
+  </div>`:'';
+
+  // Can start timer? Requires chapter + task selected
+  const canStart=logActive;
+
+  el.innerHTML=`
+<div class="focus-wrap">
+
+  <!-- Clock -->
+  <div class="focus-clock-outer${T.running?' running':''} ${modeCls}" id="focusClockOuter">
+    <svg class="focus-arc-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+      <circle class="focus-arc-bg" cx="110" cy="110" r="${R}"/>
+      <circle class="focus-arc-fill" cx="110" cy="110" r="${R}"
+        stroke="${arcStroke}"
+        stroke-dasharray="${CIRC}"
+        stroke-dashoffset="${dashOffset}"
+        transform="rotate(-90 110 110)"
+        style="filter:drop-shadow(0 0 6px ${arcStroke}55);"/>
+    </svg>
+    <div class="focus-clock-face">
+      <div class="focus-time-big" id="focusTimeBig" style="color:${T.running?'var(--t1)':'var(--t2)'};">${timeStr}</div>
+      <div class="focus-mode-lbl" style="color:${modeColor};">${modeLabels[T.mode]}</div>
+      <div class="focus-session-lbl">Session ${T.cycleSessions+1} of ${S.sessionsPerCycle}</div>
+    </div>
+  </div>
+
+  <!-- Session dots -->
+  <div class="focus-sessions-row">${dots.join('')}</div>
+
+  <!-- Controls -->
+  <div class="focus-controls">
+    <button class="focus-btn-sm" onclick="focusSkip()" title="Skip">⟫</button>
+    <button class="focus-btn-main${T.running?' running':''}" onclick="focusToggle()" id="focusMainBtn" ${!canStart&&!T.running?'style="opacity:0.4;cursor:not-allowed" title="Select chapter & task first"':''}>
+      ${T.running?'⏸':'▶'}
+    </button>
+    <button class="focus-btn-sm" onclick="focusReset()" title="Reset">↺</button>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="focus-stats-strip">
+    <div class="focus-stat-cell">
+      <div class="focus-stat-num">${todaySessions}</div>
+      <div class="focus-stat-lbl">Done Today</div>
+    </div>
+    <div class="focus-stat-cell">
+      <div class="focus-stat-num" style="color:${sessionsToGo===0?'var(--c)':'var(--t1)'};">${sessionsToGo}</div>
+      <div class="focus-stat-lbl">To Go</div>
+    </div>
+    <div class="focus-stat-cell">
+      <div class="focus-stat-num" style="font-size:16px;">${focusTimeStr||'—'}</div>
+      <div class="focus-stat-lbl">Focus Time</div>
+    </div>
+    <div class="focus-stat-cell">
+      <div class="focus-stat-num" style="color:${getTodayQues()>=(S.dailyQuesTarget||70)?'var(--c)':getTodayQues()>0?'var(--p)':'var(--t3)'};">${getTodayQues()||'—'}</div>
+      <div class="focus-stat-lbl">Ques / ${S.dailyQuesTarget||70}</div>
+    </div>
+  </div>
+
+  <!-- Log Section -->
+  <div class="focus-log-section">
+    <div class="focus-log-label">What are you working on?</div>
+    ${selectorHTML}
+  </div>
+
+  ${questionsBoxHTML}
+
+  ${todayLogHTML}
+
+</div>`;
+
+  // Focus search input after render
+  if(!logActive&&!T.currentChap){
+    const inp=document.getElementById('focusSearchInp');
+    if(inp&&focusSearchOpen){inp.focus();focusSearchOpen=false;}
+  }
+}
+
+function focusSearchLive(v){
+  focusChapSearch=v;
+  // Update only the chapter list in-place for smoothness
+  const scroll=document.querySelector('.focus-chap-scroll');
+  if(!scroll){focusSearchOpen=true;renderFocus();return;}
+  const allChaps=getAllChapters();
+  const filtered=v?allChaps.filter(c=>c.name.toLowerCase().includes(v.toLowerCase())):allChaps;
+  const chapDotColors={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'};
+  const chapTagColors={math:'MTH',chem:'CHM',phys:'PHY'};
+  scroll.innerHTML=filtered.slice(0,14).map(c=>`<div class="focus-chap-item" onclick="focusSelectChap(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+    <div class="focus-chap-dot" style="background:${chapDotColors[c.subj]};"></div>
+    <span class="focus-chap-name">${c.name}</span>
+    <span class="focus-chap-subj">${chapTagColors[c.subj]}</span>
+  </div>`).join('')||'<div class="focus-chap-empty">No chapters found</div>';
+  // Update clear button
+  const header=document.querySelector('.focus-search-header');
+  if(header){
+    const existing=header.querySelector('.focus-search-clear');
+    if(v&&!existing){
+      const btn=document.createElement('button');
+      btn.className='focus-search-clear';
+      btn.onclick=()=>focusSearchClear();
+      btn.textContent='✕';
+      header.appendChild(btn);
+    } else if(!v&&existing){
+      existing.remove();
+    }
+  }
+}
+
+function focusSearchClear(){
+  focusChapSearch='';
+  renderFocus();
+  setTimeout(()=>{const inp=document.getElementById('focusSearchInp');if(inp)inp.focus();},30);
+}
+
+function focusSearch(v){
+  focusChapSearch=v;
+  focusSearchOpen=true;
+  renderFocus();
+}
+
+function focusSelectChap(c){
+  // c may arrive as object via onclick JSON encoding
+  if(typeof c==='string') try{c=JSON.parse(c);}catch{}
+  // Commit current segment before changing
+  commitFocusSegment();
+  focusTimer.currentChap=c;
+  focusTimer.currentTask=null;
+  focusChapSearch='';
+  renderFocus();
+}
+
+function focusSelectTask(k){
+  commitFocusSegment();
+  focusTimer.currentTask=k;
+  if(focusTimer.running) focusTimer.segStart=Date.now();
+  renderFocus();
+}
+
+function focusClearLog(){
+  commitFocusSegment();
+  focusTimer.currentChap=null;
+  focusTimer.currentTask=null;
+  focusChapSearch='';
+  renderFocus();
+}
+
+function focusLogQues(){
+  const inp=document.getElementById('focusQuesInp');
+  if(!inp) return;
+  const n=parseInt(inp.value||'0');
+  if(isNaN(n)||n<=0){toast('Enter a number of questions');return;}
+  const total=addTodayQues(n);
+  inp.value='';
+  // Update total display in-place without full re-render
+  const totalEl=document.querySelector('.focus-ques-total');
+  if(totalEl) totalEl.innerHTML=total+'<br><span style="font-size:8px;">today</span>';
+  toast('✓ '+n+' questions logged — '+total+' total today');
+}
+
+function commitFocusSegment(){
+  const T=focusTimer;
+  if(T.segStart&&T.currentChap&&T.currentTask){
+    const secs=Math.floor((Date.now()-T.segStart)/1000);
+    if(secs>5){
+      const log=getTodayLog();
+      // Find existing entry for same chap+task and add to it
+      const idx=log.findIndex(e=>e.subj===T.currentChap.subj&&e.chapN===T.currentChap.n&&e.task===T.currentTask);
+      if(idx>=0){log[idx].durationSecs+=secs;}
+      else log.push({chapName:T.currentChap.name,subj:T.currentChap.subj,chapN:T.currentChap.n,task:T.currentTask,durationSecs:secs});
+      saveTodayLog(log);
+    }
+  }
+  T.segStart=T.running?Date.now():null;
+}
+
+function focusToggle(){
+  const T=focusTimer;
+  if(!T.currentChap||!T.currentTask){
+    if(!T.running){toast('Select a chapter & task first');return;}
+  }
+  // Unlock AudioContext on first user gesture
+  if(!focusSoundCtx){
+    try{focusSoundCtx=new (window.AudioContext||window.webkitAudioContext)();}catch{}
+  }
+  if(focusSoundCtx&&focusSoundCtx.state==='suspended'){
+    focusSoundCtx.resume().catch(()=>{});
+  }
+  T.running=!T.running;
+  if(T.running){
+    T.segStart=Date.now();
+    focusStartInterval();
+  } else {
+    commitFocusSegment();
+    T.segStart=null;
+    clearInterval(T.intervalId);
+    T.intervalId=null;
+  }
+  renderFocus();
+}
+
+function focusStartInterval(){
+  clearInterval(focusTimer.intervalId);
+  focusTimer.intervalId=setInterval(()=>{
+    focusTimer.secondsLeft--;
+    if(focusTimer.secondsLeft<=0){
+      focusOnModeEnd();
+    } else {
+      updateFocusClockFast();
+    }
+  },1000);
+}
+
+function updateFocusClockFast(){
+  // Fast DOM update without full re-render
+  const T=focusTimer;
+  const mins=Math.floor(T.secondsLeft/60);
+  const secs=T.secondsLeft%60;
+  const timeEl=document.getElementById('focusTimeBig');
+  if(timeEl) timeEl.textContent=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+  
+  // Update arc
+  const S=focusSettings;
+  const R=97;
+  const CIRC=2*Math.PI*R;
+  const progress=T.secondsLeft/T.totalSeconds;
+  const dashOffset=(progress*CIRC).toFixed(2);
+  const arc=document.querySelector('.focus-arc-fill');
+  if(arc) arc.setAttribute('stroke-dashoffset',dashOffset);
+
+  // Update current log time
+  if(T.segStart&&T.currentChap&&T.currentTask){
+    const elapsed=Math.floor((Date.now()-T.segStart)/1000);
+    const em=Math.floor(elapsed/60);
+    const es=elapsed%60;
+    const logTimeEl=document.querySelector('.focus-active-timer');
+    if(logTimeEl) logTimeEl.textContent=String(em).padStart(2,'0')+':'+String(es).padStart(2,'0');
+  }
+}
+
+function focusOnModeEnd(){
+  const T=focusTimer;
+  clearInterval(T.intervalId);
+  T.intervalId=null;
+
+  // Capture mode BEFORE we change it (for correct notification message)
+  const endedMode=T.mode;
+
+  // Play notification sound — fires exactly when timer hits 0
+  playFocusSound(endedMode);
+
+  if(T.mode==='session'){
+    // Commit the study segment — stop logging during break
+    commitFocusSegment();
+    T.segStart=null; // STOP segment clock — break time must NOT be logged as focus
+
+    // Increment session count
+    T.cycleSessions++;
+    const todaySessKey='fent_sessions_'+new Date().toISOString().split('T')[0];
+    const cur=parseInt(localStorage.getItem(todaySessKey)||'0');
+    localStorage.setItem(todaySessKey,cur+1);
+
+    if(T.cycleSessions>=focusSettings.sessionsPerCycle){
+      // Long break
+      T.mode='long';
+      T.cycleSessions=0;
+      T.secondsLeft=focusSettings.longBreakMins*60;
+      T.totalSeconds=focusSettings.longBreakMins*60;
+      toast('🎉 Long Break! '+focusSettings.longBreakMins+'m');
+    } else {
+      // Short break
+      T.mode='short';
+      T.secondsLeft=focusSettings.shortBreakMins*60;
+      T.totalSeconds=focusSettings.shortBreakMins*60;
+      toast('Session done! Short break '+focusSettings.shortBreakMins+'m');
+    }
+    // Auto-continue break timer (no focus logging during break)
+    focusStartInterval();
+  } else {
+    // Break ended — start new session, resume logging NOW
+    T.mode='session';
+    T.secondsLeft=focusSettings.sessionMins*60;
+    T.totalSeconds=focusSettings.sessionMins*60;
+    // Only resume logging if a chapter+task is selected
+    if(T.currentChap&&T.currentTask) T.segStart=Date.now();
+    toast('Break over! Starting session ▶');
+    focusStartInterval();
+  }
+  renderFocus();
+}
+
+function focusSkip(){
+  const T=focusTimer;
+  commitFocusSegment();
+  clearInterval(T.intervalId);
+  T.intervalId=null;
+  if(T.mode==='session'){
+    T.cycleSessions++;
+    if(T.cycleSessions>=focusSettings.sessionsPerCycle){
+      T.mode='long';T.cycleSessions=0;
+      T.secondsLeft=focusSettings.longBreakMins*60;
+      T.totalSeconds=focusSettings.longBreakMins*60;
+    } else {
+      T.mode='short';
+      T.secondsLeft=focusSettings.shortBreakMins*60;
+      T.totalSeconds=focusSettings.shortBreakMins*60;
+    }
+  } else {
+    T.mode='session';
+    T.secondsLeft=focusSettings.sessionMins*60;
+    T.totalSeconds=focusSettings.sessionMins*60;
+  }
+  T.running=false;
+  T.segStart=null;
+  renderFocus();
+}
+
+function focusReset(){
+  const T=focusTimer;
+  commitFocusSegment();
+  clearInterval(T.intervalId);
+  T.intervalId=null;
+  T.mode='session';
+  T.running=false;
+  T.cycleSessions=0;
+  T.segStart=null;
+  T.secondsLeft=focusSettings.sessionMins*60;
+  T.totalSeconds=focusSettings.sessionMins*60;
+  renderFocus();
+}
+
+function focusAdjSetting(key,delta,min,max){
+  focusSettings[key]=Math.max(min,Math.min(max,focusSettings[key]+delta));
+  // Persist settings
+  const fd=loadFocus();
+  fd.settings=focusSettings;
+  saveFocus(fd);
+  // Update relevant timer if not running
+  if(!focusTimer.running){
+    if(key==='sessionMins'&&focusTimer.mode==='session'){
+      focusTimer.secondsLeft=focusSettings.sessionMins*60;
+      focusTimer.totalSeconds=focusSettings.sessionMins*60;
+    }
+    if(key==='shortBreakMins'&&focusTimer.mode==='short'){
+      focusTimer.secondsLeft=focusSettings.shortBreakMins*60;
+      focusTimer.totalSeconds=focusSettings.shortBreakMins*60;
+    }
+    if(key==='longBreakMins'&&focusTimer.mode==='long'){
+      focusTimer.secondsLeft=focusSettings.longBreakMins*60;
+      focusTimer.totalSeconds=focusSettings.longBreakMins*60;
+    }
+  }
+  renderFocus();
+}
+
+// Sound notification — call with the mode that just ended for correct messaging
+let focusSoundCtx=null;
+function playFocusSound(endedMode){
+  // Resume/create AudioContext (browser autoplay policy requires prior user gesture;
+  // the user clicked ▶ so context should be unlocked)
+  try{
+    if(!focusSoundCtx) focusSoundCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=focusSoundCtx;
+    // Resume if suspended (some browsers suspend after inactivity)
+    const doBeep=()=>{
+      function beep(freq,start,dur,gain){
+        const o=ctx.createOscillator();
+        const g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);
+        o.frequency.value=freq;
+        o.type='sine';
+        g.gain.setValueAtTime(0,ctx.currentTime+start);
+        g.gain.linearRampToValueAtTime(gain,ctx.currentTime+start+0.01);
+        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+start+dur);
+        o.start(ctx.currentTime+start);
+        o.stop(ctx.currentTime+start+dur+0.05);
+      }
+      // Pleasant bell chord — 4 tones
+      beep(523.25,0,0.8,0.3);    // C5
+      beep(659.25,0.05,0.7,0.2); // E5
+      beep(783.99,0.1,0.6,0.2);  // G5
+      beep(1046.5,0.15,0.5,0.15);// C6
+    };
+    if(ctx.state==='suspended'){
+      ctx.resume().then(doBeep).catch(()=>{});
+    } else {
+      doBeep();
+    }
+  } catch(e){
+    // Audio not available — silent fallback
+  }
+  // Browser notification with correct message (uses the mode that just ended)
+  if(window.Notification&&Notification.permission==='granted'){
+    const msg={
+      session:'Session complete! Time for a break.',
+      short:'Short break over! Back to work.',
+      long:'Long break done! Starting new cycle.'
+    }[endedMode||'session'];
+    new Notification('fent · Focus',{body:msg,silent:true});
+  }
+}
+
+// Request notification permission once
+if(window.Notification&&Notification.permission==='default'){
+  Notification.requestPermission().catch(()=>{});
+}
+
+// Keep timer running with Page Visibility API
+document.addEventListener('visibilitychange',()=>{
+  if(!focusTimer.running) return;
+  if(document.hidden){
+    // Store start time to compensate drift
+    focusTimer._hiddenAt=Date.now();
+  } else {
+    if(focusTimer._hiddenAt){
+      const elapsed=Math.floor((Date.now()-focusTimer._hiddenAt)/1000);
+      focusTimer.secondsLeft=Math.max(0,focusTimer.secondsLeft-elapsed);
+      focusTimer._hiddenAt=null;
+      if(focusTimer.secondsLeft<=0) focusOnModeEnd();
+      else updateFocusClockFast();
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   STATS (moved into Analytics) — no-op stub
+═══════════════════════════════════════════════ */
+function renderStats(){ /* now integrated into renderAnalytics */ }
+/* ═══════════════════════════════════════════════
+   OVERVIEW WEEKLY SUMMARY — Beautiful Visual
+═══════════════════════════════════════════════ */
+function renderOverviewSummary(){
+  const el=document.getElementById('ovwWeeklySummary');
+  if(!el) return;
+
+  const today=new Date(); today.setHours(0,0,0,0);
+  const weekStart=new Date(today); weekStart.setDate(today.getDate()-today.getDay());
+  const weekEnd=new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+  const todayKey=today.toISOString().split('T')[0];
+  const allSubjs=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dailyTarget=typeof focusSettings!=='undefined'?focusSettings.dailyTarget:4;
+
+  // Collect per-day data Mon-Sat (skip Sun)
+  let weekTasks=0,weekSessions=0,weekFocusSecs=0;
+  const weekDayData=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart); d.setDate(weekStart.getDate()+i);
+    const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const isSun=d.getDay()===0;
+    const isToday=d.toDateString()===today.toDateString();
+    const isFuture=d>today&&!isToday;
+    let daySecs=0,daySess=parseInt(localStorage.getItem('fent_sessions_'+k)||'0');
+    try{const e=JSON.parse(localStorage.getItem('fent_focuslog_'+k)||'[]');daySecs=e.reduce((a,x)=>a+x.durationSecs,0);}catch{}
+    let dayTasks=0;
+    const daySubj={math:0,chem:0,phys:0};
+    allSubjs.forEach(({s,ch})=>{
+      ['theory','module','pyq','revision'].forEach(tk=>{
+        const ts=gs(s,ch.n);
+        if(ts[tk]){const tsKey='ts_'+s+'_'+ch.n+'_'+tk;if((ST[tsKey]||todayKey)===k){dayTasks++;daySubj[s]++;}}
+      });
+    });
+    if(!isSun){weekTasks+=dayTasks;weekSessions+=daySess;weekFocusSecs+=daySecs;}
+    weekDayData.push({d,k,secs:daySecs,sess:daySess,tasks:dayTasks,subj:daySubj,isSun,isToday,isFuture});
+  }
+  // Collect weekly questions total
+  let weekQues=0;
+  weekDayData.forEach(function(day){
+    if(!day.isSun){ try{weekQues+=parseInt(localStorage.getItem('fent_ques_'+day.k)||'0');}catch{} }
+  });
+  const wfm=Math.floor(weekFocusSecs/60);
+  const wfh=Math.floor(wfm/60);
+  const focusStr=wfh>0?(wfh+'h '+(wfm%60)+'m'):wfm>0?(wfm+'m'):'—';
+  function fmtMins(s){const m=Math.floor(s/60);const h=Math.floor(m/60);return h>0?(h+'h '+(m%60)+'m'):m>0?(m+'m'):'—';}
+
+  // Header totals — tasks | sessions | focus | questions
+  const headerHTML='<div style="display:flex;gap:0;border-bottom:1px solid var(--b1);">'
+    +'<div style="flex:1;padding:12px 8px;text-align:center;border-right:1px solid var(--b1);">'
+    +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:22px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;">'+weekTasks+'</div>'
+    +'<div style="font-size:9px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-top:4px;">tasks</div></div>'
+    +'<div style="flex:1;padding:12px 8px;text-align:center;border-right:1px solid var(--b1);">'
+    +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:22px;font-weight:300;color:'+(weekSessions>=dailyTarget*6?'var(--c)':'var(--t1)')+';letter-spacing:-.04em;line-height:1;">'+weekSessions+'</div>'
+    +'<div style="font-size:9px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-top:4px;">sessions</div></div>'
+    +'<div style="flex:1;padding:12px 8px;text-align:center;border-right:1px solid var(--b1);">'
+    +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:'+(wfh>0?15:22)+'px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;">'+focusStr+'</div>'
+    +'<div style="font-size:9px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-top:4px;">focus</div></div>'
+    +'<div style="flex:1;padding:12px 8px;text-align:center;">'
+    +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:22px;font-weight:300;color:'+(weekQues>0?'var(--p)':'var(--t3)')+';letter-spacing:-.04em;line-height:1;">'+(weekQues||'—')+'</div>'
+    +'<div style="font-size:9px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-top:4px;">ques</div></div></div>';
+
+  // Per-day rows
+  const rowsHTML=weekDayData.map(function(day){
+    if(day.isSun){
+      return '<div style="display:flex;align-items:center;gap:12px;padding:9px 18px;border-bottom:1px solid var(--b1);opacity:.28;">'
+        +'<div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.08);flex-shrink:0;"></div>'
+        +'<span style="font-size:11px;color:var(--t3);width:30px;flex-shrink:0;">Sun</span>'
+        +'<span style="font-size:10px;color:var(--t3);flex:1;font-style:italic;">rest day</span></div>';
+    }
+    const isFut=day.isFuture, isTod=day.isToday;
+    const metTarget=!isFut&&day.sess>=dailyTarget;
+    const anythingDone=day.tasks>0||day.sess>0;
+    var dotCol;
+    if(isFut) dotCol='rgba(255,255,255,0.08)';
+    else if(!anythingDone) dotCol='rgba(196,100,100,0.55)';
+    else if(metTarget&&day.tasks>0) dotCol='var(--c)';
+    else dotCol='var(--m)';
+
+    const subjBadges=['math','chem','phys'].filter(function(s){return day.subj[s]>0;}).map(function(s){
+      const col={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'}[s];
+      const tag={math:'M',chem:'C',phys:'P'}[s];
+      return '<span style="font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:'+col+';font-family:\'JetBrains Mono\',monospace;letter-spacing:.04em;">'+tag+'·'+day.subj[s]+'</span>';
+    }).join('');
+
+    const midContent=isFut
+      ?'<span style="font-size:10px;color:var(--t3);font-style:italic;">upcoming</span>'
+      :(anythingDone&&subjBadges?subjBadges:'<span style="font-size:10px;color:var(--t3);">—</span>');
+
+    // Questions done that day
+    let dayQues=0; try{dayQues=parseInt(localStorage.getItem('fent_ques_'+day.k)||'0');}catch{}
+
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--b1);'
+      +(isFut?'opacity:.3;':'')+(isTod?'background:rgba(255,255,255,0.015);':'')+'">'
+      +'<div style="width:6px;height:6px;border-radius:50%;background:'+dotCol+';flex-shrink:0;"></div>'
+      +'<span style="font-size:11px;font-weight:'+(isTod?500:400)+';color:'+(isTod?'var(--t1)':'var(--t2)')+';width:30px;flex-shrink:0;letter-spacing:.02em;">'+dayNames[day.d.getDay()]+'</span>'
+      +'<div style="flex:1;display:flex;gap:4px;flex-wrap:wrap;align-items:center;min-width:0;">'+midContent+'</div>'
+      +(!isFut&&day.sess>0?'<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:'+(metTarget?'var(--c)':'var(--m)')+';flex-shrink:0;">'+day.sess+'s</span>':'')
+      +(!isFut&&day.secs>0?'<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--t3);flex-shrink:0;">'+fmtMins(day.secs)+'</span>':'')
+      +(!isFut&&dayQues>0?'<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:var(--p);opacity:.8;flex-shrink:0;">'+dayQues+'q</span>':'')
+      +'</div>';
+  }).join('');
+
+  el.innerHTML='<div class="ovw-vis-card" style="margin-top:16px;animation:ovwCardIn .5s var(--ease) both;">'
+    +'<div style="padding:14px 18px 12px;display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--b1);">'
+    +'<span style="font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);">This Week</span>'
+    +'<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;color:var(--t3);font-weight:300;">'+weekStart.getDate()+' '+MONTHS[weekStart.getMonth()]+' — '+weekEnd.getDate()+' '+MONTHS[weekEnd.getMonth()]+'</span>'
+    +'</div>'
+    +headerHTML
+    +'<div style="display:flex;flex-direction:column;">'+rowsHTML+'</div>'
+    +'<div style="padding:10px 18px;display:flex;gap:14px;flex-wrap:wrap;border-top:1px solid var(--b1);">'
+    +'<div style="display:flex;align-items:center;gap:5px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--c);"></div><span style="font-size:9px;color:var(--t3);font-family:\'JetBrains Mono\',monospace;">target met</span></div>'
+    +'<div style="display:flex;align-items:center;gap:5px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--m);"></div><span style="font-size:9px;color:var(--t3);font-family:\'JetBrains Mono\',monospace;">partial</span></div>'
+    +'<div style="display:flex;align-items:center;gap:5px;"><div style="width:6px;height:6px;border-radius:50%;background:rgba(196,100,100,0.55);"></div><span style="font-size:9px;color:var(--t3);font-family:\'JetBrains Mono\',monospace;">missed</span></div>'
+    +'<span style="margin-left:auto;font-family:\'JetBrains Mono\',monospace;font-size:9px;color:var(--t3);">target '+dailyTarget+'s/day</span>'
+    +'</div></div>';
+}
+
+
+
 </script>
 
 <!-- ═══════════════════════════════════════════════
@@ -2154,6 +3844,7 @@ function hmDayClick(el,dateKey,chapters){
     <div class="cal-tabs">
       <button class="cal-tab on" onclick="calTab('schedule',this)">Schedule</button>
       <button class="cal-tab" onclick="calTab('tests',this)">Tests</button>
+      <button class="cal-tab" onclick="calTab('focus',this)">Focus</button>
     </div>
 
     <!-- SCHEDULE SECTION -->
@@ -2234,10 +3925,78 @@ function hmDayClick(el,dateKey,chapters){
       </div>
     </div>
 
+    <!-- FOCUS SETTINGS SECTION -->
+    <div class="cal-panel-section" id="calSec-focus">
+      <div class="cal-body">
+        <div style="font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);margin-bottom:16px;">Pomodoro Settings</div>
+        <div class="cal-test-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="cal-slider-card">
+            <div class="cal-slider-label">Focus Session</div>
+            <div id="calfs_sessionMins" style="font-family:\'JetBrains Mono\',monospace;font-size:28px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;margin-bottom:4px;">90</div>
+            <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;margin-bottom:14px;">min</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('sessionMins',-5,10,180)">−</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('sessionMins',5,10,180)">+</button>
+            </div>
+          </div>
+          <div class="cal-slider-card">
+            <div class="cal-slider-label">Short Break</div>
+            <div id="calfs_shortBreakMins" style="font-family:\'JetBrains Mono\',monospace;font-size:28px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;margin-bottom:4px;">15</div>
+            <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;margin-bottom:14px;">min</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('shortBreakMins',-5,5,30)">−</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('shortBreakMins',5,5,30)">+</button>
+            </div>
+          </div>
+          <div class="cal-slider-card">
+            <div class="cal-slider-label">Long Break</div>
+            <div id="calfs_longBreakMins" style="font-family:\'JetBrains Mono\',monospace;font-size:28px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;margin-bottom:4px;">60</div>
+            <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;margin-bottom:14px;">min</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('longBreakMins',-10,10,120)">−</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('longBreakMins',10,10,120)">+</button>
+            </div>
+          </div>
+          <div class="cal-slider-card">
+            <div class="cal-slider-label">Sessions / Cycle</div>
+            <div id="calfs_sessionsPerCycle" style="font-family:\'JetBrains Mono\',monospace;font-size:28px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;margin-bottom:4px;">3</div>
+            <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;margin-bottom:14px;">sessions</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('sessionsPerCycle',-1,2,6)">−</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('sessionsPerCycle',1,2,6)">+</button>
+            </div>
+          </div>
+          <div class="cal-slider-card">
+            <div class="cal-slider-label">Daily Target</div>
+            <div id="calfs_dailyTarget" style="font-family:\'JetBrains Mono\',monospace;font-size:28px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;margin-bottom:4px;">4</div>
+            <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;margin-bottom:14px;">sessions/day</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('dailyTarget',-1,1,12)">−</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('dailyTarget',1,1,12)">+</button>
+            </div>
+          </div>
+          <div class="cal-slider-card">
+            <div class="cal-slider-label">Ques Target</div>
+            <div id="calfs_dailyQuesTarget" style="font-family:\'JetBrains Mono\',monospace;font-size:28px;font-weight:300;color:var(--p);letter-spacing:-.04em;line-height:1;margin-bottom:4px;">70</div>
+            <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;margin-bottom:14px;">questions/day</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('dailyQuesTarget',-10,10,500)">−</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('dailyQuesTarget',10,10,500)">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cal-save-bar">
+        <button class="cal-reset-btn" onclick="resetFocusSettings()">Reset to default</button>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="cal-save-msg" id="calFocusSaveMsg">Saved</span>
+          <button class="cal-save-btn" onclick="saveFocusSettingsFromCal()">Apply</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
-
-<!-- SIGNATURE LOGO -->
 <div id="sigWrap" style="position:fixed;bottom:24px;right:24px;z-index:9000;display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
   <!-- Popup card — display controlled by JS -->
   <div id="sigPopup" style="
@@ -2257,7 +4016,7 @@ function hmDayClick(el,dateKey,chapters){
       font-size:14px;font-weight:400;color:var(--t1);text-decoration:none;
       letter-spacing:-.01em;transition:color .2s,text-shadow .3s;display:inline-block;
     ">slut saint</a>
-    <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;opacity:.6;font-family:'JetBrains Mono',monospace;">independent developer</div>
+    <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;opacity:.6;font-family:\'JetBrains Mono\',monospace;">independent developer</div>
   </div>
   <!-- Logo button — diamond shape -->
   <button id="sigBtn" onclick="toggleSig(event)" title="About" style="
@@ -2426,6 +4185,42 @@ function calTab(section, btn){
     renderTestSliders();
     renderTestPreview();
   }
+  if(section==='focus'){
+    renderCalFocusSettings();
+  }
+}
+
+function renderCalFocusSettings(){
+  ['sessionMins','shortBreakMins','longBreakMins','sessionsPerCycle','dailyTarget','dailyQuesTarget'].forEach(k=>{
+    const el=document.getElementById('calfs_'+k);
+    if(el) el.textContent=focusSettings[k]||({dailyQuesTarget:70}[k]||'');
+  });
+}
+
+function calFocusAdj(key,delta,min,max){
+  focusSettings[key]=Math.max(min,Math.min(max,focusSettings[key]+delta));
+  const el=document.getElementById('calfs_'+key);
+  if(el) el.textContent=focusSettings[key];
+}
+
+function saveFocusSettingsFromCal(){
+  const fd=loadFocus();
+  fd.settings=focusSettings;
+  saveFocus(fd);
+  const msg=document.getElementById('calFocusSaveMsg');
+  if(msg){msg.classList.add('visible');setTimeout(()=>msg.classList.remove('visible'),2000);}
+  // Update timer if not running
+  if(!focusTimer.running){
+    if(focusTimer.mode==='session'){focusTimer.secondsLeft=focusSettings.sessionMins*60;focusTimer.totalSeconds=focusSettings.sessionMins*60;}
+    if(focusTimer.mode==='short'){focusTimer.secondsLeft=focusSettings.shortBreakMins*60;focusTimer.totalSeconds=focusSettings.shortBreakMins*60;}
+    if(focusTimer.mode==='long'){focusTimer.secondsLeft=focusSettings.longBreakMins*60;focusTimer.totalSeconds=focusSettings.longBreakMins*60;}
+  }
+  if(document.getElementById('p-focus').classList.contains('on')) renderFocus();
+}
+
+function resetFocusSettings(){
+  focusSettings={sessionMins:90,shortBreakMins:15,longBreakMins:60,sessionsPerCycle:3,dailyTarget:4,dailyQuesTarget:70};
+  renderCalFocusSettings();
 }
 
 // Subject switch
@@ -2849,6 +4644,10 @@ function saveSchedule(){
   refreshAllLists();
   stats();
   renderPulse();
+  // Re-render analytics so daysLeft (= last chapter end date) auto-updates
+  if(document.getElementById('p-ana').classList.contains('on')){
+    renderAnalytics(); renderDeckAndLog();
+  }
 
   const msg = document.getElementById('calSaveMsg');
   msg.textContent = 'Saved ✓';
@@ -3108,6 +4907,12 @@ loadCalibration();
   document.getElementById('listP').innerHTML=PHYS.map((ch,i)=>card('phys',ch,i)).join('');
   stats();
   renderPulse();
+  renderOverviewSummary();
+  // Update focus badge
+  const todaySessKey='fent_sessions_'+new Date().toISOString().split('T')[0];
+  const todaySess=parseInt(localStorage.getItem(todaySessKey)||'0');
+  const fbadge=document.getElementById('bFocus');
+  if(fbadge) fbadge.textContent=todaySess>0?todaySess+'✓':'—';
 })();
 
 </script>
