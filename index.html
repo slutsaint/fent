@@ -2437,7 +2437,45 @@ function buildSessLineChart(last30, target, today){
   const workDays=days.filter(d=>!d.isSun);
   const pastWork=workDays.filter(d=>d.d<=today);
   const metDays=pastWork.filter(d=>d.sess>=target).length;
-  const missedDays=pastWork.filter(d=>d.d<today&&d.sess===0).length;
+
+  // Find the very first day the user logged ANY effort:
+  // tasks (ts_ keys in ST), sessions (fent_sessions_*), focus logs (fent_focuslog_*), questions (fent_ques_*)
+  // Missed days only start counting from that first effort day onward.
+  let firstEffortDate = null;
+  try {
+    const candidates = [];
+    // 1) Task timestamps — ts_subj_n_type keys hold "YYYY-MM-DD" strings
+    Object.keys(ST).forEach(k => {
+      if(k.startsWith('ts_') && typeof ST[k] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ST[k])) {
+        candidates.push(new Date(ST[k]+'T00:00:00'));
+      }
+    });
+    // 2) Sessions
+    Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{
+      const n=parseInt(localStorage.getItem(k)||'0');
+      if(n>0){const d=new Date(k.replace('fent_sessions_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
+    });
+    // 3) Focus logs
+    Object.keys(localStorage).filter(k=>k.startsWith('fent_focuslog_')).forEach(k=>{
+      try{const arr=JSON.parse(localStorage.getItem(k)||'[]');if(arr.length>0){const d=new Date(k.replace('fent_focuslog_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}}catch{}
+    });
+    // 4) Questions
+    Object.keys(localStorage).filter(k=>k.startsWith('fent_ques_')).forEach(k=>{
+      const n=parseInt(localStorage.getItem(k)||'0');
+      if(n>0){const d=new Date(k.replace('fent_ques_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
+    });
+    if(candidates.length>0){
+      firstEffortDate=new Date(Math.min(...candidates.map(d=>d.getTime())));
+      firstEffortDate.setHours(0,0,0,0);
+    }
+  }catch(e){}
+
+  // Only count missed workdays that fall on or after firstEffortDate (and before today)
+  const missedDays=pastWork.filter(d=>{
+    if(d.d>=today||d.sess>0) return false;
+    if(!firstEffortDate) return false; // no effort recorded at all — nothing wasted
+    return d.d>=firstEffortDate;
+  }).length;
   const totalSess30=days.reduce((a,d)=>a+d.sess,0);
   const totalQues30=days.reduce((a,d)=>a+d.ques,0);
   const hasQues=totalQues30>0;
@@ -5032,4 +5070,3 @@ loadCalibration();
 
 </body>
 </html>
-  
