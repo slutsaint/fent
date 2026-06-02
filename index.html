@@ -2803,20 +2803,26 @@ function buildFocusActivitySections(today){
     ptr.setDate(ptr.getDate()+1);
   }
 
-  // Color scale for month heatmap
-  // Past with 0 tasks = red (missed), partial = amber, good/great = green
-  // Sunday = near-invisible (no goal), future = subtle outline
+  // Color scale for month heatmap — based purely on sessions done vs daily target
+  // 0 sessions (missed workday) = red, partial sessions = amber gradient,
+  // at/above target = full green. Smoothly interpolated across the full range.
+  // Sunday = no goal (ghost), future = subtle outline.
+  const dailyGoal = Math.max(1, focusSettings.dailyTarget || 4);
   function hmTaskColor(cell){
     if(!cell.inMonth) return 'rgba(255,255,255,0.0)';
     if(cell.isSun)    return 'rgba(255,255,255,0.018)'; // Sunday: no goal, ghost
     if(!cell.isPast&&!cell.isToday) return 'rgba(255,255,255,0.04)'; // future: muted
-    if(cell.tasks.total===0) return 'rgba(196,100,100,0.38)'; // MISSED — red
-    const r=cell.tasks.total/maxCellTasks;
-    if(r<0.2)  return 'rgba(194,163,89,0.45)';  // very low — amber
-    if(r<0.45) return 'rgba(194,163,89,0.7)';   // low — amber
-    if(r<0.7)  return 'rgba(107,158,131,0.6)';  // decent — green
-    if(r<0.9)  return 'rgba(107,158,131,0.82)'; // good — green
-    return 'rgba(107,158,131,1.0)';              // great — full green
+    const sess = cell.tasks.sessions || 0;
+    if(sess === 0) return 'rgba(196,100,100,0.38)'; // MISSED — red
+    // Ratio of sessions done vs goal (clamped to 1.0 max)
+    const r = Math.min(1.0, sess / dailyGoal);
+    // 5-step gradient: amber (low) → amber (mid) → green (decent) → green (good) → green (full)
+    // Each step covers 20% of the goal
+    if(r < 0.2)  return 'rgba(194,163,89,0.42)';  // 1/5 sessions — faint amber
+    if(r < 0.4)  return 'rgba(194,163,89,0.65)';  // 2/5 sessions — amber
+    if(r < 0.6)  return 'rgba(107,158,131,0.52)'; // 3/5 sessions — soft green
+    if(r < 0.8)  return 'rgba(107,158,131,0.75)'; // 4/5 sessions — green
+    return 'rgba(107,158,131,1.0)';                // 5/5 (at/above goal) — full green
   }
 
   // Build 7 weeks × 7 days grid
@@ -2917,8 +2923,8 @@ function buildFocusActivitySections(today){
     ${detHTML}
     <div style="display:flex;align-items:center;gap:4px;margin-top:10px;flex-wrap:wrap;">
       <span style="font-size:7.5px;color:rgba(255,255,255,0.18);font-family:'JetBrains Mono',monospace;">Missed</span>
-      ${['rgba(196,100,100,0.38)','rgba(194,163,89,0.45)','rgba(194,163,89,0.7)','rgba(107,158,131,0.55)','rgba(107,158,131,0.82)','rgba(107,158,131,1.0)'].map(c=>`<div style="width:9px;height:9px;border-radius:2px;background:${c};flex-shrink:0;"></div>`).join('')}
-      <span style="font-size:7.5px;color:rgba(255,255,255,0.18);font-family:'JetBrains Mono',monospace;">Great</span>
+      ${['rgba(196,100,100,0.38)','rgba(194,163,89,0.42)','rgba(194,163,89,0.65)','rgba(107,158,131,0.52)','rgba(107,158,131,0.75)','rgba(107,158,131,1.0)'].map(c=>`<div style="width:9px;height:9px;border-radius:2px;background:${c};flex-shrink:0;"></div>`).join('')}
+      <span style="font-size:7.5px;color:rgba(255,255,255,0.18);font-family:'JetBrains Mono',monospace;">Goal</span>
       <div style="margin-left:auto;display:flex;align-items:center;gap:5px;">
         <div style="width:9px;height:9px;border-radius:2px;background:rgba(255,255,255,0.015);flex-shrink:0;"></div>
         <span style="font-size:7.5px;color:rgba(255,255,255,0.13);font-family:'JetBrains Mono',monospace;">Sun</span>
@@ -5026,3 +5032,4 @@ loadCalibration();
 
 </body>
 </html>
+  
