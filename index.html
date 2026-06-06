@@ -2202,7 +2202,7 @@ function buildHeatmap(weeks,today){
     dayMap[dateKey].chaps[chName].count++;
   };
 
-  const todayKey=today.toISOString().split('T')[0];
+  const todayKey=localDateKey(today);
   allSubjs.forEach(({s,ch})=>{
     const taskState=gs(s,ch.n);
     TK_KEYS.forEach(k=>{
@@ -2439,7 +2439,7 @@ function buildSessLineChart(last30, target, today){
   const metDays=pastWork.filter(d=>d.sess>=target).length;
 
   // Find the very first day the user logged ANY effort:
-  // tasks (ts_ keys in ST), sessions (fent_sessions_*), focus logs (fent_focuslog_*), questions (fent_ques_*)
+  // tasks (ts_ keys in ST), studysecs (fent_studysecs_*), focus logs (fent_focuslog_*), questions (fent_ques_*)
   // Missed days only start counting from that first effort day onward.
   let firstEffortDate = null;
   try {
@@ -2451,9 +2451,9 @@ function buildSessLineChart(last30, target, today){
       }
     });
     // 2) Sessions
-    Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{
-      const n=parseInt(localStorage.getItem(k)||'0');
-      if(n>0){const d=new Date(k.replace('fent_sessions_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
+    Object.keys(localStorage).filter(k=>k.startsWith('fent_studysecs_')).forEach(k=>{
+      const n=parseFloat(localStorage.getItem(k)||'0');
+      if(n>0){const d=new Date(k.replace('fent_studysecs_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
     });
     // 3) Focus logs
     Object.keys(localStorage).filter(k=>k.startsWith('fent_focuslog_')).forEach(k=>{
@@ -2744,7 +2744,7 @@ function buildSessLineChart(last30, target, today){
 let anaHmMonth = null; // null = current month
 
 function buildFocusActivitySections(today){
-  const todayKey=today.toISOString().split('T')[0];
+  const todayKey=localDateKey(today);
   const allSubjs=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
   const TK_KEYS=['theory','module','pyq','revision'];
 
@@ -2764,13 +2764,12 @@ function buildFocusActivitySections(today){
     });
   });
 
-  // Add sessions to dayMap
+  // Add sessions to dayMap — decimal counts from study seconds
   try{
-    Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{
-      const d=k.replace('fent_sessions_','');
-      const n=parseInt(localStorage.getItem(k)||'0');
+    Object.keys(localStorage).filter(k=>k.startsWith('fent_studysecs_')).forEach(k=>{
+      const d=k.replace('fent_studysecs_','');
       if(!dayMap[d])dayMap[d]={total:0,subj:{math:0,chem:0,phys:0},task:{},sessions:0};
-      dayMap[d].sessions=n;
+      dayMap[d].sessions=getSessCount(d);
     });
   }catch{}
 
@@ -2795,9 +2794,12 @@ function buildFocusActivitySections(today){
   const tfh=Math.floor(tfm/60);
   const focusTimeStr=tfh>0?`${tfh}h ${tfm%60}m`:`${tfm}m`;
 
-  // Total sessions
+  // Total sessions (decimal sum)
   let totalSessions=0;
-  try{Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{totalSessions+=parseInt(localStorage.getItem(k)||'0');});}catch{}
+  try{Object.keys(localStorage).filter(k=>k.startsWith('fent_studysecs_')).forEach(k=>{
+    totalSessions+=getSessCount(k.replace('fent_studysecs_',''));
+  });}catch{}
+  totalSessions=Math.floor(totalSessions*10)/10;
 
   // Focus target daily
   const target=focusSettings.dailyTarget;
@@ -2876,7 +2878,7 @@ function buildFocusActivitySections(today){
     const isSun=new Date(anaHmSelectedDay).getDay()===0;
     const dm=dayMap[anaHmSelectedDay];
     const fl=focusLogs[anaHmSelectedDay]; // focus log for that day
-    const daySess=parseInt(localStorage.getItem('fent_sessions_'+anaHmSelectedDay)||'0');
+    const daySess=getSessCount(anaHmSelectedDay);
     const dayQues=parseInt(localStorage.getItem('fent_ques_'+anaHmSelectedDay)||'0');
     // Load individual focus log entries
     let dayLogEntries=[];
@@ -2976,7 +2978,7 @@ function buildFocusActivitySections(today){
   for(let i=29;i>=0;i--){
     const d=new Date(today);d.setDate(d.getDate()-i);
     const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    const sess=parseInt(localStorage.getItem('fent_sessions_'+k)||'0');
+    const sess=getSessCount(k);
     const tasks=(dayMap[k]||{total:0}).total;
     const isSun=d.getDay()===0;
     last30.push({d,k,sess,tasks,isSun});
@@ -2984,13 +2986,13 @@ function buildFocusActivitySections(today){
 
 
   // Sessions + Focus time summary cards
-  const todaySess=parseInt(localStorage.getItem('fent_sessions_'+todayKey)||'0');
+  const todaySess=getSessCount(todayKey);
   const todayFocus=focusLogs[todayKey]||{totalSecs:0};
   const todayFocusMins=Math.floor(todayFocus.totalSecs/60);
   const last7=[...Array(7)].map((_,i)=>{
     const d=new Date(today);d.setDate(d.getDate()-i);
     const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    return {d,k,sess:parseInt(localStorage.getItem('fent_sessions_'+k)||'0')};
+    return {d,k,sess:getSessCount(k)};
   }).reverse();
   const metTarget7=last7.filter(d=>d.d.getDay()!==0&&d.sess>=target).length;
   const workDays7=last7.filter(d=>d.d.getDay()!==0).length;
@@ -3213,17 +3215,28 @@ let focusTimer = {
 };
 
 // Today's focus log (persisted per day)
-const TODAY_KEY='fent_focuslog_'+new Date().toISOString().split('T')[0];
-function getTodayLog(){try{return JSON.parse(localStorage.getItem(TODAY_KEY)||'[]')}catch{return[]}}
-function saveTodayLog(l){try{localStorage.setItem(TODAY_KEY,JSON.stringify(l))}catch{}}
+// ── Date key helpers — always local calendar date (YYYY-MM-DD), not UTC ──
+// Using local date ensures midnight means YOUR midnight, not UTC midnight.
+// These are functions not consts so they never go stale if tab stays open past midnight.
+function localDateKey(d){
+  const dt=d||new Date();
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+}
+function todayDateKey(){ return localDateKey(); }
 
-// Questions tracking — persisted per day under 'fent_ques_YYYY-MM-DD'
-const TODAY_QUES_KEY='fent_ques_'+new Date().toISOString().split('T')[0];
-function getTodayQues(){try{return parseInt(localStorage.getItem(TODAY_QUES_KEY)||'0');}catch{return 0;}}
+function getTodayLog(){
+  try{return JSON.parse(localStorage.getItem('fent_focuslog_'+todayDateKey())||'[]');}catch{return[];}
+}
+function saveTodayLog(l){
+  try{localStorage.setItem('fent_focuslog_'+todayDateKey(),JSON.stringify(l));}catch{}
+}
+function getTodayQues(){
+  try{return parseInt(localStorage.getItem('fent_ques_'+todayDateKey())||'0');}catch{return 0;}
+}
 function addTodayQues(n){
   const cur=getTodayQues();
   const next=Math.max(0,cur+n);
-  try{localStorage.setItem(TODAY_QUES_KEY,next);}catch{}
+  try{localStorage.setItem('fent_ques_'+todayDateKey(),next);}catch{}
   return next;
 }
 
@@ -3279,10 +3292,9 @@ function renderFocus(){
   const totalFocusM=totalFocusMins%60;
   const focusTimeStr=totalFocusH>0?`${totalFocusH}h ${totalFocusM}m`:`${totalFocusM}m`;
 
-  // Today's session count from storage
-  const todaySessKey='fent_sessions_'+new Date().toISOString().split('T')[0];
-  const todaySessions=parseInt(localStorage.getItem(todaySessKey)||'0');
-  const sessionsToGo=Math.max(0,S.dailyTarget-todaySessions);
+  // Today's session count — decimal, derived from study seconds
+  const todaySessions=getTodaySessCount();
+  const sessionsToGo=Math.max(0,Math.round((S.dailyTarget-todaySessions)*10)/10);
 
   // Log section HTML — new beautiful selector
   const logActive=T.currentChap&&T.currentTask;
@@ -3292,7 +3304,7 @@ function renderFocus(){
   // Current log display
   let selectorHTML='';
   if(logActive){
-    const elapsed=T.segStart?Math.floor((Date.now()-T.segStart)/1000):0;
+    const elapsed=(T.segStart&&T.mode==='session')?Math.floor((Date.now()-T.segStart)/1000):0;
     const em=Math.floor(elapsed/60);
     const es=elapsed%60;
     selectorHTML=`<div class="focus-selector-wrap active-log">
@@ -3521,7 +3533,8 @@ function focusSelectChap(c){
 function focusSelectTask(k){
   commitFocusSegment();
   focusTimer.currentTask=k;
-  if(focusTimer.running) focusTimer.segStart=Date.now();
+  // Only start logging if timer is running AND we're in a session (not a break)
+  if(focusTimer.running&&focusTimer.mode==='session') focusTimer.segStart=Date.now();
   renderFocus();
 }
 
@@ -3551,15 +3564,33 @@ function commitFocusSegment(){
   if(T.segStart&&T.currentChap&&T.currentTask){
     const secs=Math.floor((Date.now()-T.segStart)/1000);
     if(secs>5){
+      // 1. Chapter/task focus log (existing behaviour unchanged)
       const log=getTodayLog();
-      // Find existing entry for same chap+task and add to it
       const idx=log.findIndex(e=>e.subj===T.currentChap.subj&&e.chapN===T.currentChap.n&&e.task===T.currentTask);
       if(idx>=0){log[idx].durationSecs+=secs;}
       else log.push({chapName:T.currentChap.name,subj:T.currentChap.subj,chapN:T.currentChap.n,task:T.currentTask,durationSecs:secs});
       saveTodayLog(log);
+
+      // 2. Accumulate raw study seconds → decimal session count derives from this
+      const dk='fent_studysecs_'+todayDateKey();
+      localStorage.setItem(dk, (parseFloat(localStorage.getItem(dk)||'0')+secs).toFixed(0));
     }
   }
-  T.segStart=T.running?Date.now():null;
+  // Only restart segment clock if running AND in session mode — never during breaks
+  T.segStart=(T.running&&T.mode==='session')?Date.now():null;
+}
+
+// Derive decimal session count from raw study seconds for a given date key (YYYY-MM-DD).
+// Formula: studySecs ÷ sessionLength. Floored to 1 decimal. Never negative.
+// This is the single source of truth — replaces all integer fent_sessions_ reads.
+function getSessCount(dateKey){
+  const studySecs=parseFloat(localStorage.getItem('fent_studysecs_'+dateKey)||'0');
+  const sessLenSecs=(focusSettings.sessionMins||90)*60;
+  if(sessLenSecs<=0||studySecs<=0) return 0;
+  return Math.floor(studySecs/sessLenSecs*10)/10;
+}
+function getTodaySessCount(){
+  return getSessCount(todayDateKey());
 }
 
 function focusToggle(){
@@ -3576,8 +3607,9 @@ function focusToggle(){
   }
   T.running=!T.running;
   if(T.running){
-    T.segStart=Date.now();
-    // focusStartInterval sets T.endAt from T.secondsLeft
+    // Only start study segment clock if we're in session mode, never during breaks
+    if(T.mode==='session') T.segStart=Date.now();
+    else T.segStart=null;
     focusStartInterval();
   } else {
     commitFocusSegment();
@@ -3622,8 +3654,8 @@ function updateFocusClockFast(){
   const arc=document.querySelector('.focus-arc-fill');
   if(arc) arc.setAttribute('stroke-dashoffset',dashOffset);
 
-  // Update current log time
-  if(T.segStart&&T.currentChap&&T.currentTask){
+  // Update current log time — only during session mode, never during breaks
+  if(T.segStart&&T.mode==='session'&&T.currentChap&&T.currentTask){
     const elapsed=Math.floor((Date.now()-T.segStart)/1000);
     const em=Math.floor(elapsed/60);
     const es=elapsed%60;
@@ -3648,11 +3680,12 @@ function focusOnModeEnd(){
     commitFocusSegment();
     T.segStart=null; // STOP segment clock — break time must NOT be logged as focus
 
-    // Increment session count
+    // Advance internal cycle counter (drives long-break logic)
     T.cycleSessions++;
-    const todaySessKey='fent_sessions_'+new Date().toISOString().split('T')[0];
-    const cur=parseInt(localStorage.getItem(todaySessKey)||'0');
-    localStorage.setItem(todaySessKey,cur+1);
+    // Refresh analytics if open so heatmap updates immediately
+    if(document.getElementById('p-ana')&&document.getElementById('p-ana').classList.contains('on')){
+      renderAnalytics();
+    }
 
     if(T.cycleSessions>=focusSettings.sessionsPerCycle){
       // Long break
@@ -3706,6 +3739,10 @@ function focusSkip(){
   }
   T.running=false;
   T.segStart=null;
+  // Refresh analytics if open so heatmap/chart updates immediately
+  if(document.getElementById('p-ana')&&document.getElementById('p-ana').classList.contains('on')){
+    renderAnalytics();
+  }
   renderFocus();
 }
 
@@ -3840,7 +3877,7 @@ function renderOverviewSummary(){
   const today=new Date(); today.setHours(0,0,0,0);
   const weekStart=new Date(today); weekStart.setDate(today.getDate()-today.getDay());
   const weekEnd=new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
-  const todayKey=today.toISOString().split('T')[0];
+  const todayKey=localDateKey(today);
   const allSubjs=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'chem',ch}))];
   const allSubjsFull=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
   const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -3855,7 +3892,7 @@ function renderOverviewSummary(){
     const isSun=d.getDay()===0;
     const isToday=d.toDateString()===today.toDateString();
     const isFuture=d>today&&!isToday;
-    let daySecs=0,daySess=parseInt(localStorage.getItem('fent_sessions_'+k)||'0');
+    let daySecs=0,daySess=getSessCount(k);
     let dayQues=0;
     try{const e=JSON.parse(localStorage.getItem('fent_focuslog_'+k)||'[]');daySecs=e.reduce((a,x)=>a+(x.durationSecs||0),0);}catch{}
     try{dayQues=parseInt(localStorage.getItem('fent_ques_'+k)||'0');}catch{}
@@ -5060,10 +5097,9 @@ loadCalibration();
   renderPulse();
   renderOverviewSummary();
   // Update focus badge
-  const todaySessKey='fent_sessions_'+new Date().toISOString().split('T')[0];
-  const todaySess=parseInt(localStorage.getItem(todaySessKey)||'0');
+  const _todaySessInit=getTodaySessCount();
   const fbadge=document.getElementById('bFocus');
-  if(fbadge) fbadge.textContent=todaySess>0?todaySess+'✓':'—';
+  if(fbadge) fbadge.textContent=_todaySessInit>0?_todaySessInit+'✓':'—';
 })();
 
 </script>
