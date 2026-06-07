@@ -1371,10 +1371,10 @@ function tick(el, e){
   const ts=gs(s,n);
   ts[t]=!ts[t];
   
-  // Track timestamp: store date when task is checked (remove when unchecked)
+  // Track timestamp: store local calendar date when task is checked (remove when unchecked)
   const tsKey=`ts_${s}_${n}_${t}`;
   if(ts[t]){
-    if(!ST[tsKey]) ST[tsKey]=new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    if(!ST[tsKey]) ST[tsKey]=localDateKey(); // YYYY-MM-DD local date
   } else {
     delete ST[tsKey];
   }
@@ -2202,7 +2202,7 @@ function buildHeatmap(weeks,today){
     dayMap[dateKey].chaps[chName].count++;
   };
 
-  const todayKey=today.toISOString().split('T')[0];
+  const todayKey=localDateKey(today);
   allSubjs.forEach(({s,ch})=>{
     const taskState=gs(s,ch.n);
     TK_KEYS.forEach(k=>{
@@ -2422,7 +2422,7 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
 function buildSessLineChart(last30, target, today){
   const qTarget=focusSettings.dailyQuesTarget||70;
 
-  // Enrich with questions and focus time
+  // Enrich with questions and focus time — read fresh from localStorage every build
   const days=last30.map(d=>{
     const focusLog=(() => {try{return JSON.parse(localStorage.getItem('fent_focuslog_'+d.k)||'[]');}catch{return[];}})();
     const focusMins=Math.round(focusLog.reduce((a,e)=>a+(e.durationSecs||0),0)/60);
@@ -2438,28 +2438,22 @@ function buildSessLineChart(last30, target, today){
   const pastWork=workDays.filter(d=>d.d<=today);
   const metDays=pastWork.filter(d=>d.sess>=target).length;
 
-  // Find the very first day the user logged ANY effort:
-  // tasks (ts_ keys in ST), sessions (fent_sessions_*), focus logs (fent_focuslog_*), questions (fent_ques_*)
-  // Missed days only start counting from that first effort day onward.
+  // Find the very first day the user logged ANY effort
   let firstEffortDate = null;
   try {
     const candidates = [];
-    // 1) Task timestamps — ts_subj_n_type keys hold "YYYY-MM-DD" strings
     Object.keys(ST).forEach(k => {
       if(k.startsWith('ts_') && typeof ST[k] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ST[k])) {
         candidates.push(new Date(ST[k]+'T00:00:00'));
       }
     });
-    // 2) Sessions
     Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{
       const n=parseFloat(localStorage.getItem(k)||'0');
       if(n>0){const d=new Date(k.replace('fent_sessions_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
     });
-    // 3) Focus logs
     Object.keys(localStorage).filter(k=>k.startsWith('fent_focuslog_')).forEach(k=>{
       try{const arr=JSON.parse(localStorage.getItem(k)||'[]');if(arr.length>0){const d=new Date(k.replace('fent_focuslog_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}}catch{}
     });
-    // 4) Questions
     Object.keys(localStorage).filter(k=>k.startsWith('fent_ques_')).forEach(k=>{
       const n=parseInt(localStorage.getItem(k)||'0');
       if(n>0){const d=new Date(k.replace('fent_ques_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
@@ -2470,10 +2464,9 @@ function buildSessLineChart(last30, target, today){
     }
   }catch(e){}
 
-  // Only count missed workdays that fall on or after firstEffortDate (and before today)
   const missedDays=pastWork.filter(d=>{
     if(d.d>=today||d.sess>0) return false;
-    if(!firstEffortDate) return false; // no effort recorded at all — nothing wasted
+    if(!firstEffortDate) return false;
     return d.d>=firstEffortDate;
   }).length;
   const totalSess30=days.reduce((a,d)=>a+d.sess,0);
@@ -2498,12 +2491,16 @@ function buildSessLineChart(last30, target, today){
   const N=days.length;
   const barW=plotW/N;
   const gap=2;
-  const maxSess=Math.max(target+1,...days.map(d=>d.sess),1);
+
+  // maxSess: top of chart = max(target+2, actual max) so bars never clip and
+  // the target line always sits visibly below the top.
+  const actualMax=Math.max(...days.map(d=>d.sess),0);
+  const maxSess=Math.max(target+2, actualMax+1, 2);
 
   function xMid(i){ return PL + i*barW + barW/2; }
   function yS(v){ return PT + plotH - Math.min(1,v/maxSess)*plotH; }
 
-  // ── SVG defs: gradients + clip ──
+  // ── SVG defs ──
   const defsHTML=`<defs>
     <linearGradient id="${uid}gG" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="rgba(107,158,131,1)"/>
@@ -2523,27 +2520,24 @@ function buildSessLineChart(last30, target, today){
     </filter>
   </defs>`;
 
-  // ── Bars ──
-  // last30 has no inMonth concept — every entry is a valid day in the window.
-  // The old `!d.inMonth&&d.isSun` check always fired (inMonth=undefined→falsy),
-  // making every Sunday render as a flat ghost and hiding any sessions on Sundays.
+  // ── Format helpers ──
   const fmtSessVal=v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
+  const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MON_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // ── Bars (SVG only — no <title> tooltips, those are replaced by HTML overlay) ──
   const barsHTML=days.map((d,i)=>{
     const bx=PL+i*barW+gap/2;
     const bw=Math.max(0,barW-gap);
-    // Future days — tiny floor stub
     if(d.d>today){
       return `<rect x="${bx.toFixed(1)}" y="${(PT+plotH-2).toFixed(1)}" width="${bw.toFixed(1)}" height="2" rx="1" fill="rgba(255,255,255,0.05)"/>`;
     }
-    // Sunday rest day with no sessions — very faint ghost
     if(d.isSun && d.sess===0){
       return `<rect x="${bx.toFixed(1)}" y="${(PT+plotH-3).toFixed(1)}" width="${bw.toFixed(1)}" height="3" rx="1.5" fill="rgba(255,255,255,0.025)"/>`;
     }
-    // Any past/today with 0 sessions — missed notch
     if(d.sess===0){
       return `<rect x="${bx.toFixed(1)}" y="${(PT+plotH-2).toFixed(1)}" width="${bw.toFixed(1)}" height="2" rx="1" fill="rgba(255,255,255,0.09)"/>`;
     }
-    // Has sessions — draw full bar
     const isToday=d.d.toDateString()===today.toDateString();
     const met=d.sess>=target;
     const gradId=met?`url(#${uid}gG)`:`url(#${uid}gA)`;
@@ -2553,25 +2547,47 @@ function buildSessLineChart(last30, target, today){
     const delay=(i/N*0.5).toFixed(3);
     const todayGlow=isToday?`<rect x="${(bx-1).toFixed(1)}" y="${by}" width="${(bw+2).toFixed(1)}" height="${h.toFixed(1)}" rx="2.5" fill="${met?'rgba(107,158,131,0.1)':'rgba(194,163,89,0.1)'}" filter="url(#${uid}glow)"/>`:'';
     return `${todayGlow}<rect x="${bx.toFixed(1)}" y="${by}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2.5" fill="${gradId}" style="transform-box:fill-box;transform-origin:bottom;transform:scaleY(0);animation:barScaleUp .55s cubic-bezier(.16,1,.3,1) ${delay}s both;"/>
-    <rect x="${(bx+bw*0.1).toFixed(1)}" y="${by}" width="${(bw*0.8).toFixed(1)}" height="2" rx="1" fill="${capCol}" style="transform-box:fill-box;transform-origin:bottom;transform:scaleY(0);animation:barScaleUp .55s cubic-bezier(.16,1,.3,1) ${delay}s both;opacity:0.9;"/>
-    <title>${d.d.getDate()}/${d.d.getMonth()+1}: ${fmtSessVal(d.sess)} sess${d.ques?', '+d.ques+'q':''}${d.focusMins?', '+d.focusMins+'m':''}</title>`;
+    <rect x="${(bx+bw*0.1).toFixed(1)}" y="${by}" width="${(bw*0.8).toFixed(1)}" height="2" rx="1" fill="${capCol}" style="transform-box:fill-box;transform-origin:bottom;transform:scaleY(0);animation:barScaleUp .55s cubic-bezier(.16,1,.3,1) ${delay}s both;opacity:0.9;"/>`;
   }).join('');
 
-  // ── Trend line — smooth bezier path with area fill ──
+  // ── Invisible hit areas for hover — full bar column height, no tooltip on SVG ──
+  // These are transparent rects that trigger the HTML tooltip via onmouseenter/leave
+  const hitAreas=days.map((d,i)=>{
+    if(d.d>today) return '';
+    const bx=(PL+i*barW).toFixed(1);
+    const isToday=d.d.toDateString()===today.toDateString();
+    const met=d.sess>=target;
+    const sessStr=fmtSessVal(d.sess);
+    const dayLabel=`${DAY_NAMES[d.d.getDay()]}, ${MON_NAMES[d.d.getMonth()]} ${d.d.getDate()}`;
+    const topLine=isToday?'Today':'';
+    // Build tooltip content as data attributes — the JS reads them
+    const dataSess=d.sess;
+    const dataQues=d.ques;
+    const dataFocus=d.focusMins;
+    const dataIsSun=d.isSun?1:0;
+    const dataDay=dayLabel;
+    const dataMet=met?1:0;
+    const dataIsToday=isToday?1:0;
+    return `<rect class="${uid}hit" x="${bx}" y="${PT}" width="${barW.toFixed(1)}" height="${plotH}" fill="transparent" style="cursor:default;"
+      data-day="${dayLabel}" data-sess="${dataSess}" data-target="${target}" data-ques="${dataQues}" data-focus="${dataFocus}" data-issun="${dataIsSun}" data-met="${dataMet}" data-istoday="${dataIsToday}"
+      onmouseenter="scShowTip(this,'${uid}','sess')" onmouseleave="scHideTip('${uid}')"/>`;
+  }).join('');
+
+  // ── Trend line — smooth bezier. Include ALL past non-future days (inc Sundays that studied) ──
   const trendData=[];
   for(let i=0;i<N;i++){
     const d=days[i];
-    if(d.isSun||d.d>today) continue;
+    if(d.d>today) continue;
+    // 7-day rolling average centered on i, counting Sundays with 0 as rest (not miss)
     let sum=0,cnt=0;
     for(let j=Math.max(0,i-3);j<=Math.min(N-1,i+3);j++){
-      if(!days[j].isSun&&days[j].d<=today){sum+=days[j].sess;cnt++;}
+      if(days[j].d<=today){sum+=days[j].sess;cnt++;}
     }
     trendData.push({x:xMid(i),y:yS(cnt?sum/cnt:0)});
   }
 
   let trendPath='',trendAreaPath='';
   if(trendData.length>1){
-    // Catmull-Rom → cubic bezier for smooth curve
     const pts=trendData;
     let d=`M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
     for(let i=0;i<pts.length-1;i++){
@@ -2584,7 +2600,7 @@ function buildSessLineChart(last30, target, today){
     trendAreaPath=d+` L${pts[pts.length-1].x.toFixed(1)},${(PT+plotH).toFixed(1)} L${pts[0].x.toFixed(1)},${(PT+plotH).toFixed(1)} Z`;
   }
 
-  const pathLen=plotW*2.2; // generous overestimate
+  const pathLen=plotW*2.2;
   const trendSVG=trendPath?`
     <path d="${trendAreaPath}" fill="url(#${uid}trendArea)" class="chart-area-anim"/>
     <path d="${trendPath}" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.8" stroke-linecap="round" class="chart-line-anim" style="stroke-dasharray:${pathLen};stroke-dashoffset:${pathLen};animation:dashReveal 1.4s cubic-bezier(.16,1,.3,1) .3s forwards;"/>
@@ -2596,8 +2612,8 @@ function buildSessLineChart(last30, target, today){
   const targetLine=`<line x1="${PL}" y1="${syT.toFixed(1)}" x2="${(W-PR).toFixed(1)}" y2="${syT.toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="4,3"/>
   <text x="${(W-PR+3).toFixed(1)}" y="${(syT+3).toFixed(1)}" font-size="7" font-family="JetBrains Mono,monospace" fill="rgba(255,255,255,0.2)">${target}</text>`;
 
-  // ── Week separator lines ──
-  const weekSeps=days.filter((d,i)=>i>0&&d.d.getDay()===1).map((d,_,arr)=>{
+  // ── Week separators ──
+  const weekSeps=days.filter((d,i)=>i>0&&d.d.getDay()===1).map(d=>{
     const i=days.indexOf(d);
     const x=(PL+i*barW).toFixed(1);
     return `<line x1="${x}" y1="${PT}" x2="${x}" y2="${(PT+plotH).toFixed(1)}" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>`;
@@ -2610,55 +2626,73 @@ function buildSessLineChart(last30, target, today){
   }).join('');
 
   // ── Y-axis ──
-  const yAxis=[0,target,maxSess].filter((v,i,a)=>a.indexOf(v)===i).map(v=>{
+  const yAxisVals=[0,target,maxSess].filter((v,i,a)=>a.indexOf(v)===i&&v<=maxSess);
+  const yAxis=yAxisVals.map(v=>{
     const y=yS(v);
     const col=v===target?'rgba(255,255,255,0.25)':'rgba(255,255,255,0.1)';
     return `<text x="${(PL-3).toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="7" font-family="JetBrains Mono,monospace" fill="${col}" text-anchor="end">${v}</text>`;
   }).join('');
 
-  const sessChartSVG=`<svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;overflow:visible;">
-    ${defsHTML}
-    ${weekSeps}
-    ${targetLine}
-    ${barsHTML}
-    ${trendSVG}
-    ${dateLabels}
-    ${yAxis}
-  </svg>`;
+  const sessChartSVG=`<div style="position:relative;">
+    <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;overflow:visible;">
+      ${defsHTML}
+      ${weekSeps}
+      ${targetLine}
+      ${barsHTML}
+      ${trendSVG}
+      ${dateLabels}
+      ${yAxis}
+      ${hitAreas}
+    </svg>
+    <div id="${uid}tip" style="display:none;position:absolute;background:rgba(18,18,24,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 11px;pointer-events:none;z-index:99;min-width:120px;box-shadow:0 8px 24px rgba(0,0,0,0.5);backdrop-filter:blur(8px);"></div>
+  </div>`;
 
   // ── Questions panel ──
   let quesPanel='';
   if(hasQues){
-    const QH=72, QPT=10, QPB=16;
+    const QH=80, QPT=10, QPB=18;
     const qPlotH=QH-QPT-QPB;
-    const maxQ=Math.max(qTarget,...days.map(d=>d.ques),1);
-    function yQ(v){ return QPT+qPlotH-(v/maxQ)*qPlotH; }
+    const maxQ=Math.max(qTarget+Math.ceil(qTarget*0.15),...days.map(d=>d.ques),1);
+    function yQ(v){ return QPT+qPlotH-(Math.min(v,maxQ)/maxQ)*qPlotH; }
 
-    const qPts=days.map((d,i)=>{
-      if(d.isSun||d.d>today) return null;
-      return {x:xMid(i),v:d.ques};
+    // Build points for all past non-future days (inc 0-ques days for continuity)
+    const qAllPts=days.map((d,i)=>{
+      if(d.d>today) return null;
+      return {x:xMid(i),v:d.ques,i,d};
     }).filter(Boolean);
 
+    // Line path — connects all points including 0-ques days for honest graph
     let qPath='',qAreaPath='';
-    if(qPts.length>1){
-      let pd=`M${qPts[0].x.toFixed(1)},${yQ(qPts[0].v).toFixed(1)}`;
-      for(let i=0;i<qPts.length-1;i++){
-        const p0=qPts[Math.max(0,i-1)],p1=qPts[i],p2=qPts[i+1],p3=qPts[Math.min(qPts.length-1,i+2)];
+    if(qAllPts.length>1){
+      let pd=`M${qAllPts[0].x.toFixed(1)},${yQ(qAllPts[0].v).toFixed(1)}`;
+      for(let ii=0;ii<qAllPts.length-1;ii++){
+        const p0=qAllPts[Math.max(0,ii-1)],p1=qAllPts[ii],p2=qAllPts[ii+1],p3=qAllPts[Math.min(qAllPts.length-1,ii+2)];
         const cp1x=p1.x+(p2.x-p0.x)/6, cp1y=yQ(p1.v)+(yQ(p2.v)-yQ(p0.v))/6;
         const cp2x=p2.x-(p3.x-p1.x)/6, cp2y=yQ(p2.v)-(yQ(p3.v)-yQ(p1.v))/6;
         pd+=` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2.x.toFixed(1)},${yQ(p2.v).toFixed(1)}`;
       }
       qPath=pd;
-      qAreaPath=pd+` L${qPts[qPts.length-1].x.toFixed(1)},${(QPT+qPlotH).toFixed(1)} L${qPts[0].x.toFixed(1)},${(QPT+qPlotH).toFixed(1)} Z`;
+      qAreaPath=pd+` L${qAllPts[qAllPts.length-1].x.toFixed(1)},${(QPT+qPlotH).toFixed(1)} L${qAllPts[0].x.toFixed(1)},${(QPT+qPlotH).toFixed(1)} Z`;
     }
 
     const qTargetY=yQ(qTarget);
     const qPathLen=plotW*2.2;
 
-    const dotsSVG=qPts.filter(p=>p.v>0).map((p,pi)=>{
+    // Visible dots — only on days that have questions
+    const dotsSVG=qAllPts.filter(p=>p.v>0).map((p,pi)=>{
       const met=p.v>=qTarget;
-      const delay=(pi/qPts.length*0.6).toFixed(3);
+      const delay=(pi/qAllPts.length*0.6).toFixed(3);
       return `<circle cx="${p.x.toFixed(1)}" cy="${yQ(p.v).toFixed(1)}" r="2.2" fill="${met?'rgba(107,158,131,0.95)':'rgba(144,139,176,0.85)'}" stroke="rgba(0,0,0,0.6)" stroke-width="0.8" style="transform-box:fill-box;transform-origin:center;transform:scale(0);animation:dotReveal .3s cubic-bezier(.16,1,.3,1) ${delay}s both;"/>`;
+    }).join('');
+
+    // Invisible hit areas for questions hover
+    const qHitAreas=qAllPts.map(p=>{
+      const met=p.v>=qTarget;
+      const dayLabel=`${DAY_NAMES[p.d.d.getDay()]}, ${MON_NAMES[p.d.d.getMonth()]} ${p.d.d.getDate()}`;
+      const bx=(PL+p.i*barW).toFixed(1);
+      return `<rect class="${uid}qhit" x="${bx}" y="${QPT}" width="${barW.toFixed(1)}" height="${qPlotH}" fill="transparent" style="cursor:default;"
+        data-day="${dayLabel}" data-ques="${p.v}" data-qtarget="${qTarget}" data-met="${met?1:0}" data-focus="${p.d.focusMins}" data-sess="${fmtSessVal(p.d.sess)}"
+        onmouseenter="scShowTip(this,'${uid}','ques')" onmouseleave="scHideTip('${uid}')"/>`;
     }).join('');
 
     quesPanel=`<div style="margin-top:6px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.05);">
@@ -2666,19 +2700,23 @@ function buildSessLineChart(last30, target, today){
     <span style="font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(144,139,176,0.6);letter-spacing:.08em;text-transform:uppercase;">Questions / Day</span>
     <span style="font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.18);">target <strong style="color:rgba(144,139,176,0.6);">${qTarget}</strong> · 30d <strong style="color:rgba(144,139,176,0.7);">${totalQues30Fmt}</strong></span>
   </div>
-  <svg viewBox="0 0 ${W} ${QH}" style="display:block;width:100%;overflow:visible;">
-    <defs>
-      <linearGradient id="${uid}qArea" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="rgba(144,139,176,0.25)"/>
-        <stop offset="100%" stop-color="rgba(144,139,176,0)"/>
-      </linearGradient>
-    </defs>
-    <line x1="${PL}" y1="${qTargetY.toFixed(1)}" x2="${(W-PR).toFixed(1)}" y2="${qTargetY.toFixed(1)}" stroke="rgba(144,139,176,0.18)" stroke-width="1" stroke-dasharray="4,3"/>
-    <text x="${(W-PR+3).toFixed(1)}" y="${(qTargetY+3).toFixed(1)}" font-size="7" font-family="JetBrains Mono,monospace" fill="rgba(144,139,176,0.3)">${qTarget}</text>
-    ${qAreaPath?`<path d="${qAreaPath}" fill="url(#${uid}qArea)" class="chart-area-anim"/>`:''}
-    ${qPath?`<path d="${qPath}" fill="none" stroke="rgba(144,139,176,0.7)" stroke-width="1.8" stroke-linecap="round" class="chart-line-anim" style="stroke-dasharray:${qPathLen};stroke-dashoffset:${qPathLen};animation:dashReveal 1.2s cubic-bezier(.16,1,.3,1) .5s forwards;"/>`:''}
-    ${dotsSVG}
-  </svg>
+  <div style="position:relative;">
+    <svg viewBox="0 0 ${W} ${QH}" style="display:block;width:100%;overflow:visible;">
+      <defs>
+        <linearGradient id="${uid}qArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(144,139,176,0.25)"/>
+          <stop offset="100%" stop-color="rgba(144,139,176,0)"/>
+        </linearGradient>
+      </defs>
+      <line x1="${PL}" y1="${qTargetY.toFixed(1)}" x2="${(W-PR).toFixed(1)}" y2="${qTargetY.toFixed(1)}" stroke="rgba(144,139,176,0.18)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="${(W-PR+3).toFixed(1)}" y="${(qTargetY+3).toFixed(1)}" font-size="7" font-family="JetBrains Mono,monospace" fill="rgba(144,139,176,0.3)">${qTarget}</text>
+      ${qAreaPath?`<path d="${qAreaPath}" fill="url(#${uid}qArea)" class="chart-area-anim"/>`:''}
+      ${qPath?`<path d="${qPath}" fill="none" stroke="rgba(144,139,176,0.7)" stroke-width="1.8" stroke-linecap="round" class="chart-line-anim" style="stroke-dasharray:${qPathLen};stroke-dashoffset:${qPathLen};animation:dashReveal 1.2s cubic-bezier(.16,1,.3,1) .5s forwards;"/>`:''}
+      ${dotsSVG}
+      ${qHitAreas}
+    </svg>
+    <div id="${uid}qtip" style="display:none;position:absolute;background:rgba(18,18,24,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 11px;pointer-events:none;z-index:99;min-width:120px;box-shadow:0 8px 24px rgba(0,0,0,0.5);backdrop-filter:blur(8px);"></div>
+  </div>
 </div>`;
   }
 
@@ -2703,13 +2741,11 @@ function buildSessLineChart(last30, target, today){
     </div>
   </div>`;
 
-  // ── Sessions label ──
   const sessLabel=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px;">
     <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(107,158,131,0.65);letter-spacing:.08em;text-transform:uppercase;">Sessions / Day</span>
     <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.2);">target <strong style="color:rgba(255,255,255,0.38);">${target}</strong> · 30d total <strong style="color:rgba(255,255,255,0.38);">${(Math.round(totalSess30*10)/10).toFixed(1)}</strong></span>
   </div>`;
 
-  // ── Legend ──
   const legend=`<div style="display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">
     <div style="display:flex;align-items:center;gap:5px;">
       <div style="width:10px;height:10px;border-radius:2px;background:linear-gradient(180deg,rgba(107,158,131,0.95),rgba(107,158,131,0.4));"></div>
@@ -2742,6 +2778,93 @@ function buildSessLineChart(last30, target, today){
   </div>
   ${legend}
 </div>`;
+}
+
+/* ── Chart tooltip handlers ── */
+function scShowTip(el, uid, mode){
+  const tipId = mode==='ques' ? uid+'qtip' : uid+'tip';
+  const tip = document.getElementById(tipId);
+  if(!tip) return;
+
+  const day     = el.dataset.day||'';
+  const isToday = el.dataset.istoday==='1';
+  const isSun   = el.dataset.issun==='1';
+
+  let html = '';
+
+  if(mode==='sess'){
+    const sess    = parseFloat(el.dataset.sess||'0');
+    const tgt     = parseFloat(el.dataset.target||'4');
+    const ques    = parseInt(el.dataset.ques||'0');
+    const focus   = parseInt(el.dataset.focus||'0');
+    const met     = sess>=tgt;
+    const fmtV    = v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
+    const sessCol = met?'#6b9e83':'#c2a359';
+    const dayLbl  = isToday?'<span style="font-size:8px;color:rgba(107,158,131,0.8);font-family:JetBrains Mono,monospace;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:3px;">Today</span>':'';
+    const sunNote = isSun?'<div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:4px;">Rest day</div>':'';
+
+    html = `${dayLbl}
+      <div style="font-size:10px;color:rgba(255,255,255,0.55);font-family:JetBrains Mono,monospace;margin-bottom:6px;">${day}</div>
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:2px;">
+        <span style="font-family:JetBrains Mono,monospace;font-size:18px;font-weight:300;color:${sessCol};letter-spacing:-.03em;line-height:1;">${fmtV(sess)}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.3);font-family:JetBrains Mono,monospace;">/ ${fmtV(tgt)} sessions</span>
+      </div>
+      <div style="width:100%;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;margin:5px 0;">
+        <div style="width:${Math.min(100,tgt>0?sess/tgt*100:0).toFixed(1)}%;height:100%;background:${sessCol};border-radius:1px;transition:width .3s;"></div>
+      </div>
+      ${focus>0?`<div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;">${focus}m focus${ques>0?' · '+ques+' ques':''}</div>`:(ques>0?`<div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;">${ques} questions</div>`:'')}
+      ${sunNote}`;
+  } else {
+    const ques    = parseInt(el.dataset.ques||'0');
+    const qtgt    = parseInt(el.dataset.qtarget||'70');
+    const focus   = parseInt(el.dataset.focus||'0');
+    const sess    = el.dataset.sess||'0';
+    const met     = ques>=qtgt;
+    const qCol    = met?'#6b9e83':'#908bb0';
+
+    html = `<div style="font-size:10px;color:rgba(255,255,255,0.55);font-family:JetBrains Mono,monospace;margin-bottom:6px;">${day}</div>
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:2px;">
+        <span style="font-family:JetBrains Mono,monospace;font-size:18px;font-weight:300;color:${qCol};letter-spacing:-.03em;line-height:1;">${ques}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.3);font-family:JetBrains Mono,monospace;">/ ${qtgt} questions</span>
+      </div>
+      <div style="width:100%;height:2px;background:rgba(255,255,255,0.08);border-radius:1px;margin:5px 0;">
+        <div style="width:${Math.min(100,qtgt>0?ques/qtgt*100:0).toFixed(1)}%;height:100%;background:${qCol};border-radius:1px;transition:width .3s;"></div>
+      </div>
+      ${sess!=='0'?`<div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;">${sess} sessions${focus>0?' · '+focus+'m focus':''}</div>`:''}`;
+  }
+
+  tip.innerHTML = html;
+  tip.style.display = 'block';
+
+  // Position: get SVG bounding rect relative to the tooltip's parent (position:relative div)
+  const svgEl = el.closest('svg');
+  const svgRect = svgEl ? svgEl.getBoundingClientRect() : null;
+  const parentRect = tip.parentElement.getBoundingClientRect();
+  if(svgRect && parentRect){
+    // el is an SVG rect — get its x from data
+    const hitX   = parseFloat(el.getAttribute('x'));
+    const hitW   = parseFloat(el.getAttribute('width'));
+    const svgW   = svgEl.viewBox.baseVal.width || 560;
+    const scaleX = svgRect.width / svgW;
+    // Centre of hit area in parent coords
+    const cx = svgRect.left - parentRect.left + (hitX + hitW/2)*scaleX;
+    const tipW = 160;
+    let left = cx - tipW/2;
+    // Clamp so it stays inside the container
+    const containerW = parentRect.width;
+    left = Math.max(4, Math.min(left, containerW - tipW - 4));
+    tip.style.left   = left+'px';
+    tip.style.bottom = (parentRect.bottom - svgRect.top + 8)+'px';
+    tip.style.top    = 'auto';
+    tip.style.width  = tipW+'px';
+  }
+}
+
+function scHideTip(uid){
+  ['tip','qtip'].forEach(s=>{
+    const t=document.getElementById(uid+s);
+    if(t) t.style.display='none';
+  });
 }
 
 /* ─── Focus & Activity Analytics Sections ─── */
@@ -2835,7 +2958,7 @@ function buildFocusActivitySections(today){
   let maxCellTasks=1;
   while(ptr<=gridLast){
     const d=new Date(ptr);
-    const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const k=localDateKey(d);
     const inMonth=d.getMonth()===hmMonth;
     const inTracker=d>=trackerStart&&d<=trackerEnd;
     const isPast=d<today;
@@ -2848,10 +2971,11 @@ function buildFocusActivitySections(today){
     ptr.setDate(ptr.getDate()+1);
   }
 
-  // Color scale for month heatmap — based purely on sessions done vs daily target
-  // 0 sessions (missed workday) = red, partial sessions = amber gradient,
-  // at/above target = full green. Smoothly interpolated across the full range.
-  // Sunday = no goal (ghost), future = subtle outline.
+  // Color scale for month heatmap — heavily back-loaded so good colours are EARNED.
+  // Ugly warning tones dominate 0–89% of the daily target.
+  // Only the final 10% (1 session left) gets a soft green.
+  // Full vivid green is reserved exclusively for hitting or beating the goal.
+  // This keeps constant visual pressure through the day and makes the reward feel real.
   const dailyGoal = Math.max(1, focusSettings.dailyTarget || 4);
   function hmTaskColor(cell){
     if(!cell.inMonth) return 'rgba(255,255,255,0.0)';
@@ -2859,15 +2983,15 @@ function buildFocusActivitySections(today){
     if(!cell.isPast&&!cell.isToday) return 'rgba(255,255,255,0.04)'; // future: muted
     const sess = cell.tasks.sessions || 0;
     if(sess === 0) return 'rgba(196,100,100,0.38)'; // MISSED — red
-    // Ratio of sessions done vs goal (clamped to 1.0 max)
     const r = Math.min(1.0, sess / dailyGoal);
-    // 5-step gradient: amber (low) → amber (mid) → green (decent) → green (good) → green (full)
-    // Each step covers 20% of the goal
-    if(r < 0.2)  return 'rgba(194,163,89,0.42)';  // 1/5 sessions — faint amber
-    if(r < 0.4)  return 'rgba(194,163,89,0.65)';  // 2/5 sessions — amber
-    if(r < 0.6)  return 'rgba(107,158,131,0.52)'; // 3/5 sessions — soft green
-    if(r < 0.8)  return 'rgba(107,158,131,0.75)'; // 4/5 sessions — green
-    return 'rgba(107,158,131,1.0)';                // 5/5 (at/above goal) — full green
+    // Back-loaded scale: 6 bands where the first 4 are ugly, band 5 is "almost", band 6 is goal
+    // Thresholds: 0–15% | 15–35% | 35–55% | 55–80% | 80–99% | 100%
+    if(r < 0.15) return 'rgba(180,130,60,0.28)';  // just started — very dim muddy amber
+    if(r < 0.35) return 'rgba(194,155,70,0.44)';  // low progress — dull amber
+    if(r < 0.55) return 'rgba(194,163,89,0.58)';  // mid — amber, still ugly
+    if(r < 0.80) return 'rgba(185,155,75,0.72)';  // getting close — amber-warm, still warning
+    if(r < 1.00) return 'rgba(107,158,131,0.52)'; // 1 session left — first hint of green, muted
+    return         'rgba(107,158,131,1.0)';        // GOAL MET — full vivid green, the reward
   }
 
   // Build 7 weeks × 7 days grid
@@ -2883,28 +3007,29 @@ function buildFocusActivitySections(today){
     const isSun=new Date(anaHmSelectedDay).getDay()===0;
     const dm=dayMap[anaHmSelectedDay];
     const fl=focusLogs[anaHmSelectedDay]; // focus log for that day
-    const daySess=parseInt(localStorage.getItem('fent_sessions_'+anaHmSelectedDay)||'0');
+    const daySess=parseFloat(localStorage.getItem('fent_sessions_'+anaHmSelectedDay)||'0');
     const dayQues=parseInt(localStorage.getItem('fent_ques_'+anaHmSelectedDay)||'0');
     // Load individual focus log entries
     let dayLogEntries=[];
     try{dayLogEntries=JSON.parse(localStorage.getItem('fent_focuslog_'+anaHmSelectedDay)||'[]');}catch{}
 
     function fmtS(s){const m=Math.floor(s/60);const h=Math.floor(m/60);return h>0?`${h}h ${m%60}m`:`${m}m`;}
+    const fmtSess=v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
+    const sessTarget=typeof focusSettings!=='undefined'?focusSettings.dailyTarget:4;
+    const sessMetCol=daySess>=sessTarget?'var(--c)':daySess>0?'var(--m)':'var(--t3)';
 
     if(isSun){
       detHTML=`<div class="month-hm-detail" id="${hmDetailId}">
         <div class="month-hm-detail-date">${dateLbl} · Sunday</div>
         <div style="font-size:11px;color:var(--t3);padding:4px 0;">${daySess>0||dayLogEntries.length>0?'Chose to study on rest day.':'Rest day — no sessions logged.'}</div>
-        ${daySess>0?`<div class="month-hm-detail-row"><span style="font-size:11px;color:var(--t2);flex:1;">Sessions</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--p);">${daySess}</span></div>`:''}
+        ${daySess>0?`<div class="month-hm-detail-row"><span style="font-size:11px;color:var(--t2);flex:1;">Sessions</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}</span></div>`:''}
         ${fl&&fl.totalSecs>0?`<div class="month-hm-detail-row"><span style="font-size:11px;color:var(--t2);flex:1;">Focus time</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c);">${fmtS(fl.totalSecs)}</span></div>`:''}
       </div>`;
     } else {
-      // Has session/focus data or task data
       const focusSecs=fl?fl.totalSecs:0;
       const hasFocus=focusSecs>0||daySess>0;
       const hasTasks=dm&&dm.total>0;
 
-      // Mini focus log entries
       const logEntriesHTML=dayLogEntries.slice(0,6).map(e=>{
         const chapCol={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'}[e.subj]||'var(--t3)';
         const taskCol={theory:'var(--m)',module:'var(--c)',pyq:'var(--p)',revision:'var(--red)'}[e.task]||'var(--t3)';
@@ -2916,7 +3041,14 @@ function buildFocusActivitySections(today){
         </div>`;
       }).join('');
 
+      // Sessions row — always shown when there's any focus activity; shows sess/target
+      const sessRowHTML=hasFocus?`<div class="month-hm-detail-row">
+          <span style="font-size:10px;color:var(--t3);flex:1;">Sessions</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}<span style="font-size:9px;color:var(--t3);opacity:.6;"> / ${sessTarget}</span></span>
+        </div>`:'';
+
       const statRowsHTML=`
+        ${sessRowHTML}
         ${hasFocus?`<div class="month-hm-detail-row">
           <span style="font-size:10px;color:var(--t3);flex:1;">Focus time</span>
           <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c);">${focusSecs>0?fmtS(focusSecs):'—'}</span>
@@ -2968,7 +3100,7 @@ function buildFocusActivitySections(today){
     ${detHTML}
     <div style="display:flex;align-items:center;gap:4px;margin-top:10px;flex-wrap:wrap;">
       <span style="font-size:7.5px;color:rgba(255,255,255,0.18);font-family:'JetBrains Mono',monospace;">Missed</span>
-      ${['rgba(196,100,100,0.38)','rgba(194,163,89,0.42)','rgba(194,163,89,0.65)','rgba(107,158,131,0.52)','rgba(107,158,131,0.75)','rgba(107,158,131,1.0)'].map(c=>`<div style="width:9px;height:9px;border-radius:2px;background:${c};flex-shrink:0;"></div>`).join('')}
+      ${['rgba(196,100,100,0.38)','rgba(180,130,60,0.28)','rgba(194,155,70,0.44)','rgba(194,163,89,0.58)','rgba(185,155,75,0.72)','rgba(107,158,131,0.52)','rgba(107,158,131,1.0)'].map(c=>`<div style="width:9px;height:9px;border-radius:2px;background:${c};flex-shrink:0;"></div>`).join('')}
       <span style="font-size:7.5px;color:rgba(255,255,255,0.18);font-family:'JetBrains Mono',monospace;">Goal</span>
       <div style="margin-left:auto;display:flex;align-items:center;gap:5px;">
         <div style="width:9px;height:9px;border-radius:2px;background:rgba(255,255,255,0.015);flex-shrink:0;"></div>
@@ -3568,10 +3700,10 @@ function focusLogQues(){
   if(isNaN(n)||n<=0){toast('Enter a number of questions');return;}
   const total=addTodayQues(n);
   inp.value='';
-  // Update total display in-place without full re-render
-  const totalEl=document.querySelector('.focus-ques-total');
-  if(totalEl) totalEl.innerHTML=total+'<br><span style="font-size:8px;">today</span>';
   toast('✓ '+n+' questions logged — '+total+' total today');
+  // Re-render focus panel to update the ques display, and analytics if open
+  renderFocus();
+  if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
 }
 
 function commitFocusSegment(){
