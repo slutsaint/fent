@@ -3360,18 +3360,19 @@ function localDateKey(d){
   return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
 }
 
-// Today's focus log (persisted per day)
-const TODAY_KEY='fent_focuslog_'+localDateKey();
-function getTodayLog(){try{return JSON.parse(localStorage.getItem(TODAY_KEY)||'[]')}catch{return[]}}
-function saveTodayLog(l){try{localStorage.setItem(TODAY_KEY,JSON.stringify(l))}catch{}}
+// Today's focus log — key computed fresh on every call so midnight rollover works
+// even if the tab has been open for hours. NEVER cache this as a module constant.
+function todayFocusKey(){ return 'fent_focuslog_'+localDateKey(); }
+function getTodayLog(){try{return JSON.parse(localStorage.getItem(todayFocusKey())||'[]');}catch{return[];}}
+function saveTodayLog(l){try{localStorage.setItem(todayFocusKey(),JSON.stringify(l));}catch{}}
 
-// Questions tracking — persisted per day under 'fent_ques_YYYY-MM-DD'
-const TODAY_QUES_KEY='fent_ques_'+localDateKey();
-function getTodayQues(){try{return parseInt(localStorage.getItem(TODAY_QUES_KEY)||'0');}catch{return 0;}}
+// Questions tracking — same dynamic-key pattern
+function todayQuesKey(){ return 'fent_ques_'+localDateKey(); }
+function getTodayQues(){try{return parseInt(localStorage.getItem(todayQuesKey())||'0');}catch{return 0;}}
 function addTodayQues(n){
   const cur=getTodayQues();
   const next=Math.max(0,cur+n);
-  try{localStorage.setItem(TODAY_QUES_KEY,next);}catch{}
+  try{localStorage.setItem(todayQuesKey(),next);}catch{}
   return next;
 }
 
