@@ -3376,7 +3376,125 @@ function addTodayQues(n){
   return next;
 }
 
-// Build ALL chapters for search
+
+// ── Crash / unexpected-close recovery ──────────────────────────────────────
+// We save a lightweight snapshot to localStorage on every timer tick and on
+// page-hide events. If the tab is force-closed, killed, or crashes while a
+// session is running, the next page load detects the snapshot and credits
+// whatever study time had elapsed before the close.
+//
+// Design principles:
+//  • Snapshot is deleted immediately on read — no double-counting ever.
+//  • Only session mode earns credit; breaks do not.
+//  • Minimum 5% of session must have elapsed to register (avoids noise).
+//  • Snapshots older than 4 hours are ignored (user clearly stopped deliberately).
+//  • Deliberate user actions (Reset, Skip, Pause) clear the snapshot explicitly.
+//  • The snapshot key is separate from all other keys — zero risk of corruption.
+
+const CRASH_SNAP_KEY = 'fent_crash_snap';
+const CRASH_MAX_AGE_MS = 4 * 60 * 60 * 1000; // 4 hours
+
+function saveCrashSnap(){
+  const T = focusTimer;
+  if(!T.running) return; // only save while timer is actively running
+  try {
+    const snap = {
+      running:       T.running,
+      mode:          T.mode,
+      endAt:         T.endAt,          // absolute ms timestamp when mode ends
+      totalSeconds:  T.totalSeconds,
+      cycleSessions: T.cycleSessions,
+      segStart:      T.segStart,       // ms timestamp when study segment started
+      currentChap:   T.currentChap,
+      currentTask:   T.currentTask,
+      savedAt:       Date.now()
+    };
+    localStorage.setItem(CRASH_SNAP_KEY, JSON.stringify(snap));
+  } catch(e){}
+}
+
+function clearCrashSnap(){
+  try { localStorage.removeItem(CRASH_SNAP_KEY); } catch(e){}
+}
+
+function recoverFromCrash(){
+  let snap;
+  try {
+    const raw = localStorage.getItem(CRASH_SNAP_KEY);
+    if(!raw) return;
+    snap = JSON.parse(raw);
+  } catch(e){ clearCrashSnap(); return; }
+
+  // Always delete immediately — prevents any possibility of double-counting
+  clearCrashSnap();
+
+  if(!snap || !snap.running) return;                          // was paused — nothing to recover
+  if(snap.mode !== 'session') return;                         // only sessions earn credit
+  const age = Date.now() - (snap.savedAt || 0);
+  if(age > CRASH_MAX_AGE_MS) return;                          // too stale — user stopped deliberately
+
+  const totalSecs = snap.totalSeconds || (focusSettings.sessionMins * 60);
+
+  // Compute how many seconds of the session had elapsed at the moment of close.
+  // endAt is the absolute timestamp when the session would finish.
+  // elapsed = totalSeconds − secondsRemaining = totalSeconds − (endAt − savedAt)/1000
+  // Clamp to [0, totalSeconds].
+  let elapsed = 0;
+  if(snap.endAt && snap.savedAt) {
+    const remainingAtClose = Math.max(0, (snap.endAt - snap.savedAt) / 1000);
+    elapsed = Math.max(0, totalSecs - remainingAtClose);
+  }
+
+  const fraction = totalSecs > 0 ? elapsed / totalSecs : 0;
+
+  // ── Credit the study log segment ──────────────────────────────────────────
+  // If segStart is present and the chapter/task are known, log the elapsed time
+  // as a focus segment — same path as commitFocusSegment.
+  if(snap.segStart && snap.currentChap && snap.currentTask && elapsed > 5) {
+    try {
+      const secs = Math.floor(elapsed);
+      const log = getTodayLog();
+      const idx = log.findIndex(e =>
+        e.subj === snap.currentChap.subj &&
+        e.chapN === snap.currentChap.n &&
+        e.task === snap.currentTask
+      );
+      if(idx >= 0) {
+        log[idx].durationSecs += secs;
+      } else {
+        log.push({
+          chapName:    snap.currentChap.name,
+          subj:        snap.currentChap.subj,
+          chapN:       snap.currentChap.n,
+          task:        snap.currentTask,
+          durationSecs: secs
+        });
+      }
+      saveTodayLog(log);
+    } catch(e){}
+  }
+
+  // ── Credit partial/full session ───────────────────────────────────────────
+  // Full session: elapsed ≥ 95% of totalSeconds → credit 1.0 (same as natural end)
+  // Partial:      elapsed ≥ 5%  of totalSeconds → credit the fraction (max 0.9)
+  // Below 5%: too small — ignore.
+  if(fraction >= 0.95) {
+    // Full session — same credit as focusOnModeEnd
+    const todaySessKey = 'fent_sessions_' + localDateKey();
+    const cur = parseFloat(localStorage.getItem(todaySessKey) || '0');
+    localStorage.setItem(todaySessKey, Math.round((cur + 1.0) * 10) / 10);
+  } else if(fraction >= 0.05) {
+    // Partial — same credit logic as focusSkip
+    const partial = Math.min(0.9, fraction);
+    const todaySessKey = 'fent_sessions_' + localDateKey();
+    const cur = parseFloat(localStorage.getItem(todaySessKey) || '0');
+    localStorage.setItem(todaySessKey, Math.round((cur + partial) * 10) / 10);
+  }
+  // fraction < 0.05 → too little, nothing credited
+}
+// ── End crash recovery ──────────────────────────────────────────────────────
+
+
 function getAllChapters(){
   const all=[];
   MATH.forEach(ch=>all.push({subj:'math',n:ch.n,name:ch.name}));
@@ -3748,6 +3866,7 @@ function focusToggle(){
     T.segStart=null;
     clearInterval(T.intervalId);
     T.intervalId=null;
+    clearCrashSnap(); // deliberate pause — if closed now, no partial credit (segment already committed)
   }
   renderFocus();
 }
@@ -3761,9 +3880,11 @@ function focusStartInterval(){
     const remaining=Math.ceil((T.endAt-Date.now())/1000);
     if(remaining<=0){
       T.secondsLeft=0;
+      clearCrashSnap(); // session completed normally — no crash recovery needed
       focusOnModeEnd();
     } else {
       T.secondsLeft=remaining;
+      saveCrashSnap();  // keep snapshot fresh every tick
       updateFocusClockFast();
     }
   },500); // 500ms tick so we catch the exact end moment quickly even if one tick is late
@@ -3855,6 +3976,7 @@ function focusSkip(){
   commitFocusSegment();
   clearInterval(T.intervalId);
   T.intervalId=null;
+  clearCrashSnap(); // deliberate skip — no crash recovery on next load
   if(T.mode==='session'){
     // Calculate how much of the session was completed (for partial credit)
     // secondsLeft tells us how much is REMAINING; totalSeconds is the full session.
@@ -3898,6 +4020,7 @@ function focusReset(){
   commitFocusSegment();
   clearInterval(T.intervalId);
   T.intervalId=null;
+  clearCrashSnap(); // deliberate reset — no recovery on next load
   T.mode='session';
   T.running=false;
   T.cycleSessions=0;
@@ -5232,6 +5355,18 @@ function resetTestSchedule(){
 
 // ── INIT (must run after all functions defined) ──
 loadCalibration();
+// ── Crash recovery — must run before any UI renders ──
+recoverFromCrash();
+
+// ── Page-hide / beforeunload: save snapshot whenever tab might be closing ──
+// 'visibilitychange' fires on tab switch, phone lock screen, force-close.
+// 'beforeunload'/'pagehide' fire on close/navigate. Using both covers all browsers.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'hidden') saveCrashSnap();
+});
+window.addEventListener('pagehide', saveCrashSnap);
+// beforeunload is a best-effort fallback; pagehide is more reliable on mobile
+window.addEventListener('beforeunload', saveCrashSnap);
 (function(){
   const newTests = buildCustomTestSchedule();
   TESTS.length = 0;
