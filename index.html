@@ -2464,14 +2464,54 @@ function buildSessLineChart(last30, target, today){
     }
   }catch(e){}
 
-  const missedDays=pastWork.filter(d=>{
-    if(d.d>=today||d.sess>0) return false;
-    if(!firstEffortDate) return false;
-    return d.d>=firstEffortDate;
-  }).length;
   const totalSess30=days.reduce((a,d)=>a+d.sess,0);
   const totalQues30=days.reduce((a,d)=>a+d.ques,0);
-  const hasQues=totalQues30>0;
+  const hasQuesData=totalQues30>0;
+
+  // ── Wasted sessions (not days) — computed across ALL history, not just 30d window ──
+  // For every workday (non-Sunday) from firstEffortDate up to (not including) today,
+  // wasted += max(0, target - sessionsActuallyDone). Partial days count as partial waste.
+  let wastedSessions = 0;
+  if(firstEffortDate){
+    // Iterate over every calendar day from firstEffortDate to yesterday
+    const yesterday = new Date(today); yesterday.setDate(today.getDate()-1); yesterday.setHours(0,0,0,0);
+    const cursor = new Date(firstEffortDate);
+    while(cursor <= yesterday){
+      const isSunCursor = cursor.getDay() === 0;
+      if(!isSunCursor){
+        const k = localDateKey(cursor);
+        const done = parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
+        const short = Math.max(0, target - done);
+        wastedSessions += short;
+      }
+      cursor.setDate(cursor.getDate()+1);
+    }
+    wastedSessions = Math.round(wastedSessions * 10) / 10; // 1 decimal
+  }
+
+  // ── Questions behind + days to cover ──
+  // Expected ques = every workday from firstEffortDate to today × qTarget
+  // Actual ques   = sum of all fent_ques_* since firstEffortDate (incl today)
+  let quesBehind = 0;
+  let daysToCover = 0;
+  if(firstEffortDate && hasQuesData){
+    let expectedQues = 0;
+    let actualQues = 0;
+    const cursorQ = new Date(firstEffortDate);
+    const todayEnd = new Date(today); todayEnd.setHours(23,59,59,999);
+    while(cursorQ <= todayEnd){
+      const isSunCursorQ = cursorQ.getDay() === 0;
+      const k = localDateKey(cursorQ);
+      if(!isSunCursorQ) expectedQues += qTarget;
+      const done = parseInt(localStorage.getItem('fent_ques_'+k)||'0');
+      actualQues += done;
+      cursorQ.setDate(cursorQ.getDate()+1);
+    }
+    quesBehind = Math.max(0, expectedQues - actualQues);
+    // Days to cover at current daily target (qTarget ques/day on workdays)
+    // = ceil(quesBehind / qTarget), but only counting workdays
+    daysToCover = qTarget > 0 ? Math.ceil(quesBehind / qTarget) : 0;
+  }
 
   // Streak
   let streak=0;
@@ -2649,7 +2689,7 @@ function buildSessLineChart(last30, target, today){
 
   // ── Questions panel ──
   let quesPanel='';
-  if(hasQues){
+  if(hasQuesData){
     const QH=80, QPT=10, QPB=18;
     const qPlotH=QH-QPT-QPB;
     const maxQ=Math.max(qTarget+Math.ceil(qTarget*0.15),...days.map(d=>d.ques),1);
@@ -2721,25 +2761,41 @@ function buildSessLineChart(last30, target, today){
   }
 
   // ── Stat pills ──
+  const fmtSessVal2=v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
   const streakCol=streak>=5?'var(--c)':streak>=2?'var(--m)':'var(--t3)';
-  const wastedCol=missedDays===0?'var(--c)':missedDays<=3?'var(--m)':'var(--red)';
+  const wastedCol=wastedSessions===0?'var(--c)':wastedSessions<=target*2?'var(--m)':'var(--red)';
   const onTargetPct=pastWork.length>0?Math.round(metDays/pastWork.length*100):0;
   const onTargetCol=onTargetPct>=80?'var(--c)':onTargetPct>=50?'var(--m)':'var(--t3)';
 
-  const statPills=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+  // Ques catch-up strip — only shown when user has logged questions and is behind
+  const quesCatchupStrip = (hasQuesData && quesBehind > 0) ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(144,139,176,0.08);border:1px solid rgba(144,139,176,0.14);border-radius:7px;padding:8px 12px;margin-bottom:14px;animation:fadeUp .4s var(--ease) .2s both;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:5px;height:5px;border-radius:50%;background:rgba(144,139,176,0.7);flex-shrink:0;"></div>
+        <span style="font-size:9px;color:rgba(144,139,176,0.75);font-family:'JetBrains Mono',monospace;letter-spacing:.04em;">${quesBehind.toLocaleString()} ques behind</span>
+      </div>
+      <span style="font-size:9px;color:rgba(144,139,176,0.5);font-family:'JetBrains Mono',monospace;">${daysToCover} study day${daysToCover!==1?'s':''} to cover</span>
+    </div>` : (hasQuesData && quesBehind===0 ? `
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(107,158,131,0.07);border:1px solid rgba(107,158,131,0.14);border-radius:7px;padding:8px 12px;margin-bottom:14px;animation:fadeUp .4s var(--ease) .2s both;">
+      <div style="width:5px;height:5px;border-radius:50%;background:var(--c);flex-shrink:0;"></div>
+      <span style="font-size:9px;color:rgba(107,158,131,0.8);font-family:'JetBrains Mono',monospace;letter-spacing:.04em;">All caught up on questions</span>
+    </div>` : '');
+
+  const statPills=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:${(hasQuesData&&quesBehind>=0)?'10px':'16px'};">
     <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;animation:fadeUp .4s var(--ease) .05s both;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:300;color:${streakCol};letter-spacing:-.04em;line-height:1;">${streak}</div>
       <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;">streak</div>
     </div>
     <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;animation:fadeUp .4s var(--ease) .1s both;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:300;color:${wastedCol};letter-spacing:-.04em;line-height:1;">${missedDays}</div>
-      <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;">wasted</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:${wastedSessions>=100?'20':'26'}px;font-weight:300;color:${wastedCol};letter-spacing:-.04em;line-height:1;">${firstEffortDate?fmtSessVal2(wastedSessions):'—'}</div>
+      <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;">sess wasted</div>
     </div>
     <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;animation:fadeUp .4s var(--ease) .15s both;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:300;color:${onTargetCol};letter-spacing:-.04em;line-height:1;">${onTargetPct}<span style="font-size:14px;opacity:.6;">%</span></div>
       <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;">on target</div>
     </div>
-  </div>`;
+  </div>
+  ${quesCatchupStrip}`;
 
   const sessLabel=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px;">
     <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(107,158,131,0.65);letter-spacing:.08em;text-transform:uppercase;">Sessions / Day</span>
@@ -2759,7 +2815,7 @@ function buildSessLineChart(last30, target, today){
       <div style="width:16px;height:1.5px;background:rgba(255,255,255,0.45);border-radius:1px;"></div>
       <span style="font-size:8px;color:var(--t3);font-family:'JetBrains Mono',monospace;">trend</span>
     </div>
-    ${hasQues?`<div style="display:flex;align-items:center;gap:5px;">
+    ${hasQuesData?`<div style="display:flex;align-items:center;gap:5px;">
       <div style="width:16px;height:1.5px;background:rgba(144,139,176,0.65);border-radius:1px;"></div>
       <span style="font-size:8px;color:var(--t3);font-family:'JetBrains Mono',monospace;">questions</span>
     </div>`:''}
