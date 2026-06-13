@@ -1471,8 +1471,14 @@ function stats(){
   const pCD=PHYS.filter(ch=>isDone('phys',ch.n)).length;
   const tot=mCD+cCD+pCD;
   const max=MATH.length+CHEM.length+PHYS.length;
-  
-  document.getElementById('mPct').textContent=Math.round((tot/max)*100||0)+'%';
+
+  // Overall Progress % = tasks ticked ÷ total tasks (same as dashboard Syllabus block)
+  // Each chapter has 4 tasks: theory, module, pyq, revision
+  const allChapsList=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
+  const totalTasksDone=allChapsList.reduce((a,{s,ch})=>a+tc(s,ch.n),0);
+  const totalTasksAll=max*4;
+  document.getElementById('mPct').textContent=Math.round((totalTasksDone/totalTasksAll)*100||0)+'%';
+
   document.getElementById('scM').textContent=mCD+' / '+MATH.length;
   document.getElementById('scC').textContent=cCD+' / '+CHEM.length;
   document.getElementById('scP').textContent=pCD+' / '+PHYS.length;
@@ -1889,7 +1895,11 @@ function renderAnalytics(){
   let html='';
 
   /* 1 ── Chapter Progress (3 Individual Subject Rings) */
-  const overallPct=Math.round(totalDone/totalChaps*100)||0;
+  // overallPct = tasks ticked ÷ total tasks — consistent with dashboard Syllabus block and header mPct
+  const allChapsList2=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
+  const totalTasksDoneAna=allChapsList2.reduce((a,{s,ch})=>a+tc(s,ch.n),0);
+  const totalTasksAllAna=totalChaps*4;
+  const overallPct=Math.round(totalTasksDoneAna/totalTasksAllAna*100)||0;
   const subjData=[
     {l:'Mathematics',d:mDone,t:MATH.length,color:'#c2a359',colorRgb:'194,163,89'},
     {l:'Chemistry',  d:cDone,t:CHEM.length,color:'#6b9e83',colorRgb:'107,158,131'},
@@ -1959,7 +1969,7 @@ function renderAnalytics(){
   html+=`<div class="ana-section">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px;">
     <span class="ana-sect-title" style="margin-bottom:0;">Chapter Progress</span>
-    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);font-weight:300;">${totalDone}/${totalChaps} · ${overallPct}% overall</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);font-weight:300;">${totalTasksDoneAna}/${totalTasksAllAna} tasks · ${overallPct}% overall</span>
   </div>
   <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;">
     ${ringCards}
@@ -2513,7 +2523,67 @@ function buildSessLineChart(last30, target, today){
     daysToCover = qTarget > 0 ? Math.ceil(quesBehind / qTarget) : 0;
   }
 
-  // Streak
+  // ── Wasted questions — same logic as wasted sessions ──
+  // For every workday (non-Sunday) from firstEffortDate to yesterday,
+  // wastedQues += max(0, qTarget - quesDoneThisDay)
+  let wastedQues = 0;
+  if(firstEffortDate && qTarget > 0){
+    const yesterdayQ = new Date(today); yesterdayQ.setDate(today.getDate()-1); yesterdayQ.setHours(0,0,0,0);
+    const cursorWQ = new Date(firstEffortDate);
+    while(cursorWQ <= yesterdayQ){
+      if(cursorWQ.getDay() !== 0){ // skip Sundays
+        const k = localDateKey(cursorWQ);
+        const done = parseInt(localStorage.getItem('fent_ques_'+k)||'0');
+        wastedQues += Math.max(0, qTarget - done);
+      }
+      cursorWQ.setDate(cursorWQ.getDate()+1);
+    }
+    wastedQues = Math.round(wastedQues);
+  }
+
+  // ── Dashboard metrics — customization-safe (reads live focusSettings) ──
+  // Total sessions done all-time
+  let totalSessAllTime = 0;
+  try{ Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{
+    totalSessAllTime += parseFloat(localStorage.getItem(k)||'0');
+  }); totalSessAllTime = Math.round(totalSessAllTime*10)/10; }catch{}
+
+  // Total ques done all-time
+  let totalQuesAllTime = 0;
+  try{ Object.keys(localStorage).filter(k=>k.startsWith('fent_ques_')).forEach(k=>{
+    totalQuesAllTime += parseInt(localStorage.getItem(k)||'0');
+  }); }catch{}
+
+  // Active workdays since firstEffortDate (non-Sundays up to and including today)
+  let activeWorkdays = 0;
+  if(firstEffortDate){
+    const cursorAW = new Date(firstEffortDate);
+    while(cursorAW <= today){
+      if(cursorAW.getDay() !== 0) activeWorkdays++;
+      cursorAW.setDate(cursorAW.getDate()+1);
+    }
+  }
+
+  // Total sessions expected all-time
+  const totalSessExpected = firstEffortDate ? Math.round(activeWorkdays * target * 10)/10 : 0;
+
+  // Average sessions per workday (from real history, fallback to target)
+  const avgSessPerDay = activeWorkdays > 0 ? Math.round((totalSessAllTime / activeWorkdays)*10)/10 : target;
+
+  // Syllabus completion — tasks done vs total (4 tasks per chapter)
+  const allChaps = [...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
+  const totalTasks = allChaps.length * 4; // theory+module+pyq+revision
+  let tasksDone = 0;
+  allChaps.forEach(({s,ch})=>{ tasksDone += tc(s,ch.n); });
+  const tasksRemaining = Math.max(0, totalTasks - tasksDone);
+  const syllabusCompletePct = totalTasks > 0 ? Math.round(tasksDone/totalTasks*100) : 0;
+
+  // Days to finish syllabus — estimate based on avg tasks completed per workday
+  // avg tasks/workday from history
+  const avgTasksPerDay = activeWorkdays > 0 ? tasksDone / activeWorkdays : 0;
+  const daysToFinishSyllabus = avgTasksPerDay > 0
+    ? Math.ceil(tasksRemaining / avgTasksPerDay)
+    : (target > 0 ? Math.ceil(tasksRemaining / (target * 3)) : null); // fallback: assume 3 tasks per session
   let streak=0;
   for(let i=days.length-1;i>=0;i--){
     const d=days[i];
@@ -2802,6 +2872,129 @@ function buildSessLineChart(last30, target, today){
     <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.2);">target <strong style="color:rgba(255,255,255,0.38);">${target}</strong> · 30d total <strong style="color:rgba(255,255,255,0.38);">${(Math.round(totalSess30*10)/10).toFixed(1)}</strong></span>
   </div>`;
 
+  // ── Dashboard panel ─────────────────────────────────────────────────────────
+  // Collapsible detail card with all metrics. Toggle via the header row.
+  const dashId = uid+'dash';
+  const fmtNum = n => n>=10000?(n/1000).toFixed(1)+'k':n>=1000?(n/1000).toFixed(1)+'k':String(n);
+  const fmtSV  = v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
+
+  // Sessions block
+  const sessExpFmt   = fmtSV(totalSessExpected);
+  const sessActFmt   = fmtSV(totalSessAllTime);
+  const sessWasteFmt = fmtSV(wastedSessions);
+  const sessEffPct   = totalSessExpected>0 ? Math.round(totalSessAllTime/totalSessExpected*100) : 0;
+
+  // Questions block
+  const qDoneF   = fmtNum(totalQuesAllTime);
+  const qWasteF  = fmtNum(wastedQues);
+  const qBehindF = fmtNum(quesBehind);
+  const qDaysCov = daysToCover;
+
+  // Syllabus block
+  const sylPct    = syllabusCompletePct;
+  const sylDays   = daysToFinishSyllabus;
+  const avgSFmt   = fmtSV(avgSessPerDay);
+  const daysActive= activeWorkdays;
+
+  // Mini bar helper
+  const miniBar=(pct,col)=>`<div style="width:100%;height:3px;background:rgba(255,255,255,0.07);border-radius:2px;margin-top:5px;overflow:hidden;">
+    <div style="width:${Math.min(100,pct)}%;height:100%;background:${col};border-radius:2px;transition:width .8s cubic-bezier(.16,1,.3,1);"></div>
+  </div>`;
+
+  const dashPanel=`
+  <div style="margin-bottom:14px;background:rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.07);border-radius:9px;overflow:hidden;animation:fadeUp .4s var(--ease) .18s both;">
+    <!-- Toggle header -->
+    <div onclick="(function(){const d=document.getElementById('${dashId}');const a=document.getElementById('${dashId}arr');const open=d.style.maxHeight&&d.style.maxHeight!=='0px';d.style.maxHeight=open?'0px':'400px';d.style.opacity=open?'0':'1';a.style.transform=open?'rotate(0deg)':'rotate(180deg)';})()" style="display:flex;align-items:center;justify-content:space-between;padding:9px 13px;cursor:pointer;user-select:none;">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;opacity:.6;">
+          <div style="width:4px;height:4px;border-radius:1px;background:var(--c);"></div>
+          <div style="width:4px;height:4px;border-radius:1px;background:var(--m);"></div>
+          <div style="width:4px;height:4px;border-radius:1px;background:var(--p);"></div>
+          <div style="width:4px;height:4px;border-radius:1px;background:rgba(144,139,176,0.7);"></div>
+        </div>
+        <span style="font-size:8.5px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.35);letter-spacing:.08em;text-transform:uppercase;">Full Dashboard</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.18);">${sylPct}% syllabus · ${daysActive} days active</span>
+        <svg id="${dashId}arr" viewBox="0 0 10 6" width="10" height="6" style="transition:transform .3s cubic-bezier(.16,1,.3,1);flex-shrink:0;"><path d="M1 1l4 4 4-4" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+
+    <!-- Expandable body -->
+    <div id="${dashId}" style="max-height:0;opacity:0;overflow:hidden;transition:max-height .45s cubic-bezier(.16,1,.3,1),opacity .3s ease;">
+      <div style="padding:0 13px 13px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+
+        <!-- Sessions block -->
+        <div style="background:rgba(107,158,131,0.06);border:1px solid rgba(107,158,131,0.12);border-radius:7px;padding:10px;">
+          <div style="font-size:7.5px;color:rgba(107,158,131,0.6);font-family:'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Sessions</div>
+          <div style="margin-bottom:6px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--c);letter-spacing:-.03em;line-height:1;">${sessActFmt}</div>
+            <div style="font-size:8px;color:var(--t3);margin-top:1px;">done / ${sessExpFmt} expected</div>
+            ${miniBar(sessEffPct,'rgba(107,158,131,0.8)')}
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:${wastedSessions===0?'var(--c)':wastedSessions<=target*3?'var(--m)':'var(--red)'};letter-spacing:-.02em;">${sessWasteFmt}</div>
+              <div style="font-size:7px;color:var(--t3);margin-top:1px;">wasted</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:rgba(255,255,255,0.4);">${target>0?Math.ceil(wastedSessions/target):'—'}</div>
+              <div style="font-size:7px;color:var(--t3);margin-top:1px;">days to cover</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Questions block -->
+        <div style="background:rgba(144,139,176,0.06);border:1px solid rgba(144,139,176,0.12);border-radius:7px;padding:10px;">
+          <div style="font-size:7.5px;color:rgba(144,139,176,0.6);font-family:'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Questions</div>
+          ${totalQuesAllTime>0?`
+          <div style="margin-bottom:6px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:rgba(144,139,176,0.9);letter-spacing:-.03em;line-height:1;">${qDoneF}</div>
+            <div style="font-size:8px;color:var(--t3);margin-top:1px;">done total</div>
+            ${miniBar(Math.min(100,totalQuesAllTime/Math.max(1,totalQuesAllTime+quesBehind)*100),'rgba(144,139,176,0.75)')}
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:${wastedQues===0?'var(--c)':wastedQues<=qTarget*5?'var(--m)':'var(--red)'};letter-spacing:-.02em;">${qWasteF}</div>
+              <div style="font-size:7px;color:var(--t3);margin-top:1px;">wasted</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:${quesBehind===0?'var(--c)':'rgba(194,163,89,0.9)'};letter-spacing:-.02em;">${quesBehind===0?'✓':qBehindF}</div>
+              <div style="font-size:7px;color:var(--t3);margin-top:1px;">${quesBehind===0?'caught up':'behind'}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:rgba(255,255,255,0.4);letter-spacing:-.02em;">${qTarget>0?Math.ceil(wastedQues/qTarget):'—'}</div>
+              <div style="font-size:7px;color:var(--t3);margin-top:1px;">days to cover</div>
+            </div>
+          </div>
+          ${quesBehind>0&&qDaysCov>0?`<div style="margin-top:7px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05);font-size:7.5px;color:rgba(144,139,176,0.5);font-family:'JetBrains Mono',monospace;">${qDaysCov} day${qDaysCov!==1?'s':''} to clear backlog</div>`:''}
+          `:`<div style="font-size:8px;color:var(--t3);padding-top:4px;">No questions<br>logged yet</div>`}
+        </div>
+
+        <!-- Syllabus block -->
+        <div style="background:rgba(194,163,89,0.05);border:1px solid rgba(194,163,89,0.1);border-radius:7px;padding:10px;">
+          <div style="font-size:7.5px;color:rgba(194,163,89,0.6);font-family:'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Syllabus</div>
+          <div style="margin-bottom:6px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--m);letter-spacing:-.03em;line-height:1;">${sylPct}<span style="font-size:12px;opacity:.6;">%</span></div>
+            <div style="font-size:8px;color:var(--t3);margin-top:1px;">${tasksDone} / ${totalTasks} tasks</div>
+            ${miniBar(sylPct,'rgba(194,163,89,0.75)')}
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:rgba(255,255,255,0.45);letter-spacing:-.02em;">${tasksRemaining}</div>
+              <div style="font-size:7px;color:var(--t3);margin-top:1px;">remaining</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:rgba(194,163,89,0.8);letter-spacing:-.02em;">${sylDays!==null?'~'+sylDays:'—'}</div>
+              <div style="font-size:7px;color:var(--t3);margin-top:1px;">days est.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>`;
+
   const legend=`<div style="display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">
     <div style="display:flex;align-items:center;gap:5px;">
       <div style="width:10px;height:10px;border-radius:2px;background:linear-gradient(180deg,rgba(107,158,131,0.95),rgba(107,158,131,0.4));"></div>
@@ -2827,6 +3020,7 @@ function buildSessLineChart(last30, target, today){
     <span class="ana-sect-title" style="margin-bottom:0;">Progress — Last 30 Days</span>
   </div>
   ${statPills}
+  ${dashPanel}
   <div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:14px 12px 10px;">
     ${sessLabel}
     ${sessChartSVG}
@@ -3382,6 +3576,9 @@ function loadFocus(){try{return JSON.parse(localStorage.getItem(FOCUS_KEY)||'{}'
 function saveFocus(d){try{localStorage.setItem(FOCUS_KEY,JSON.stringify(d))}catch{}}
 
 // Default settings
+// ⚠️ TEST FILE — session=10s, breaks=5s
+const TEST_SESSION_SECS=10;
+const TEST_BREAK_SECS=5;
 let focusSettings = Object.assign({
   sessionMins:90,
   shortBreakMins:15,
@@ -3397,8 +3594,8 @@ let focusTimer = {
   mode:'session', // 'session'|'short'|'long'
   sessionCount:0,  // completed sessions today
   cycleSessions:0, // sessions in current cycle (resets after long break)
-  secondsLeft:focusSettings.sessionMins*60,
-  totalSeconds:focusSettings.sessionMins*60,
+  secondsLeft:TEST_SESSION_SECS,
+  totalSeconds:TEST_SESSION_SECS,
   intervalId:null,
   endAt:null,        // absolute Date.now() timestamp when current mode ends — drift-proof
   // Log state
@@ -4000,23 +4197,23 @@ function focusOnModeEnd(){
       // Long break
       T.mode='long';
       T.cycleSessions=0;
-      T.secondsLeft=focusSettings.longBreakMins*60;
-      T.totalSeconds=focusSettings.longBreakMins*60;
-      toast('🎉 Long Break! '+focusSettings.longBreakMins+'m');
+      T.secondsLeft=TEST_BREAK_SECS;
+      T.totalSeconds=TEST_BREAK_SECS;
+      toast('🎉 Long Break! 5s');
     } else {
       // Short break
       T.mode='short';
-      T.secondsLeft=focusSettings.shortBreakMins*60;
-      T.totalSeconds=focusSettings.shortBreakMins*60;
-      toast('Session done! Short break '+focusSettings.shortBreakMins+'m');
+      T.secondsLeft=TEST_BREAK_SECS;
+      T.totalSeconds=TEST_BREAK_SECS;
+      toast('Session done! Short break 5s');
     }
     // Auto-continue break timer (no focus logging during break)
     focusStartInterval();
   } else {
     // Break ended — start new session, resume logging NOW
     T.mode='session';
-    T.secondsLeft=focusSettings.sessionMins*60;
-    T.totalSeconds=focusSettings.sessionMins*60;
+    T.secondsLeft=TEST_SESSION_SECS;
+    T.totalSeconds=TEST_SESSION_SECS;
     // Only resume logging if a chapter+task is selected
     if(T.currentChap&&T.currentTask) T.segStart=Date.now();
     toast('Break over! Starting session ▶');
@@ -4053,18 +4250,18 @@ function focusSkip(){
     T.cycleSessions++;
     if(T.cycleSessions>=focusSettings.sessionsPerCycle){
       T.mode='long';T.cycleSessions=0;
-      T.secondsLeft=focusSettings.longBreakMins*60;
-      T.totalSeconds=focusSettings.longBreakMins*60;
+      T.secondsLeft=TEST_BREAK_SECS;
+      T.totalSeconds=TEST_BREAK_SECS;
     } else {
       T.mode='short';
-      T.secondsLeft=focusSettings.shortBreakMins*60;
-      T.totalSeconds=focusSettings.shortBreakMins*60;
+      T.secondsLeft=TEST_BREAK_SECS;
+      T.totalSeconds=TEST_BREAK_SECS;
     }
   } else {
     // Skipping a break — no session credit, just move to next session
     T.mode='session';
-    T.secondsLeft=focusSettings.sessionMins*60;
-    T.totalSeconds=focusSettings.sessionMins*60;
+    T.secondsLeft=TEST_SESSION_SECS;
+    T.totalSeconds=TEST_SESSION_SECS;
   }
   T.running=false;
   T.segStart=null;
@@ -4081,8 +4278,8 @@ function focusReset(){
   T.running=false;
   T.cycleSessions=0;
   T.segStart=null;
-  T.secondsLeft=focusSettings.sessionMins*60;
-  T.totalSeconds=focusSettings.sessionMins*60;
+  T.secondsLeft=TEST_SESSION_SECS;
+  T.totalSeconds=TEST_SESSION_SECS;
   renderFocus();
 }
 
@@ -4095,16 +4292,16 @@ function focusAdjSetting(key,delta,min,max){
   // Update relevant timer if not running
   if(!focusTimer.running){
     if(key==='sessionMins'&&focusTimer.mode==='session'){
-      focusTimer.secondsLeft=focusSettings.sessionMins*60;
-      focusTimer.totalSeconds=focusSettings.sessionMins*60;
+      focusTimer.secondsLeft=TEST_SESSION_SECS;
+      focusTimer.totalSeconds=TEST_SESSION_SECS;
     }
     if(key==='shortBreakMins'&&focusTimer.mode==='short'){
-      focusTimer.secondsLeft=focusSettings.shortBreakMins*60;
-      focusTimer.totalSeconds=focusSettings.shortBreakMins*60;
+      focusTimer.secondsLeft=TEST_BREAK_SECS;
+      focusTimer.totalSeconds=TEST_BREAK_SECS;
     }
     if(key==='longBreakMins'&&focusTimer.mode==='long'){
-      focusTimer.secondsLeft=focusSettings.longBreakMins*60;
-      focusTimer.totalSeconds=focusSettings.longBreakMins*60;
+      focusTimer.secondsLeft=TEST_BREAK_SECS;
+      focusTimer.totalSeconds=TEST_BREAK_SECS;
     }
   }
   renderFocus();
@@ -4726,9 +4923,9 @@ function saveFocusSettingsFromCal(){
   if(msg){msg.classList.add('visible');setTimeout(()=>msg.classList.remove('visible'),2000);}
   // Update timer if not running
   if(!focusTimer.running){
-    if(focusTimer.mode==='session'){focusTimer.secondsLeft=focusSettings.sessionMins*60;focusTimer.totalSeconds=focusSettings.sessionMins*60;}
-    if(focusTimer.mode==='short'){focusTimer.secondsLeft=focusSettings.shortBreakMins*60;focusTimer.totalSeconds=focusSettings.shortBreakMins*60;}
-    if(focusTimer.mode==='long'){focusTimer.secondsLeft=focusSettings.longBreakMins*60;focusTimer.totalSeconds=focusSettings.longBreakMins*60;}
+    if(focusTimer.mode==='session'){focusTimer.secondsLeft=TEST_SESSION_SECS;focusTimer.totalSeconds=TEST_SESSION_SECS;}
+    if(focusTimer.mode==='short'){focusTimer.secondsLeft=TEST_BREAK_SECS;focusTimer.totalSeconds=TEST_BREAK_SECS;}
+    if(focusTimer.mode==='long'){focusTimer.secondsLeft=TEST_BREAK_SECS;focusTimer.totalSeconds=TEST_BREAK_SECS;}
   }
   if(document.getElementById('p-focus').classList.contains('on')) renderFocus();
 }
