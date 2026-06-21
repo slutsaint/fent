@@ -1049,7 +1049,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .month-hm-cell.clickable{cursor:pointer;}
 .month-hm-cell.clickable:hover{transform:scale(1.18);filter:brightness(1.4);z-index:3;}
 .month-hm-cell.today-cell{box-shadow:0 0 0 1.5px rgba(255,255,255,0.35);animation:hmPulse 2.5s ease-in-out infinite;}
-.month-hm-cell.sunday-cell{background:rgba(255,255,255,0.012)!important;}
+.month-hm-cell.sunday-cell{opacity:0.85;}
 .month-hm-cell.empty-cell{background:transparent!important;pointer-events:none;}
 .month-hm-day-num{font-size:6px;color:rgba(255,255,255,0.2);position:absolute;bottom:1.5px;right:2px;line-height:1;font-family:'JetBrains Mono',monospace;}
 
@@ -2488,7 +2488,6 @@ function buildSessLineChart(last30, target, today){
   // wasted += max(0, target - sessionsActuallyDone). Partial days count as partial waste.
   let wastedSessions = 0;
   if(firstEffortDate){
-    // Iterate over every calendar day from firstEffortDate to yesterday
     const yesterday = new Date(today); yesterday.setDate(today.getDate()-1); yesterday.setHours(0,0,0,0);
     const cursor = new Date(firstEffortDate);
     while(cursor <= yesterday){
@@ -2501,6 +2500,18 @@ function buildSessLineChart(last30, target, today){
       }
       cursor.setDate(cursor.getDate()+1);
     }
+    // Sunday sessions reduce wasted — studying on rest day covers the debt.
+    // Sum all Sunday sessions since firstEffortDate (including today if Sunday).
+    let sundaySessions = 0;
+    const cursorSun = new Date(firstEffortDate);
+    while(cursorSun <= today){
+      if(cursorSun.getDay() === 0){
+        const k = localDateKey(cursorSun);
+        sundaySessions += parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
+      }
+      cursorSun.setDate(cursorSun.getDate()+1);
+    }
+    wastedSessions = Math.max(0, wastedSessions - sundaySessions);
     wastedSessions = Math.round(wastedSessions * 10) / 10; // 1 decimal
   }
 
@@ -3234,19 +3245,28 @@ function buildFocusActivitySections(today){
   const dailyGoal = Math.max(1, focusSettings.dailyTarget || 4);
   function hmTaskColor(cell){
     if(!cell.inMonth) return 'rgba(255,255,255,0.0)';
-    if(cell.isSun)    return 'rgba(255,255,255,0.018)'; // Sunday: no goal, ghost
     if(!cell.isPast&&!cell.isToday) return 'rgba(255,255,255,0.04)'; // future: muted
     const sess = cell.tasks.sessions || 0;
-    if(sess === 0) return 'rgba(196,100,100,0.38)'; // MISSED — red
+    // Sunday — neutral when empty, GREEN scale from first session (bonus day)
+    if(cell.isSun){
+      if(sess === 0) return 'rgba(255,255,255,0.04)'; // neutral — no target
+      const r = Math.min(1.0, sess / dailyGoal);
+      // All green, progressively more vivid — bonus framing
+      if(r < 0.25) return 'rgba(107,158,131,0.32)'; // just started — soft green whisper
+      if(r < 0.50) return 'rgba(107,158,131,0.52)'; // building — muted green
+      if(r < 0.75) return 'rgba(107,158,131,0.72)'; // good effort — solid green
+      if(r < 1.00) return 'rgba(107,158,131,0.88)'; // almost full target — strong green
+      return         'rgba(107,158,131,1.0)';        // hit target on rest day — full vivid green
+    }
+    if(sess === 0) return 'rgba(196,100,100,0.38)'; // MISSED workday — red
     const r = Math.min(1.0, sess / dailyGoal);
-    // Back-loaded scale: 6 bands where the first 4 are ugly, band 5 is "almost", band 6 is goal
-    // Thresholds: 0–15% | 15–35% | 35–55% | 55–80% | 80–99% | 100%
-    if(r < 0.15) return 'rgba(180,130,60,0.28)';  // just started — very dim muddy amber
-    if(r < 0.35) return 'rgba(194,155,70,0.44)';  // low progress — dull amber
-    if(r < 0.55) return 'rgba(194,163,89,0.58)';  // mid — amber, still ugly
-    if(r < 0.80) return 'rgba(185,155,75,0.72)';  // getting close — amber-warm, still warning
-    if(r < 1.00) return 'rgba(107,158,131,0.52)'; // 1 session left — first hint of green, muted
-    return         'rgba(107,158,131,1.0)';        // GOAL MET — full vivid green, the reward
+    // Back-loaded scale
+    if(r < 0.15) return 'rgba(180,130,60,0.28)';
+    if(r < 0.35) return 'rgba(194,155,70,0.44)';
+    if(r < 0.55) return 'rgba(194,163,89,0.58)';
+    if(r < 0.80) return 'rgba(185,155,75,0.72)';
+    if(r < 1.00) return 'rgba(107,158,131,0.52)';
+    return         'rgba(107,158,131,1.0)';
   }
 
   // Build 7 weeks × 7 days grid
@@ -3274,11 +3294,30 @@ function buildFocusActivitySections(today){
     const sessMetCol=daySess>=sessTarget?'var(--c)':daySess>0?'var(--m)':'var(--t3)';
 
     if(isSun){
+      const focusSecs=fl?fl.totalSecs:0;
+      const logEntriesHTML=dayLogEntries.slice(0,6).map(e=>{
+        const chapCol={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'}[e.subj]||'var(--t3)';
+        const taskCol={theory:'var(--m)',module:'var(--c)',pyq:'var(--p)',revision:'var(--red)'}[e.task]||'var(--t3)';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="width:4px;height:4px;border-radius:50%;background:${chapCol};flex-shrink:0;"></div>
+          <span style="flex:1;font-size:10px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.chapName}</span>
+          <span style="font-size:9px;color:${taskCol};padding:1px 5px;border-radius:3px;background:rgba(255,255,255,0.04);flex-shrink:0;">${e.task}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);flex-shrink:0;">${fmtS(e.durationSecs)}</span>
+        </div>`;
+      }).join('');
       detHTML=`<div class="month-hm-detail" id="${hmDetailId}">
-        <div class="month-hm-detail-date">${dateLbl} · Sunday</div>
-        <div style="font-size:11px;color:var(--t3);padding:4px 0;">${daySess>0||dayLogEntries.length>0?'Chose to study on rest day.':'Rest day — no sessions logged.'}</div>
-        ${daySess>0?`<div class="month-hm-detail-row"><span style="font-size:11px;color:var(--t2);flex:1;">Sessions</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}</span></div>`:''}
-        ${fl&&fl.totalSecs>0?`<div class="month-hm-detail-row"><span style="font-size:11px;color:var(--t2);flex:1;">Focus time</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c);">${fmtS(fl.totalSecs)}</span></div>`:''}
+        <div class="month-hm-detail-date">${dateLbl} · <span style="color:rgba(255,255,255,0.3);font-size:9px;">Sunday</span></div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.25);margin-bottom:6px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;">${daySess>0||dayLogEntries.length>0?'Rest day — bonus sessions count toward wasted debt':'Rest day — no sessions logged'}</div>
+        ${daySess>0?`<div class="month-hm-detail-row">
+          <span style="font-size:10px;color:var(--t3);flex:1;">Sessions</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}<span style="font-size:9px;color:var(--t3);opacity:.6;"> covers debt</span></span>
+        </div>`:''}
+        ${focusSecs>0?`<div class="month-hm-detail-row">
+          <span style="font-size:10px;color:var(--t3);flex:1;">Focus time</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c);">${fmtS(focusSecs)}</span>
+        </div>`:''}
+        ${logEntriesHTML?`<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;">${logEntriesHTML}</div>`:''}
+        ${dayLogEntries.length>6?`<div style="font-size:9px;color:var(--t3);padding:4px 0;text-align:right;">+${dayLogEntries.length-6} more entries</div>`:''}
       </div>`;
     } else {
       const focusSecs=fl?fl.totalSecs:0;
@@ -3327,15 +3366,31 @@ function buildFocusActivitySections(today){
   const cellsHTML=cells.map((cell,ci)=>{
     const bg=hmTaskColor(cell);
     const isActive=anaHmSelectedDay===cell.k&&cell.inMonth;
-    const hasData=cell.tasks.total>0||cell.focus.totalSecs>0;
-    const colIdx=Math.floor(ci/7); // column index for stagger
+    const hasSess=cell.tasks.sessions>0;
+    const hasData=cell.tasks.total>0||cell.focus.totalSecs>0||hasSess;
+    const colIdx=Math.floor(ci/7);
     const extraStyle=isActive?'outline:1.5px solid rgba(255,255,255,0.55);outline-offset:1px;':'';
     const animDelay=colIdx*0.018;
     const animStyle=`animation:hmCellIn .3s var(--ease) ${animDelay}s both;`;
-    return `<div class="month-hm-cell${!cell.inMonth?' empty-cell':cell.isSun?' sunday-cell':cell.isToday?' today-cell clickable':hasData?' clickable':cell.isPast?' clickable':''}"
+    // Class logic:
+    // - outside month → empty-cell (transparent, no events)
+    // - Sunday with sessions → sunday-cell clickable (can see detail)
+    // - Sunday empty → sunday-cell (neutral, no click)
+    // - today → today-cell clickable
+    // - past with data → clickable
+    // - past no data → clickable (shows "nothing logged")
+    // - future → default (no click)
+    let cellClass='month-hm-cell';
+    if(!cell.inMonth)        cellClass+=' empty-cell';
+    else if(cell.isSun)      cellClass+=hasSess?' sunday-cell clickable':' sunday-cell';
+    else if(cell.isToday)    cellClass+=' today-cell clickable';
+    else if(cell.isPast)     cellClass+=' clickable';
+    const sunTitle=cell.isSun?(hasSess?'Sunday · click for details':'Sunday — rest day'):'';
+    const title=cell.inMonth?(cell.isSun?sunTitle:(cell.isPast||cell.isToday?'click for details':'')):'';
+    return `<div class="${cellClass}"
       style="background:${bg};${extraStyle}${animStyle}"
-      ${cell.inMonth?`onclick="anaHmClick('${cell.k}')"`:''}
-      title="${cell.inMonth?(cell.isSun?'Sunday':cell.isPast||cell.isToday?'click for details':''):''}"
+      ${cell.inMonth&&(cell.isPast||cell.isToday||hasSess)?`onclick="anaHmClick('${cell.k}')"`:''}
+      title="${title}"
     ><span class="month-hm-day-num" style="${!cell.inMonth?'display:none;':''}">${cell.d.getDate()}</span></div>`;
   }).join('');
 
@@ -3358,8 +3413,8 @@ function buildFocusActivitySections(today){
       ${['rgba(196,100,100,0.38)','rgba(180,130,60,0.28)','rgba(194,155,70,0.44)','rgba(194,163,89,0.58)','rgba(185,155,75,0.72)','rgba(107,158,131,0.52)','rgba(107,158,131,1.0)'].map(c=>`<div style="width:9px;height:9px;border-radius:2px;background:${c};flex-shrink:0;"></div>`).join('')}
       <span style="font-size:7.5px;color:rgba(255,255,255,0.18);font-family:'JetBrains Mono',monospace;">Goal</span>
       <div style="margin-left:auto;display:flex;align-items:center;gap:5px;">
-        <div style="width:9px;height:9px;border-radius:2px;background:rgba(255,255,255,0.015);flex-shrink:0;"></div>
-        <span style="font-size:7.5px;color:rgba(255,255,255,0.13);font-family:'JetBrains Mono',monospace;">Sun</span>
+        <div style="width:9px;height:9px;border-radius:2px;background:rgba(107,158,131,0.5);flex-shrink:0;"></div>
+        <span style="font-size:7.5px;color:rgba(255,255,255,0.13);font-family:'JetBrains Mono',monospace;">Sun bonus</span>
       </div>
     </div>
   </div>
