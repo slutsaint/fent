@@ -1316,7 +1316,7 @@ function go(tab,btn){
      c.style.animation = '';
   });
 
-  if(tab==='overview'){pulseOffset=0;renderPulse();renderOverviewSummary();}
+  if(tab==='overview'){pulseOffset=0;ovwWeekOffset=0;renderPulse();renderOverviewSummary();}
   if(tab==='tests') renderTests();
   if(tab==='focus'){renderFocus();}
   if(tab==='ana'){renderAnalytics(); renderDeckAndLog();}
@@ -4450,13 +4450,26 @@ function renderStats(){ /* now integrated into renderAnalytics */ }
 /* ═══════════════════════════════════════════════
    OVERVIEW WEEKLY SUMMARY — Beautiful Visual
 ═══════════════════════════════════════════════ */
+let ovwWeekOffset=0; // 0 = current week, -1 = last week, etc.
+
+function shiftOvwWeek(dir){
+  ovwWeekOffset+=dir;
+  // Don't allow navigating into the future beyond current week
+  if(ovwWeekOffset>0) ovwWeekOffset=0;
+  renderOverviewSummary();
+}
+
 function renderOverviewSummary(){
   const el=document.getElementById('ovwWeeklySummary');
   if(!el) return;
 
   const today=new Date(); today.setHours(0,0,0,0);
-  const weekStart=new Date(today); weekStart.setDate(today.getDate()-today.getDay());
+  // Apply week offset — 0 = current week, -1 = last week, etc.
+  const weekStart=new Date(today);
+  weekStart.setDate(today.getDate()-today.getDay()+ovwWeekOffset*7);
+  weekStart.setHours(0,0,0,0);
   const weekEnd=new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+  const isCurrentWeek=ovwWeekOffset===0;
   const todayKey=localDateKey(today);
   const allSubjs=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'chem',ch}))];
   const allSubjsFull=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
@@ -4470,7 +4483,7 @@ function renderOverviewSummary(){
     const d=new Date(weekStart); d.setDate(weekStart.getDate()+i);
     const k=localDateKey(d);
     const isSun=d.getDay()===0;
-    const isToday=d.toDateString()===today.toDateString();
+    const isToday=isCurrentWeek&&d.toDateString()===today.toDateString();
     const isFuture=d>today&&!isToday;
     let daySecs=0,daySess=parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
     let dayQues=0;
@@ -4576,10 +4589,18 @@ function renderOverviewSummary(){
   const completionPct=workDaysTotal>0?Math.round(workDaysMet/workDaysTotal*100):0;
   const compColor=completionPct>=80?'var(--c)':completionPct>=50?'var(--m)':'var(--red)';
 
+  const weekLabel = isCurrentWeek ? 'This Week'
+    : ovwWeekOffset===-1 ? '1 Wk Ago'
+    : Math.abs(ovwWeekOffset)+' Wks Ago';
+
   el.innerHTML=`<div class="ovw-vis-card" style="animation:ovwCardIn .5s var(--ease) .1s both;">
-    <div style="padding:13px 18px 11px;display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--b1);">
-      <span style="font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);">This Week</span>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);font-weight:300;">${weekStart.getDate()} ${MONTHS[weekStart.getMonth()]} — ${weekEnd.getDate()} ${MONTHS[weekEnd.getMonth()]}</span>
+    <div style="padding:11px 14px 10px;border-bottom:1px solid var(--b1);">
+      <div class="pulse-nav" style="margin-bottom:0;">
+        <button class="pulse-nav-btn" onclick="shiftOvwWeek(-1)">← Prev</button>
+        <span class="pulse-nav-center">${weekLabel}</span>
+        <button class="pulse-nav-btn" onclick="shiftOvwWeek(1)" ${isCurrentWeek?'disabled style="opacity:.3;cursor:default;"':''}>Next →</button>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--t3);font-weight:300;text-align:center;margin-top:4px;">${weekStart.getDate()} ${MONTHS[weekStart.getMonth()]} — ${weekEnd.getDate()} ${MONTHS[weekEnd.getMonth()]}</div>
     </div>
     ${headerHTML}
     <div style="display:flex;flex-direction:column;">${rowsHTML}</div>
