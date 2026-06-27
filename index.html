@@ -838,6 +838,21 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 /* Session stats strip */
 .focus-stats-strip{display:flex;gap:0;margin-top:20px;width:100%;border:1px solid var(--b1);border-radius:var(--r);overflow:hidden;}
+.focus-done-card{display:flex;align-items:center;gap:0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;margin:12px 0 4px;overflow:hidden;}
+.focus-done-left,.focus-done-right{flex:1;padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
+.focus-done-right{text-align:right;align-items:flex-end;}
+.focus-done-sep{width:1px;height:36px;background:rgba(255,255,255,0.07);flex-shrink:0;}
+.focus-done-label{font-size:8px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
+.focus-done-time{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:300;color:var(--c);letter-spacing:-.02em;line-height:1.2;}
+.focus-done-till{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:300;letter-spacing:-.02em;line-height:1.2;}
+.focus-done-icon{font-size:14px;color:var(--c);padding:10px 12px;}
+.focus-done-text{font-size:11px;color:var(--c);font-family:'JetBrains Mono',monospace;letter-spacing:.04em;}
+/* Done-by inline whisper */
+.focus-doneby-strip{display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:6px 2px 10px;animation:fadeUp .5s var(--ease) .15s both;opacity:0;animation-fill-mode:forwards;}
+.focus-doneby-by{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:300;color:var(--c);letter-spacing:-.01em;transition:color .4s;}
+.focus-doneby-sep{font-size:9px;color:rgba(255,255,255,0.12);margin:0 2px;}
+.focus-doneby-rem{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.01em;transition:color .4s;}
+.focus-doneby-prefix{font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-right:4px;opacity:.7;}
 .focus-stat-cell{flex:1;padding:14px 12px;text-align:center;border-right:1px solid var(--b1);}
 .focus-stat-cell:last-child{border-right:none;}
 .focus-stat-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;}
@@ -1318,8 +1333,9 @@ function go(tab,btn){
 
   if(tab==='overview'){pulseOffset=0;ovwWeekOffset=0;renderPulse();renderOverviewSummary();}
   if(tab==='tests') renderTests();
-  if(tab==='focus'){renderFocus();}
-  if(tab==='ana'){renderAnalytics(); renderDeckAndLog();}
+  if(tab==='focus'){renderFocus(); startDoneByTick();}
+  if(tab==='ana'){stopDoneByTick(); renderAnalytics(); renderDeckAndLog();}
+  if(tab!=='focus') stopDoneByTick();
 }
 
 function fl(subj,val,btn){
@@ -3792,18 +3808,116 @@ function recoverFromCrash(){
     // Full session — same credit as focusOnModeEnd
     const todaySessKey = 'fent_sessions_' + localDateKey();
     const cur = parseFloat(localStorage.getItem(todaySessKey) || '0');
-    localStorage.setItem(todaySessKey, Math.round((cur + 1.0) * 10) / 10);
+    localStorage.setItem(todaySessKey, cur + 1.0); // store raw float
   } else if(fraction >= 0.05) {
     // Partial — same credit logic as focusSkip
     const partial = Math.min(0.9, fraction);
     const todaySessKey = 'fent_sessions_' + localDateKey();
     const cur = parseFloat(localStorage.getItem(todaySessKey) || '0');
-    localStorage.setItem(todaySessKey, Math.round((cur + partial) * 10) / 10);
+    localStorage.setItem(todaySessKey, cur + partial); // store raw float
   }
   // fraction < 0.05 → too little, nothing credited
 }
 // ── End crash recovery ──────────────────────────────────────────────────────
 
+
+// ── "Completed By" time calculator ─────────────────────────────────────────
+// Returns the estimated wall-clock time when all remaining sessions will be done.
+// Accounts for: current timer state (running/paused/mode), full cycles with
+// short+long breaks, fractional remaining sessions, and all customizable settings.
+function computeCompletedBy(){
+  const S=focusSettings;
+  const T=focusTimer;
+  const sessSecs  = S.sessionMins*60;
+  const shortSecs = S.shortBreakMins*60;
+  const longSecs  = S.longBreakMins*60;
+  const perCycle  = Math.max(1,S.sessionsPerCycle);
+
+  const todaySessKey='fent_sessions_'+localDateKey();
+  const todaySessions=parseFloat(localStorage.getItem(todaySessKey)||'0');
+  const remaining=Math.max(0,S.dailyTarget-todaySessions);
+  if(remaining<=0) return null; // already done
+
+  let totalSecs=0;
+
+  // ── Step 1: account for the CURRENT timer mode ──────────────────────────
+  // Whatever is on the clock right now (session or break) is already in progress.
+  // We only count secondsLeft of the current mode, not a fresh full duration.
+  const curSecsLeft=T.secondsLeft;
+
+  if(T.mode==='session'){
+    // Currently in a session. That session will contribute some fraction to done.
+    // We'll handle it as part of the remaining count below — but we already
+    // know this session has `curSecsLeft` seconds left.
+    // So time for this session slot = curSecsLeft (not sessSecs).
+    // We'll track position in cycle from T.cycleSessions.
+  } else {
+    // Currently in a break (short or long). That break has curSecsLeft remaining.
+    // Add break remainder first, then compute full sessions from scratch.
+    totalSecs+=curSecsLeft;
+  }
+
+  // ── Step 2: walk through remaining sessions ──────────────────────────────
+  // pos = position in current cycle (0-indexed, which session we're about to do)
+  let pos=T.cycleSessions; // how many sessions done in current cycle
+  let remSessions=remaining;
+
+  // If currently in a session, the CURRENT session is already ongoing.
+  // Its remaining time is curSecsLeft. If remSessions < 1, only a fraction of
+  // this session needs doing — take min(curSecsLeft, fraction*sessSecs).
+  if(T.mode==='session'){
+    const thisSessionContrib=Math.min(1,remSessions); // at most 1 full session here
+    if(thisSessionContrib<=0){ return null; }
+    // Time for this session slot
+    if(remSessions<1){
+      // Only a fraction needed — proportion of curSecsLeft
+      // The fraction of the current session still needed vs full session
+      const fractionOfSession=remSessions; // e.g. 0.7
+      // Time = fractionOfSession * sessSecs, but capped at curSecsLeft
+      totalSecs+=Math.min(curSecsLeft, fractionOfSession*sessSecs);
+      return new Date(Date.now()+totalSecs*1000);
+    } else {
+      totalSecs+=curSecsLeft; // full remaining time of current session
+      remSessions-=1;
+      pos=(pos+1)%perCycle;
+      // Break after this session (if more sessions remain)
+      if(remSessions>0){
+        totalSecs+=(pos===0)?longSecs:shortSecs;
+        if(pos===0) pos=0; // long break resets cycle
+      }
+    }
+  }
+
+  // ── Step 3: remaining full+fractional sessions ───────────────────────────
+  while(remSessions>0){
+    const thisSlot=Math.min(1,remSessions);
+    if(thisSlot<1){
+      // Fractional last session — only that fraction of sessSecs
+      totalSecs+=thisSlot*sessSecs;
+      remSessions=0;
+    } else {
+      totalSecs+=sessSecs;
+      remSessions-=1;
+      pos=(pos+1)%perCycle;
+      // Add break only if more sessions follow
+      if(remSessions>0){
+        totalSecs+=(pos===0)?longSecs:shortSecs;
+      }
+    }
+  }
+
+  return new Date(Date.now()+totalSecs*1000);
+}
+
+function fmtCompletedBy(dt){
+  if(!dt) return null;
+  const h=dt.getHours();
+  const m=dt.getMinutes();
+  const ampm=h>=12?'PM':'AM';
+  const hh=h%12||12;
+  return `${hh}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+// ── End Completed By ────────────────────────────────────────────────────────
 
 function getAllChapters(){
   const all=[];
@@ -3815,6 +3929,25 @@ function getAllChapters(){
 
 let focusChapSearch='';
 let focusSearchOpen=false;
+
+// ── Done-by wall-clock tick ─────────────────────────────────────────────────
+// Runs every 30 seconds on the Focus tab regardless of whether the timer is
+// running or paused. Ensures "done by" and "time left" stay current even when
+// the timer is paused for hours or the page is left open overnight.
+let _doneByTickId=null;
+function startDoneByTick(){
+  stopDoneByTick(); // clear any previous
+  _doneByTickId=setInterval(()=>{
+    // Only update if Focus panel is visible
+    const fp=document.getElementById('p-focus');
+    if(!fp||!fp.classList.contains('on')) return stopDoneByTick();
+    updateFocusClockFast();
+  },30000); // every 30 seconds
+}
+function stopDoneByTick(){
+  if(_doneByTickId){clearInterval(_doneByTickId);_doneByTickId=null;}
+}
+// ── End done-by tick ────────────────────────────────────────────────────────
 
 function renderFocus(){
   const el=document.getElementById('focusContent');
@@ -4032,6 +4165,23 @@ function renderFocus(){
     </div>
   </div>
 
+  <!-- Done-by whisper line -->
+  <div class="focus-doneby-strip" id="focusDoneByStrip">
+    ${(()=>{
+      const cbDt=computeCompletedBy();
+      if(!cbDt){
+        return `<span class="focus-doneby-by" style="color:var(--c);font-size:11px;" id="focusDoneByVal">✓ target done</span>`;
+      }
+      const cbStr=fmtCompletedBy(cbDt);
+      const secsTill=Math.max(0,Math.round((cbDt.getTime()-Date.now())/1000));
+      const hTill=Math.floor(secsTill/3600);
+      const mTill=Math.floor((secsTill%3600)/60);
+      const tillStr=hTill>0?`${hTill}h ${mTill}m`:`${mTill}m`;
+      const isPaused=!T.running;
+      return `<span class="focus-doneby-prefix">finish by</span><span class="focus-doneby-by${isPaused?' style="color:var(--t2);"':''}" id="focusDoneByVal">${cbStr}</span><span class="focus-doneby-sep">·</span><span class="focus-doneby-rem" id="focusDoneByTill">${tillStr}</span>`;
+    })()}
+  </div>
+
   <!-- Log Section -->
   <div class="focus-log-section">
     <div class="focus-log-label">What are you working on?</div>
@@ -4207,7 +4357,7 @@ function updateFocusClockFast(){
   const secs=T.secondsLeft%60;
   const timeEl=document.getElementById('focusTimeBig');
   if(timeEl) timeEl.textContent=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
-  
+
   // Update arc
   const S=focusSettings;
   const R=97;
@@ -4224,6 +4374,29 @@ function updateFocusClockFast(){
     const es=elapsed%60;
     const logTimeEl=document.querySelector('.focus-active-timer');
     if(logTimeEl) logTimeEl.textContent=String(em).padStart(2,'0')+':'+String(es).padStart(2,'0');
+  }
+
+  // Update "Done by" whisper line — id-based, always works
+  const cbDt=computeCompletedBy();
+  const doneByVal=document.getElementById('focusDoneByVal');
+  const doneByTill=document.getElementById('focusDoneByTill');
+  const T2=focusTimer;
+  const isPaused2=!T2.running;
+  if(cbDt){
+    const cbStr2=fmtCompletedBy(cbDt);
+    if(doneByVal){
+      doneByVal.textContent=cbStr2;
+      doneByVal.style.color=isPaused2?'var(--t2)':'var(--c)';
+    }
+    if(doneByTill){
+      const secsTill=Math.max(0,Math.round((cbDt.getTime()-Date.now())/1000));
+      const hTill=Math.floor(secsTill/3600);
+      const mTill=Math.floor((secsTill%3600)/60);
+      doneByTill.textContent=hTill>0?`${hTill}h ${mTill}m`:`${mTill}m`;
+    }
+  } else {
+    if(doneByVal){doneByVal.textContent='✓ target done';doneByVal.style.color='var(--c)';}
+    if(doneByTill) doneByTill.textContent='';
   }
 }
 
@@ -4243,12 +4416,11 @@ function focusOnModeEnd(){
     commitFocusSegment();
     T.segStart=null; // STOP segment clock — break time must NOT be logged as focus
 
-    // Increment session count — FULL session = +1.0 stored as float
+    // Increment session count — store raw float, never round on write
     T.cycleSessions++;
     const todaySessKey='fent_sessions_'+localDateKey();
     const cur=parseFloat(localStorage.getItem(todaySessKey)||'0');
-    const newVal=Math.round((cur+1.0)*10)/10; // keep 1 decimal precision
-    localStorage.setItem(todaySessKey,newVal);
+    localStorage.setItem(todaySessKey, cur + 1.0);
 
     if(T.cycleSessions>=focusSettings.sessionsPerCycle){
       // Long break
@@ -4300,8 +4472,7 @@ function focusSkip(){
     if(partial >= 0.05){
       const todaySessKey='fent_sessions_'+localDateKey();
       const cur=parseFloat(localStorage.getItem(todaySessKey)||'0');
-      const newVal=Math.round((cur+partial)*10)/10;
-      localStorage.setItem(todaySessKey,newVal);
+      localStorage.setItem(todaySessKey, cur + partial); // store raw float, never round on write
     }
 
     T.cycleSessions++;
