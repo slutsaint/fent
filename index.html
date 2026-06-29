@@ -4668,7 +4668,8 @@ function renderOverviewSummary(){
         if(ts[tk]){const tsKey='ts_'+s+'_'+ch.n+'_'+tk;if((ST[tsKey]||todayKey)===k){dayTasks++;daySubj[s]++;}}
       });
     });
-    if(!isSun){weekTasks+=dayTasks;weekSessions+=daySess;weekFocusSecs+=daySecs;weekQues+=dayQues;}
+    // Always accumulate ALL days including Sunday — Sunday is bonus but counts toward weekly total
+    weekTasks+=dayTasks;weekSessions+=daySess;weekFocusSecs+=daySecs;weekQues+=dayQues;
     weekDayData.push({d,k,secs:daySecs,sess:daySess,tasks:dayTasks,subj:daySubj,ques:dayQues,isSun,isToday,isFuture});
   }
   const wfm=Math.floor(weekFocusSecs/60);
@@ -4678,7 +4679,7 @@ function renderOverviewSummary(){
 
   // Week progress mini sparkline — last 7 session counts (Mon–Sat excl Sun)
   const workDayData=weekDayData.filter(d=>!d.isSun);
-  const maxSess7=Math.max(dailyTarget+1,...workDayData.map(d=>d.sess),1);
+  const maxSess7=Math.max(dailyTarget+1,...weekDayData.map(d=>d.sess),1); // all days incl Sunday
 
   // ── Header stat tiles ──
   const sessColor=weekSessions>=(dailyTarget*6*0.8)?'var(--c)':weekSessions>0?'var(--t1)':'var(--t3)';
@@ -4707,10 +4708,34 @@ function renderOverviewSummary(){
   // ── Per-day rows with mini sparkline bars ──
   const rowsHTML=weekDayData.map((day,i)=>{
     if(day.isSun){
-      return `<div class="ovw-day-row" style="opacity:.22;animation:ovwRowIn .35s var(--ease) ${i*0.04}s both;">
-        <div class="ovw-day-dot" style="background:rgba(255,255,255,0.06);"></div>
-        <span class="ovw-day-name" style="color:var(--t3);">${dayNames[day.d.getDay()]}</span>
-        <div class="ovw-day-badges"><span style="font-size:10px;color:var(--t3);font-style:italic;opacity:.6;">rest</span></div>
+      const hasSunData=day.sess>0||day.secs>0||day.ques>0;
+      if(!hasSunData){
+        // Nothing logged — show as rest (faded, no data)
+        return `<div class="ovw-day-row" style="opacity:.22;animation:ovwRowIn .35s var(--ease) ${i*0.04}s both;">
+          <div class="ovw-day-dot" style="background:rgba(255,255,255,0.06);"></div>
+          <span class="ovw-day-name" style="color:var(--t3);">${dayNames[day.d.getDay()]}</span>
+          <div class="ovw-day-badges"><span style="font-size:10px;color:var(--t3);font-style:italic;opacity:.6;">rest</span></div>
+        </div>`;
+      }
+      // Has data — render like a normal day but with a green tint (bonus day)
+      const sunCol='rgba(107,158,131,0.7)';
+      const sh=16, sw=28;
+      const bh=Math.max(2,Math.round((day.sess/maxSess7)*(sh-2)));
+      const by=sh-bh;
+      const sparkSVG=`<svg width="${sw}" height="${sh}" viewBox="0 0 ${sw} ${sh}" style="flex-shrink:0;" class="ovw-day-spark">
+        <rect x="4" y="${sh-2}" width="${sw-8}" height="2" rx="1" fill="rgba(255,255,255,0.05)"/>
+        ${day.sess>0?`<rect x="4" y="${by}" width="${sw-8}" height="${bh}" rx="1.5" fill="${sunCol}" style="transition:height .8s var(--ease),y .8s var(--ease);"/>`:''}
+      </svg>`;
+      return `<div class="ovw-day-row" style="animation:ovwRowIn .35s var(--ease) ${i*0.04}s both;">
+        <div class="ovw-day-dot" style="background:${sunCol};"></div>
+        <span class="ovw-day-name" style="color:var(--c);">${dayNames[day.d.getDay()]}</span>
+        <div class="ovw-day-badges"><span style="font-size:9px;color:rgba(107,158,131,0.6);letter-spacing:.05em;font-family:'JetBrains Mono',monospace;">bonus</span></div>
+        ${sparkSVG}
+        <div class="ovw-day-meta">
+          ${day.sess>0?`<span class="ovw-day-meta-val" style="color:var(--c);">${fmtSessOvw(day.sess)}<span style="font-size:8px;opacity:.6;">s</span></span>`:''}
+          ${day.secs>0?`<span class="ovw-day-meta-val" style="color:var(--t3);">${fmtMins(day.secs)}</span>`:''}
+          ${day.ques>0?`<span class="ovw-day-meta-val" style="color:var(--p);opacity:.85;">${day.ques}<span style="font-size:8px;opacity:.6;">q</span></span>`:''}
+        </div>
       </div>`;
     }
     const isFut=day.isFuture, isTod=day.isToday;
