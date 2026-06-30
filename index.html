@@ -2450,7 +2450,10 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
 }
 
 /* ─── 30-Day Progress Dashboard ─── */
-function buildSessLineChart(last30, target, today){
+function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthFirst, monthLast){
+  const MON_SHORT=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const isCurrentMonthChart = chartMonth===today.getMonth() && chartYear===today.getFullYear();
+  const monthLabel = MON_SHORT[chartMonth]+' '+chartYear;
   const qTarget=focusSettings.dailyQuesTarget||70;
 
   // Enrich with questions and focus time — read fresh from localStorage every build
@@ -3049,7 +3052,8 @@ function buildSessLineChart(last30, target, today){
 
   return `<div class="ana-section" style="animation:fadeUp .4s var(--ease) both;">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;">
-    <span class="ana-sect-title" style="margin-bottom:0;">Progress — Last 30 Days</span>
+    <span class="ana-sect-title" style="margin-bottom:0;">Progress — ${monthLabel}</span>
+    ${!isCurrentMonthChart?`<span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.18);letter-spacing:.04em;">synced to heatmap ↑</span>`:''}
   </div>
   ${statPills}
   ${dashPanel}
@@ -3436,11 +3440,16 @@ function buildFocusActivitySections(today){
   </div>
 </div>`;
 
-  // ── Sessions over time chart (last 30 days) ──
-  // Keys MUST use localDateKey — same format used when sessions are saved in focusOnModeEnd.
+  // ── Sessions over time chart ──
+  // Strictly month-aligned to the SAME month currently open in the Monthly Heatmap
+  // above (anaHmMonth/hmYear). Navigating the heatmap's prev/next month buttons
+  // automatically updates this chart too — no separate nav needed here.
+  const chartMonthFirst=new Date(hmYear,hmMonth,1);
+  const chartMonthLast=new Date(hmYear,hmMonth+1,0); // last day of that month
+  const daysInChartMonth=chartMonthLast.getDate();
   const last30=[];
-  for(let i=29;i>=0;i--){
-    const d=new Date(today);d.setDate(d.getDate()-i);
+  for(let i=0;i<daysInChartMonth;i++){
+    const d=new Date(hmYear,hmMonth,i+1);
     const k=localDateKey(d);
     const sess=parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
     const tasks=(dayMap[k]||{total:0}).total;
@@ -3500,7 +3509,7 @@ function buildFocusActivitySections(today){
   return `
 ${hmHTML}
 
-${buildSessLineChart(last30, target, today)}
+${buildSessLineChart(last30, target, today, hmMonth, hmYear, chartMonthFirst, chartMonthLast)}
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
   <div class="stats-section" style="margin-bottom:0;padding:18px 20px;">
