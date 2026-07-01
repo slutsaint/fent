@@ -2060,6 +2060,9 @@ function renderAnalytics(){
   /* ── Focus & Activity Sections (integrated from Stats) ── */
   html+=buildFocusActivitySections(today);
 
+  /* ── Per-Chapter Time Breakdown (new) ── */
+  html+=buildChapterTimeBreakdown();
+
   el.innerHTML=html;
 
   /* Animate bars + ring legend fills after paint */
@@ -2077,6 +2080,10 @@ function renderAnalytics(){
       });
       // Focus activity bars
       el.querySelectorAll('.subj-time-fill[data-w],.sess-bar-fill[data-w]').forEach(b=>{
+        b.style.width=b.dataset.w+'%';
+      });
+      // Per-chapter time breakdown bars
+      el.querySelectorAll('.cbt-bar-fill[data-w]').forEach(b=>{
         b.style.width=b.dataset.w+'%';
       });
     },80);
@@ -3572,6 +3579,199 @@ ${buildSessLineChart(last30, target, today, hmMonth, hmYear, chartMonthFirst, ch
 `;
 }
 
+/* ─── Per-Chapter Time Breakdown ───────────────────────────────────────────
+   Extracts accurate chapter-level focus time from every fent_focuslog_* entry
+   ever saved (each entry already carries subj, chapN, chapName, task,
+   durationSecs). Questions are NOT chapter-tagged anywhere in this tracker's
+   data model — fent_ques_* is daily-only — so this section never fabricates
+   per-chapter question counts. Only chapters with either logged focus time
+   OR at least one ticked task are shown, keeping the list relevant. */
+// State: which chapter is expanded for full detail (subj_n key), and which subject filter is active
+let cbtSelectedChap=null;
+let cbtSubjFilter='all'; // 'all' | 'math' | 'chem' | 'phys'
+
+function cbtSetFilter(s){ cbtSubjFilter=s; cbtSelectedChap=null; if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();} }
+function cbtToggleChap(key){ cbtSelectedChap=(cbtSelectedChap===key)?null:key; if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();} }
+
+function buildChapterTimeBreakdown(){
+  // ── Aggregate every focus log entry across all history, by chapter ──
+  const chapMap={};
+  try{
+    Object.keys(localStorage).filter(k=>k.startsWith('fent_focuslog_')).forEach(key=>{
+      let entries=[];
+      try{entries=JSON.parse(localStorage.getItem(key)||'[]');}catch{return;}
+      const dateKey=key.replace('fent_focuslog_','');
+      entries.forEach(e=>{
+        if(!e||!e.subj||e.chapN===undefined) return;
+        const ck=e.subj+'_'+e.chapN;
+        if(!chapMap[ck]) chapMap[ck]={subj:e.subj,n:e.chapN,name:e.chapName||'',secs:0,ques:0,byTask:{theory:0,module:0,pyq:0,revision:0},sessionDates:new Set()};
+        chapMap[ck].secs+=e.durationSecs||0;
+        chapMap[ck].sessionDates.add(dateKey);
+        if(e.task && chapMap[ck].byTask[e.task]!==undefined) chapMap[ck].byTask[e.task]+=e.durationSecs||0;
+      });
+    });
+  }catch(e){}
+
+  // ── Merge in chapter-tagged questions (new forward-only log) ──
+  try{
+    Object.keys(localStorage).filter(k=>k.startsWith('fent_quesbychap_')).forEach(key=>{
+      let entries=[];
+      try{entries=JSON.parse(localStorage.getItem(key)||'[]');}catch{return;}
+      entries.forEach(e=>{
+        if(!e||!e.subj||e.chapN===undefined) return;
+        const ck=e.subj+'_'+e.chapN;
+        if(!chapMap[ck]) chapMap[ck]={subj:e.subj,n:e.chapN,name:e.chapName||'',secs:0,ques:0,byTask:{theory:0,module:0,pyq:0,revision:0},sessionDates:new Set()};
+        chapMap[ck].ques+=e.ques||0;
+      });
+    });
+  }catch(e){}
+
+  // ── Merge in chapters that have ticked tasks but maybe zero logged time ──
+  const allChaps=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
+  allChaps.forEach(({s,ch})=>{
+    const ck=s+'_'+ch.n;
+    const hasTask=isAny(s,ch.n);
+    const hasLog=!!chapMap[ck];
+    if(hasTask && !hasLog){
+      chapMap[ck]={subj:s,n:ch.n,name:ch.name,secs:0,ques:0,byTask:{theory:0,module:0,pyq:0,revision:0},sessionDates:new Set()};
+    } else if(hasLog && !chapMap[ck].name){
+      chapMap[ck].name=ch.name;
+    }
+  });
+
+  // ── Filter: only chapters that are actually "touched" ──
+  let touched=Object.values(chapMap).filter(c=>c.secs>0||c.ques>0||isAny(c.subj,c.n));
+
+  const subjColors={math:'#c2a359',chem:'#6b9e83',phys:'#908bb0'};
+  const subjNames={math:'Mathematics',chem:'Chemistry',phys:'Physics'};
+  const taskColors={theory:'var(--m)',module:'var(--c)',pyq:'var(--p)',revision:'var(--red)'};
+  const taskLabels={theory:'Theory',module:'Module',pyq:'PYQ',revision:'Revision'};
+
+  function fmtTime(s){
+    if(s<=0) return '—';
+    const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
+    return h>0?`${h}h ${m}m`:`${m}m`;
+  }
+
+  if(touched.length===0){
+    return `<div class="ana-section" style="animation:fadeUp .4s var(--ease) both;">
+  <span class="ana-sect-title">Time Per Chapter</span>
+  <div style="background:radial-gradient(circle at 50% 0%,rgba(255,255,255,0.03),transparent 70%);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:32px 14px;text-align:center;">
+    <div style="font-size:22px;opacity:.15;margin-bottom:8px;">◌</div>
+    <span style="font-size:10px;color:var(--t3);">No chapter activity logged yet — start a Focus session or tick a task to see this build up.</span>
+  </div>
+</div>`;
+  }
+
+  // ── Apply subject filter ──
+  const allTouched=touched;
+  if(cbtSubjFilter!=='all') touched=touched.filter(c=>c.subj===cbtSubjFilter);
+  touched.sort((a,b)=>b.secs-a.secs);
+
+  const totalSecsAll=allTouched.reduce((a,c)=>a+c.secs,0);
+  const totalQuesAll=allTouched.reduce((a,c)=>a+c.ques,0);
+  const maxChapSecs=Math.max(...allTouched.map(c=>c.secs),1);
+
+  // ── Subject totals (always computed on full set, not filtered) ──
+  const bySubj={math:{secs:0,ques:0,count:0},chem:{secs:0,ques:0,count:0},phys:{secs:0,ques:0,count:0}};
+  allTouched.forEach(c=>{ bySubj[c.subj].secs+=c.secs; bySubj[c.subj].ques+=c.ques; bySubj[c.subj].count++; });
+
+  // ── Most-studied chapter (headline stat) ──
+  const topChap=allTouched.length?[...allTouched].sort((a,b)=>b.secs-a.secs)[0]:null;
+  // Average time per chapter
+  const avgSecsPerChap=allTouched.length>0?Math.round(totalSecsAll/allTouched.length):0;
+  // Average questions per touched chapter (total chapter-tagged ques / chapters with any ques logged)
+  const chapsWithQues=allTouched.filter(c=>c.ques>0).length;
+  const avgQuesPerChap=chapsWithQues>0?Math.round(totalQuesAll/chapsWithQues):0;
+
+  const uid='cb'+Math.floor(Math.random()*99999);
+
+  // ── Hero stat row ──
+  const heroStats=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+    <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:11px;text-align:center;animation:fadeUp .35s var(--ease) .03s both;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--t1);letter-spacing:-.03em;">${allTouched.length}</div>
+      <div style="font-size:7.5px;color:var(--t3);margin-top:3px;letter-spacing:.07em;text-transform:uppercase;">chapters touched</div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:11px;text-align:center;animation:fadeUp .35s var(--ease) .07s both;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--c);letter-spacing:-.03em;">${fmtTime(avgSecsPerChap)}</div>
+      <div style="font-size:7.5px;color:var(--t3);margin-top:3px;letter-spacing:.07em;text-transform:uppercase;">avg / chapter</div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:11px;text-align:center;animation:fadeUp .35s var(--ease) .11s both;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:${avgQuesPerChap>0?'var(--p)':'var(--t3)'};letter-spacing:-.03em;">${avgQuesPerChap>0?avgQuesPerChap:'—'}</div>
+      <div style="font-size:7.5px;color:var(--t3);margin-top:3px;letter-spacing:.07em;text-transform:uppercase;">avg ques / chap</div>
+    </div>
+  </div>`;
+
+  // ── Subject filter pills (clickable, act as a segmented control) ──
+  const filterPills=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+    ${['all','math','chem','phys'].filter(s=>s==='all'||bySubj[s].count>0).map(s=>{
+      const active=cbtSubjFilter===s;
+      const label=s==='all'?'All':subjNames[s];
+      const col=s==='all'?'rgba(255,255,255,0.7)':subjColors[s];
+      return `<button onclick="cbtSetFilter('${s}')" style="background:${active?(s==='all'?'rgba(255,255,255,0.1)':col+'22'):'transparent'};border:1px solid ${active?(s==='all'?'rgba(255,255,255,0.25)':col+'55'):'rgba(255,255,255,0.08)'};border-radius:99px;padding:5px 11px;font-size:9.5px;color:${active?col:'var(--t3)'};font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .2s;letter-spacing:.02em;">${label}${s!=='all'?` <span style="opacity:.5;">${bySubj[s].count}</span>`:''}</button>`;
+    }).join('')}
+  </div>`;
+
+  // ── Horizontal bar chart — each chapter as a labeled bar, click to expand ──
+  const barChartRows=touched.map((c,i)=>{
+    const ck=c.subj+'_'+c.n;
+    const pct=Math.max(2,Math.round(c.secs/maxChapSecs*100));
+    const isOpen=cbtSelectedChap===ck;
+    const col=subjColors[c.subj];
+    const delay=(i*0.02).toFixed(3);
+    const taskBreakdown=['theory','module','pyq','revision'].filter(t=>c.byTask[t]>0).map(t=>
+      `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;">
+        <span style="font-size:9px;color:${taskColors[t]};opacity:.85;">${taskLabels[t]}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);">${fmtTime(c.byTask[t])}</span>
+      </div>`
+    ).join('');
+
+    return `<div style="border-bottom:1px solid rgba(255,255,255,0.04);animation:fadeUp .3s var(--ease) ${delay}s both;">
+      <div onclick="cbtToggleChap('${ck}')" style="padding:9px 2px;cursor:pointer;user-select:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;">
+          <div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;">
+            <div style="width:6px;height:6px;border-radius:50%;background:${col};flex-shrink:0;box-shadow:0 0 6px ${col}66;"></div>
+            <span style="font-size:11.5px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name||('Ch '+c.n)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+            ${c.ques>0?`<span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--p);opacity:.8;">${c.ques}q</span>`:''}
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${col};">${fmtTime(c.secs)}</span>
+            <svg viewBox="0 0 10 6" width="8" height="5" style="transition:transform .3s cubic-bezier(.16,1,.3,1);transform:rotate(${isOpen?180:0}deg);flex-shrink:0;opacity:.4;"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div style="width:100%;height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;">
+          <div class="cbt-bar-fill" data-w="${pct}" style="width:0%;height:100%;background:linear-gradient(90deg,${col}99,${col});border-radius:3px;transition:width .9s cubic-bezier(.16,1,.3,1);"></div>
+        </div>
+      </div>
+      <div style="max-height:${isOpen?'200px':'0px'};opacity:${isOpen?'1':'0'};overflow:hidden;transition:max-height .4s cubic-bezier(.16,1,.3,1),opacity .3s ease;">
+        <div style="padding:2px 2px 12px 15px;">
+          ${taskBreakdown||`<div style="font-size:9px;color:var(--t3);opacity:.5;padding:4px 0;">No task-level time logged yet</div>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Mini context line for top chapter (only when viewing 'all') ──
+  const topChapLine = (cbtSubjFilter==='all' && topChap) ? `<div style="font-size:8.5px;color:var(--t3);margin-bottom:10px;font-family:'JetBrains Mono',monospace;">most time on <span style="color:${subjColors[topChap.subj]};">${topChap.name}</span> · avg ${fmtTime(avgSecsPerChap)}/chapter</div>` : '';
+
+  return `<div class="ana-section" style="animation:fadeUp .4s var(--ease) both;">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+    <span class="ana-sect-title" style="margin-bottom:0;">Time Per Chapter</span>
+    <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.16);">${allTouched.length} chapter${allTouched.length!==1?'s':''} · ${fmtTime(totalSecsAll)} total</span>
+  </div>
+
+  ${heroStats}
+  ${filterPills}
+  ${topChapLine}
+
+  <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:4px 12px;">
+    ${barChartRows}
+  </div>
+
+  <div style="font-size:8px;color:var(--t3);opacity:.4;margin-top:10px;text-align:center;font-family:'JetBrains Mono',monospace;">Tap a chapter to see its task breakdown · questions tracked per-chapter from now on</div>
+</div>`;
+}
+
 // Month heatmap navigation
 let anaHmSelectedDay=null;
 function anaHmNav(dir){
@@ -3710,6 +3910,25 @@ function addTodayQues(n){
   try{localStorage.setItem(todayQuesKey(),next);}catch{}
   return next;
 }
+
+// ── Chapter-tagged questions log (forward-only, additive) ──────────────────
+// The original fent_ques_* system only ever stored a daily total with no
+// chapter attribution — that data cannot be retroactively split by chapter.
+// This new log starts fresh: from now on, when questions are logged during a
+// break and a chapter was active, we ALSO record a per-chapter entry here.
+// Existing daily totals (fent_ques_*) are untouched — this is purely additive.
+function todayQuesChapKey(){ return 'fent_quesbychap_'+localDateKey(); }
+function getTodayQuesChapLog(){try{return JSON.parse(localStorage.getItem(todayQuesChapKey())||'[]');}catch{return[];}}
+function saveTodayQuesChapLog(l){try{localStorage.setItem(todayQuesChapKey(),JSON.stringify(l));}catch{}}
+function addQuesToChapter(n, chap){
+  if(!chap || n<=0) return;
+  const log=getTodayQuesChapLog();
+  const idx=log.findIndex(e=>e.subj===chap.subj&&e.chapN===chap.n);
+  if(idx>=0){ log[idx].ques+=n; }
+  else { log.push({chapName:chap.name,subj:chap.subj,chapN:chap.n,ques:n}); }
+  saveTodayQuesChapLog(log);
+}
+// ── End chapter-tagged questions log ─────────────────────────────────────────
 
 
 // ── Crash / unexpected-close recovery ──────────────────────────────────────
@@ -4287,6 +4506,9 @@ function focusLogQues(){
   const n=parseInt(inp.value||'0');
   if(isNaN(n)||n<=0){toast('Enter a number of questions');return;}
   const total=addTodayQues(n);
+  // Tag to the chapter that was just being studied (still set during break)
+  // — purely additive, does not affect the existing daily total logic above.
+  if(focusTimer.currentChap){ addQuesToChapter(n, focusTimer.currentChap); }
   inp.value='';
   toast('✓ '+n+' questions logged — '+total+' total today');
   // Re-render focus panel to update the ques display, and analytics if open
