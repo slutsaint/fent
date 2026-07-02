@@ -3881,9 +3881,6 @@ function loadFocus(){try{return JSON.parse(localStorage.getItem(FOCUS_KEY)||'{}'
 function saveFocus(d){try{localStorage.setItem(FOCUS_KEY,JSON.stringify(d))}catch{}}
 
 // Default settings
-// ⚠️ TEST FILE — session=10s, breaks=5s
-const TEST_SESSION_SECS=10;
-const TEST_BREAK_SECS=5;
 let focusSettings = Object.assign({
   sessionMins:90,
   shortBreakMins:15,
@@ -3899,8 +3896,8 @@ let focusTimer = {
   mode:'session', // 'session'|'short'|'long'
   sessionCount:0,  // completed sessions today
   cycleSessions:0, // sessions in current cycle (resets after long break)
-  secondsLeft:TEST_SESSION_SECS,
-  totalSeconds:TEST_SESSION_SECS,
+  secondsLeft:focusSettings.sessionMins*60,
+  totalSeconds:focusSettings.sessionMins*60,
   intervalId:null,
   endAt:null,        // absolute Date.now() timestamp when current mode ends — drift-proof
   // Log state
@@ -4831,23 +4828,23 @@ function focusOnModeEnd(){
       // Long break
       T.mode='long';
       T.cycleSessions=0;
-      T.secondsLeft=TEST_BREAK_SECS;
-      T.totalSeconds=TEST_BREAK_SECS;
-      toast('🎉 Long Break! 5s');
+      T.secondsLeft=focusSettings.longBreakMins*60;
+      T.totalSeconds=focusSettings.longBreakMins*60;
+      toast('🎉 Long Break! '+focusSettings.longBreakMins+'m');
     } else {
       // Short break
       T.mode='short';
-      T.secondsLeft=TEST_BREAK_SECS;
-      T.totalSeconds=TEST_BREAK_SECS;
-      toast('Session done! Short break 5s');
+      T.secondsLeft=focusSettings.shortBreakMins*60;
+      T.totalSeconds=focusSettings.shortBreakMins*60;
+      toast('Session done! Short break '+focusSettings.shortBreakMins+'m');
     }
     // Auto-continue break timer (no focus logging during break)
     focusStartInterval();
   } else {
     // Break ended — start new session, resume logging NOW
     T.mode='session';
-    T.secondsLeft=TEST_SESSION_SECS;
-    T.totalSeconds=TEST_SESSION_SECS;
+    T.secondsLeft=focusSettings.sessionMins*60;
+    T.totalSeconds=focusSettings.sessionMins*60;
     // Only resume logging if a chapter+task is selected
     if(T.currentChap&&T.currentTask) T.segStart=Date.now();
     toast('Break over! Starting session ▶');
@@ -4885,18 +4882,18 @@ function focusSkip(){
     T.cycleSessions++;
     if(T.cycleSessions>=focusSettings.sessionsPerCycle){
       T.mode='long';T.cycleSessions=0;
-      T.secondsLeft=TEST_BREAK_SECS;
-      T.totalSeconds=TEST_BREAK_SECS;
+      T.secondsLeft=focusSettings.longBreakMins*60;
+      T.totalSeconds=focusSettings.longBreakMins*60;
     } else {
       T.mode='short';
-      T.secondsLeft=TEST_BREAK_SECS;
-      T.totalSeconds=TEST_BREAK_SECS;
+      T.secondsLeft=focusSettings.shortBreakMins*60;
+      T.totalSeconds=focusSettings.shortBreakMins*60;
     }
   } else {
     // Skipping a break — no session credit, just move to next session
     T.mode='session';
-    T.secondsLeft=TEST_SESSION_SECS;
-    T.totalSeconds=TEST_SESSION_SECS;
+    T.secondsLeft=focusSettings.sessionMins*60;
+    T.totalSeconds=focusSettings.sessionMins*60;
   }
   T.running=false;
   T.segStart=null;
@@ -4913,8 +4910,8 @@ function focusReset(){
   T.running=false;
   T.cycleSessions=0;
   T.segStart=null;
-  T.secondsLeft=TEST_SESSION_SECS;
-  T.totalSeconds=TEST_SESSION_SECS;
+  T.secondsLeft=focusSettings.sessionMins*60;
+  T.totalSeconds=focusSettings.sessionMins*60;
   renderFocus();
 }
 
@@ -4927,16 +4924,16 @@ function focusAdjSetting(key,delta,min,max){
   // Update relevant timer if not running
   if(!focusTimer.running){
     if(key==='sessionMins'&&focusTimer.mode==='session'){
-      focusTimer.secondsLeft=TEST_SESSION_SECS;
-      focusTimer.totalSeconds=TEST_SESSION_SECS;
+      focusTimer.secondsLeft=focusSettings.sessionMins*60;
+      focusTimer.totalSeconds=focusSettings.sessionMins*60;
     }
     if(key==='shortBreakMins'&&focusTimer.mode==='short'){
-      focusTimer.secondsLeft=TEST_BREAK_SECS;
-      focusTimer.totalSeconds=TEST_BREAK_SECS;
+      focusTimer.secondsLeft=focusSettings.shortBreakMins*60;
+      focusTimer.totalSeconds=focusSettings.shortBreakMins*60;
     }
     if(key==='longBreakMins'&&focusTimer.mode==='long'){
-      focusTimer.secondsLeft=TEST_BREAK_SECS;
-      focusTimer.totalSeconds=TEST_BREAK_SECS;
+      focusTimer.secondsLeft=focusSettings.longBreakMins*60;
+      focusTimer.totalSeconds=focusSettings.longBreakMins*60;
     }
   }
   renderFocus();
@@ -5610,9 +5607,9 @@ function saveFocusSettingsFromCal(){
   if(msg){msg.classList.add('visible');setTimeout(()=>msg.classList.remove('visible'),2000);}
   // Update timer if not running
   if(!focusTimer.running){
-    if(focusTimer.mode==='session'){focusTimer.secondsLeft=TEST_SESSION_SECS;focusTimer.totalSeconds=TEST_SESSION_SECS;}
-    if(focusTimer.mode==='short'){focusTimer.secondsLeft=TEST_BREAK_SECS;focusTimer.totalSeconds=TEST_BREAK_SECS;}
-    if(focusTimer.mode==='long'){focusTimer.secondsLeft=TEST_BREAK_SECS;focusTimer.totalSeconds=TEST_BREAK_SECS;}
+    if(focusTimer.mode==='session'){focusTimer.secondsLeft=focusSettings.sessionMins*60;focusTimer.totalSeconds=focusSettings.sessionMins*60;}
+    if(focusTimer.mode==='short'){focusTimer.secondsLeft=focusSettings.shortBreakMins*60;focusTimer.totalSeconds=focusSettings.shortBreakMins*60;}
+    if(focusTimer.mode==='long'){focusTimer.secondsLeft=focusSettings.longBreakMins*60;focusTimer.totalSeconds=focusSettings.longBreakMins*60;}
   }
   if(document.getElementById('p-focus').classList.contains('on')) renderFocus();
   if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
