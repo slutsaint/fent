@@ -2509,36 +2509,51 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   const totalQues30=days.reduce((a,d)=>a+d.ques,0);
   const hasQuesData=totalQues30>0;
 
-  // ── Wasted sessions (not days) — computed across ALL history, not just 30d window ──
-  // For every workday (non-Sunday) from firstEffortDate up to (not including) today,
-  // wasted += max(0, target - sessionsActuallyDone). Partial days count as partial waste.
+  // ── Wasted sessions — computed across ALL history ──────────────────────────
+  // For every workday (non-Sunday) from firstEffortDate up to yesterday:
+  //   dayTarget  = the target that was set THAT day (fent_daytarget_*), falling
+  //                back to today's target for days before the snapshot was added.
+  //   wasted    += max(0, dayTarget - done)  [missed portion]
+  //   overTarget+= max(0, done - dayTarget)  [bonus above target]
+  // Over-target weekday sessions reduce wasted (you earned extra that day).
+  // Sunday sessions also reduce wasted (bonus rest-day work).
+  // Final: wastedSessions = max(0, totalWasted - overTarget - sundaySessions)
   let wastedSessions = 0;
   if(firstEffortDate){
     const yesterday = new Date(today); yesterday.setDate(today.getDate()-1); yesterday.setHours(0,0,0,0);
     const cursor = new Date(firstEffortDate);
+    let overTargetSessions = 0;
+    let sundaySessions = 0;
+
+    // Past days (up to yesterday) — use per-day target snapshots
     while(cursor <= yesterday){
-      const isSunCursor = cursor.getDay() === 0;
-      if(!isSunCursor){
-        const k = localDateKey(cursor);
-        const done = parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
-        const short = Math.max(0, target - done);
-        wastedSessions += short;
+      const k = localDateKey(cursor);
+      const isSun = cursor.getDay() === 0;
+      const done = parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
+      if(isSun){
+        sundaySessions += done;
+      } else {
+        const dayTarget = parseFloat(localStorage.getItem('fent_daytarget_'+k)||String(target));
+        wastedSessions  += Math.max(0, dayTarget - done);
+        overTargetSessions += Math.max(0, done - dayTarget);
       }
       cursor.setDate(cursor.getDate()+1);
     }
-    // Sunday sessions reduce wasted — studying on rest day covers the debt.
-    // Sum all Sunday sessions since firstEffortDate (including today if Sunday).
-    let sundaySessions = 0;
-    const cursorSun = new Date(firstEffortDate);
-    while(cursorSun <= today){
-      if(cursorSun.getDay() === 0){
-        const k = localDateKey(cursorSun);
-        sundaySessions += parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
+
+    // TODAY — always use current target (day-level: latest change wins)
+    if(today >= firstEffortDate){
+      const todayK = localDateKey(today);
+      const isTodaySun = today.getDay() === 0;
+      const todayDone = parseFloat(localStorage.getItem('fent_sessions_'+todayK)||'0');
+      if(isTodaySun){
+        sundaySessions += todayDone;
+      } else {
+        wastedSessions  += Math.max(0, target - todayDone);
+        overTargetSessions += Math.max(0, todayDone - target);
       }
-      cursorSun.setDate(cursorSun.getDate()+1);
     }
-    wastedSessions = Math.max(0, wastedSessions - sundaySessions);
-    wastedSessions = Math.round(wastedSessions * 10) / 10; // 1 decimal
+
+    wastedSessions = Math.max(0, wastedSessions - overTargetSessions - sundaySessions);
   }
 
   // ── Questions behind + days to cover ──
@@ -2554,32 +2569,37 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
     while(cursorQ <= todayEnd){
       const isSunCursorQ = cursorQ.getDay() === 0;
       const k = localDateKey(cursorQ);
-      if(!isSunCursorQ) expectedQues += qTarget;
+      if(!isSunCursorQ){
+        // Use the ques target that was set THAT day for historical accuracy
+        const dayQTarget = parseInt(localStorage.getItem('fent_dayqtarget_'+k)||String(qTarget));
+        expectedQues += dayQTarget;
+      }
       const done = parseInt(localStorage.getItem('fent_ques_'+k)||'0');
       actualQues += done;
       cursorQ.setDate(cursorQ.getDate()+1);
     }
     quesBehind = Math.max(0, expectedQues - actualQues);
-    // Days to cover at current daily target (qTarget ques/day on workdays)
-    // = ceil(quesBehind / qTarget), but only counting workdays
     daysToCover = qTarget > 0 ? Math.ceil(quesBehind / qTarget) : 0;
   }
 
-  // ── Wasted questions — same logic as wasted sessions ──
-  // For every workday (non-Sunday) from firstEffortDate to yesterday,
-  // wastedQues += max(0, qTarget - quesDoneThisDay)
+  // ── Wasted questions — same logic, per-day ques target snapshots ──────────
   let wastedQues = 0;
   if(firstEffortDate && qTarget > 0){
     const yesterdayQ = new Date(today); yesterdayQ.setDate(today.getDate()-1); yesterdayQ.setHours(0,0,0,0);
     const cursorWQ = new Date(firstEffortDate);
+    let overTargetQues = 0;
     while(cursorWQ <= yesterdayQ){
       if(cursorWQ.getDay() !== 0){ // skip Sundays
         const k = localDateKey(cursorWQ);
         const done = parseInt(localStorage.getItem('fent_ques_'+k)||'0');
-        wastedQues += Math.max(0, qTarget - done);
+        // Use the ques target that was set that day, fallback to current
+        const dayQTarget = parseInt(localStorage.getItem('fent_dayqtarget_'+k)||String(qTarget));
+        wastedQues += Math.max(0, dayQTarget - done);
+        overTargetQues += Math.max(0, done - dayQTarget);
       }
       cursorWQ.setDate(cursorWQ.getDate()+1);
     }
+    wastedQues = Math.max(0, wastedQues - overTargetQues);
     wastedQues = Math.round(wastedQues);
   }
 
@@ -3861,6 +3881,9 @@ function loadFocus(){try{return JSON.parse(localStorage.getItem(FOCUS_KEY)||'{}'
 function saveFocus(d){try{localStorage.setItem(FOCUS_KEY,JSON.stringify(d))}catch{}}
 
 // Default settings
+// ⚠️ TEST FILE — session=10s, breaks=5s
+const TEST_SESSION_SECS=10;
+const TEST_BREAK_SECS=5;
 let focusSettings = Object.assign({
   sessionMins:90,
   shortBreakMins:15,
@@ -3876,8 +3899,8 @@ let focusTimer = {
   mode:'session', // 'session'|'short'|'long'
   sessionCount:0,  // completed sessions today
   cycleSessions:0, // sessions in current cycle (resets after long break)
-  secondsLeft:focusSettings.sessionMins*60,
-  totalSeconds:focusSettings.sessionMins*60,
+  secondsLeft:TEST_SESSION_SECS,
+  totalSeconds:TEST_SESSION_SECS,
   intervalId:null,
   endAt:null,        // absolute Date.now() timestamp when current mode ends — drift-proof
   // Log state
@@ -3907,7 +3930,11 @@ function getTodayQues(){try{return parseInt(localStorage.getItem(todayQuesKey())
 function addTodayQues(n){
   const cur=getTodayQues();
   const next=Math.max(0,cur+n);
-  try{localStorage.setItem(todayQuesKey(),next);}catch{}
+  try{
+    localStorage.setItem(todayQuesKey(),next);
+    // Snapshot today's ques target for historical accuracy when target changes later
+    localStorage.setItem('fent_dayqtarget_'+localDateKey(), focusSettings.dailyQuesTarget||70);
+  }catch{}
   return next;
 }
 
@@ -4037,12 +4064,14 @@ function recoverFromCrash(){
     const todaySessKey = 'fent_sessions_' + localDateKey();
     const cur = parseFloat(localStorage.getItem(todaySessKey) || '0');
     localStorage.setItem(todaySessKey, cur + 1.0); // store raw float
+    localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
   } else if(fraction >= 0.05) {
     // Partial — same credit logic as focusSkip
     const partial = Math.min(0.9, fraction);
     const todaySessKey = 'fent_sessions_' + localDateKey();
     const cur = parseFloat(localStorage.getItem(todaySessKey) || '0');
     localStorage.setItem(todaySessKey, cur + partial); // store raw float
+    localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
   }
   // fraction < 0.05 → too little, nothing credited
 }
@@ -4146,6 +4175,74 @@ function fmtCompletedBy(dt){
   return `${hh}:${String(m).padStart(2,'0')} ${ampm}`;
 }
 // ── End Completed By ────────────────────────────────────────────────────────
+
+let focusManualLogOpen=false;
+let focusManualChap=null;   // selected chapter for manual log
+let focusManualTask=null;   // selected task for manual log
+let focusManualSearch='';   // search string for manual log chapter picker
+function focusToggleManualLog(){
+  focusManualLogOpen=!focusManualLogOpen;
+  if(!focusManualLogOpen){ focusManualChap=null; focusManualTask=null; focusManualSearch=''; }
+  renderFocus();
+}
+function focusManualSelectChap(c){
+  if(typeof c==='string') try{c=JSON.parse(c);}catch{}
+  focusManualChap=c;
+  focusManualTask=null;
+  focusManualSearch='';
+  renderFocus();
+}
+function focusManualSelectTask(k){
+  focusManualTask=k;
+  renderFocus();
+  // Auto-focus the minutes input once task is picked
+  setTimeout(()=>{const inp=document.getElementById('manualMinsInp');if(inp)inp.focus();},30);
+}
+function focusManualSearchLive(v){
+  focusManualSearch=v;
+  const scroll=document.querySelector('.manual-chap-scroll');
+  if(!scroll){renderFocus();return;}
+  const allC=getAllChapters();
+  const filtered=v?allC.filter(c=>c.name.toLowerCase().includes(v.toLowerCase())):allC;
+  const chapDotColors={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'};
+  const chapTagColors={math:'MTH',chem:'CHM',phys:'PHY'};
+  scroll.innerHTML=filtered.slice(0,12).map(c=>'<div class="focus-chap-item" onclick="focusManualSelectChap('+JSON.stringify(c).replace(/"/g,'&quot;')+')">'
+    +'<div class="focus-chap-dot" style="background:'+chapDotColors[c.subj]+';"></div>'
+    +'<span class="focus-chap-name">'+c.name+'</span>'
+    +'<span class="focus-chap-subj">'+chapTagColors[c.subj]+'</span>'
+    +'</div>').join('')||'<div class="focus-chap-empty">No chapters found</div>';
+}
+function focusSubmitManualLog(){
+  const minInp=document.getElementById('manualMinsInp');
+  if(!focusManualChap||!focusManualTask){toast('Pick a chapter and task type first');return;}
+  const mins=parseFloat(minInp?minInp.value||'0':'0');
+  if(isNaN(mins)||mins<=0){toast('Enter minutes studied');return;}
+  const subj=focusManualChap.subj, chapN=focusManualChap.n, chapName=focusManualChap.name;
+  const sessionMins=focusSettings.sessionMins||90;
+  const fraction=mins/sessionMins;
+  const credit=Math.min(1.0, fraction);
+  // Add to today's sessions
+  const todaySessKey='fent_sessions_'+localDateKey();
+  const cur=parseFloat(localStorage.getItem(todaySessKey)||'0');
+  localStorage.setItem(todaySessKey, cur+credit);
+  localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
+  // Add to today's focus log
+  const secs=Math.round(mins*60);
+  const log=getTodayLog();
+  const idx=log.findIndex(e=>e.subj===subj&&e.chapN===chapN&&e.task===focusManualTask);
+  if(idx>=0){log[idx].durationSecs+=secs;}
+  else{log.push({chapName,subj,chapN,task:focusManualTask,durationSecs:secs});}
+  saveTodayLog(log);
+  const fmtV=v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
+  toast('✓ Logged '+mins+'m · '+chapName+' ('+fmtV(credit)+'s credit)');
+  // Reset manual log state
+  focusManualLogOpen=false;
+  focusManualChap=null;
+  focusManualTask=null;
+  focusManualSearch='';
+  renderFocus();
+  if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
+}
 
 function getAllChapters(){
   const all=[];
@@ -4292,20 +4389,94 @@ function renderFocus(){
     </div>`;
   }
 
+  // Manual session log panel — same UI pattern as "What are you working on?"
+  function buildManualLogHTML(){
+    const chapDotColors={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'};
+    const chapTagColors={math:'MTH',chem:'CHM',phys:'PHY'};
+    let h='';
+    // Header row: label + toggle button
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:'+(focusManualLogOpen?'12px':'6px')+';transition:margin .2s;">';
+    h+='<span style="font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;font-family:\'JetBrains Mono\',monospace;">Today\'s Focus Log</span>';
+    h+='<button onclick="focusToggleManualLog()" style="display:flex;align-items:center;gap:5px;background:'+(focusManualLogOpen?'rgba(107,158,131,0.12)':'rgba(255,255,255,0.04)')+';border:1px solid '+(focusManualLogOpen?'rgba(107,158,131,0.28)':'rgba(255,255,255,0.08)')+';border-radius:6px;padding:5px 10px;cursor:pointer;transition:all .2s;">';
+    h+='<svg viewBox="0 0 12 12" width="9" height="9" fill="none"><path d="M6 1v10M1 6h10" stroke="'+(focusManualLogOpen?'#6b9e83':'rgba(255,255,255,0.4)')+'" stroke-width="1.8" stroke-linecap="round"/></svg>';
+    h+='<span style="font-size:9px;color:'+(focusManualLogOpen?'var(--c)':'var(--t3)')+';font-family:\'JetBrains Mono\',monospace;letter-spacing:.02em;">log session</span></button></div>';
+
+    if(focusManualLogOpen){
+      h+='<div class="focus-selector-wrap" style="margin-bottom:12px;animation:fadeUp .2s var(--ease) both;border:1px solid rgba(107,158,131,0.15);border-radius:10px;">';
+
+      if(!focusManualChap){
+        // Step 1: search + chapter list — exact clone of the main search panel
+        const allC=getAllChapters();
+        const filtered=focusManualSearch?allC.filter(c=>c.name.toLowerCase().includes(focusManualSearch.toLowerCase())):allC;
+        h+='<div class="focus-search-panel" style="border-top:none;border-radius:10px;">';
+        h+='<div class="focus-search-header">';
+        h+='<span class="focus-search-ico">◎</span>';
+        h+='<input class="focus-search-inp" type="text" placeholder="Search chapter…" value="'+focusManualSearch+'" oninput="focusManualSearchLive(this.value)" autocomplete="off" spellcheck="false">';
+        if(focusManualSearch) h+='<button class="focus-search-clear" onclick="focusManualSearch=\'\';renderFocus()">✕</button>';
+        h+='</div>';
+        h+='<div class="focus-chap-scroll manual-chap-scroll">';
+        h+=filtered.slice(0,12).map(c=>'<div class="focus-chap-item" onclick="focusManualSelectChap('+JSON.stringify(c).replace(/"/g,'&quot;')+')">'
+          +'<div class="focus-chap-dot" style="background:'+chapDotColors[c.subj]+';"></div>'
+          +'<span class="focus-chap-name">'+c.name+'</span>'
+          +'<span class="focus-chap-subj">'+chapTagColors[c.subj]+'</span>'
+          +'</div>').join('')||'<div class="focus-chap-empty">No chapters found</div>';
+        h+='</div></div>';
+
+      } else if(!focusManualTask){
+        // Step 2: chapter selected, pick task type — exact clone of the task pills panel
+        h+='<div class="focus-active-bar" style="cursor:default;">';
+        h+='<div class="focus-active-indicator" style="background:'+chapDotColors[focusManualChap.subj]+';"></div>';
+        h+='<span class="focus-active-name">'+focusManualChap.name+'</span>';
+        h+='<button class="focus-active-edit" onclick="focusManualChap=null;focusManualTask=null;renderFocus()" title="Change chapter">✕</button>';
+        h+='</div>';
+        h+='<div class="focus-subtask-bar">';
+        ['theory','module','pyq','revision'].forEach(function(k){
+          h+='<button class="focus-subtask-btn '+k+'" onclick="focusManualSelectTask(\''+k+'\')">'+k+'</button>';
+        });
+        h+='</div>';
+
+      } else {
+        // Step 3: chapter + task set — show minutes input
+        h+='<div class="focus-active-bar" style="cursor:default;">';
+        h+='<div class="focus-active-indicator" style="background:'+chapDotColors[focusManualChap.subj]+';"></div>';
+        h+='<span class="focus-active-name">'+focusManualChap.name+'</span>';
+        h+='<span class="focus-active-tag '+focusManualTask+'">'+focusManualTask+'</span>';
+        h+='<button class="focus-active-edit" onclick="focusManualTask=null;renderFocus()" title="Change task">✕</button>';
+        h+='</div>';
+        h+='<div style="padding:10px 12px;border-top:1px solid rgba(255,255,255,0.05);">';
+        h+='<div style="font-size:8.5px;color:var(--t3);margin-bottom:8px;font-family:\'JetBrains Mono\',monospace;letter-spacing:.04em;">How many minutes did you study?</div>';
+        h+='<div style="display:flex;align-items:center;gap:8px;">';
+        h+='<input id="manualMinsInp" type="number" min="1" max="600" placeholder="e.g. 45" style="flex:1;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:8px 10px;font-size:13px;color:var(--t1);outline:none;font-family:\'JetBrains Mono\',monospace;" onkeydown="if(event.key===\'Enter\'){focusSubmitManualLog();}" />';
+        h+='<button onclick="focusSubmitManualLog()" style="background:rgba(107,158,131,0.18);border:1px solid rgba(107,158,131,0.32);border-radius:7px;padding:8px 16px;font-size:11px;color:var(--c);cursor:pointer;font-family:\'JetBrains Mono\',monospace;transition:background .2s;white-space:nowrap;">Log</button>';
+        h+='</div>';
+        h+='<div style="font-size:7.5px;color:var(--t3);opacity:.45;margin-top:7px;font-family:\'JetBrains Mono\',monospace;">session = '+focusSettings.sessionMins+'m · partial credit logged automatically</div>';
+        h+='</div>';
+      }
+
+      h+='</div>'; // close focus-selector-wrap
+    }
+    return h;
+  }
+  const manualLogHTML=buildManualLogHTML();
+
   // Today's log entries
-  const todayLogHTML=todayLog.length>0?`<div class="focus-today-log">
-    <div class="focus-log-label">Today's Focus Log</div>
-    ${todayLog.slice().reverse().slice(0,8).map((e,ei)=>{
+  // Today's log entries — computed outside template literal to avoid nested template parsing issues
+  let logRowsHTML='';
+  if(todayLog.length>0){
+    logRowsHTML=todayLog.slice().reverse().slice(0,8).map(function(e,ei){
       const dm=Math.floor(e.durationSecs/60);
       const ds=e.durationSecs%60;
-      const durStr=dm>0?`${dm}m ${ds}s`:`${ds}s`;
-      return `<div class="focus-log-entry" style="animation-delay:${ei*30}ms">
-        <div style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:${chapDotColors[e.subj]||'var(--t3)'};"></div>
-        <span class="focus-log-entry-chap">${e.chapName} · <span style="color:var(--t3);font-size:9px;">${e.task}</span></span>
-        <span class="focus-log-entry-dur">${durStr}</span>
-      </div>`;
-    }).join('')}
-  </div>`:'';
+      const durStr=dm>0?(dm+'m '+ds+'s'):(ds+'s');
+      const dotCol=chapDotColors[e.subj]||'var(--t3)';
+      return '<div class="focus-log-entry" style="animation-delay:'+(ei*30)+'ms">'
+        +'<div style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:'+dotCol+';"></div>'
+        +'<span class="focus-log-entry-chap">'+e.chapName+' \xb7 <span style="color:var(--t3);font-size:9px;">'+e.task+'</span></span>'
+        +'<span class="focus-log-entry-dur">'+durStr+'</span>'
+        +'</div>';
+    }).join('');
+  }
+
+  const todayLogHTML='<div class="focus-today-log">'+manualLogHTML+logRowsHTML+'</div>';
 
   // Questions box — only during break (short or long), minimal and clean
   const isBreak=T.mode==='short'||T.mode==='long';
@@ -4652,28 +4823,31 @@ function focusOnModeEnd(){
     const todaySessKey='fent_sessions_'+localDateKey();
     const cur=parseFloat(localStorage.getItem(todaySessKey)||'0');
     localStorage.setItem(todaySessKey, cur + 1.0);
+    // Snapshot today's session target — so if user later changes target,
+    // this day's wasted calc still uses the target that was set when they studied.
+    localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
 
     if(T.cycleSessions>=focusSettings.sessionsPerCycle){
       // Long break
       T.mode='long';
       T.cycleSessions=0;
-      T.secondsLeft=focusSettings.longBreakMins*60;
-      T.totalSeconds=focusSettings.longBreakMins*60;
-      toast('🎉 Long Break! '+focusSettings.longBreakMins+'m');
+      T.secondsLeft=TEST_BREAK_SECS;
+      T.totalSeconds=TEST_BREAK_SECS;
+      toast('🎉 Long Break! 5s');
     } else {
       // Short break
       T.mode='short';
-      T.secondsLeft=focusSettings.shortBreakMins*60;
-      T.totalSeconds=focusSettings.shortBreakMins*60;
-      toast('Session done! Short break '+focusSettings.shortBreakMins+'m');
+      T.secondsLeft=TEST_BREAK_SECS;
+      T.totalSeconds=TEST_BREAK_SECS;
+      toast('Session done! Short break 5s');
     }
     // Auto-continue break timer (no focus logging during break)
     focusStartInterval();
   } else {
     // Break ended — start new session, resume logging NOW
     T.mode='session';
-    T.secondsLeft=focusSettings.sessionMins*60;
-    T.totalSeconds=focusSettings.sessionMins*60;
+    T.secondsLeft=TEST_SESSION_SECS;
+    T.totalSeconds=TEST_SESSION_SECS;
     // Only resume logging if a chapter+task is selected
     if(T.currentChap&&T.currentTask) T.segStart=Date.now();
     toast('Break over! Starting session ▶');
@@ -4704,23 +4878,25 @@ function focusSkip(){
       const todaySessKey='fent_sessions_'+localDateKey();
       const cur=parseFloat(localStorage.getItem(todaySessKey)||'0');
       localStorage.setItem(todaySessKey, cur + partial); // store raw float, never round on write
+      // Snapshot today's target for historical accuracy
+      localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
     }
 
     T.cycleSessions++;
     if(T.cycleSessions>=focusSettings.sessionsPerCycle){
       T.mode='long';T.cycleSessions=0;
-      T.secondsLeft=focusSettings.longBreakMins*60;
-      T.totalSeconds=focusSettings.longBreakMins*60;
+      T.secondsLeft=TEST_BREAK_SECS;
+      T.totalSeconds=TEST_BREAK_SECS;
     } else {
       T.mode='short';
-      T.secondsLeft=focusSettings.shortBreakMins*60;
-      T.totalSeconds=focusSettings.shortBreakMins*60;
+      T.secondsLeft=TEST_BREAK_SECS;
+      T.totalSeconds=TEST_BREAK_SECS;
     }
   } else {
     // Skipping a break — no session credit, just move to next session
     T.mode='session';
-    T.secondsLeft=focusSettings.sessionMins*60;
-    T.totalSeconds=focusSettings.sessionMins*60;
+    T.secondsLeft=TEST_SESSION_SECS;
+    T.totalSeconds=TEST_SESSION_SECS;
   }
   T.running=false;
   T.segStart=null;
@@ -4737,8 +4913,8 @@ function focusReset(){
   T.running=false;
   T.cycleSessions=0;
   T.segStart=null;
-  T.secondsLeft=focusSettings.sessionMins*60;
-  T.totalSeconds=focusSettings.sessionMins*60;
+  T.secondsLeft=TEST_SESSION_SECS;
+  T.totalSeconds=TEST_SESSION_SECS;
   renderFocus();
 }
 
@@ -4751,16 +4927,16 @@ function focusAdjSetting(key,delta,min,max){
   // Update relevant timer if not running
   if(!focusTimer.running){
     if(key==='sessionMins'&&focusTimer.mode==='session'){
-      focusTimer.secondsLeft=focusSettings.sessionMins*60;
-      focusTimer.totalSeconds=focusSettings.sessionMins*60;
+      focusTimer.secondsLeft=TEST_SESSION_SECS;
+      focusTimer.totalSeconds=TEST_SESSION_SECS;
     }
     if(key==='shortBreakMins'&&focusTimer.mode==='short'){
-      focusTimer.secondsLeft=focusSettings.shortBreakMins*60;
-      focusTimer.totalSeconds=focusSettings.shortBreakMins*60;
+      focusTimer.secondsLeft=TEST_BREAK_SECS;
+      focusTimer.totalSeconds=TEST_BREAK_SECS;
     }
     if(key==='longBreakMins'&&focusTimer.mode==='long'){
-      focusTimer.secondsLeft=focusSettings.longBreakMins*60;
-      focusTimer.totalSeconds=focusSettings.longBreakMins*60;
+      focusTimer.secondsLeft=TEST_BREAK_SECS;
+      focusTimer.totalSeconds=TEST_BREAK_SECS;
     }
   }
   renderFocus();
@@ -5424,15 +5600,22 @@ function saveFocusSettingsFromCal(){
   const fd=loadFocus();
   fd.settings=focusSettings;
   saveFocus(fd);
+  // Write today's target snapshot — the wasted calc always uses current target for today,
+  // but also update the snapshot so it's ready for tomorrow's past-day lookup.
+  try{
+    localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
+    localStorage.setItem('fent_dayqtarget_'+localDateKey(), focusSettings.dailyQuesTarget||70);
+  }catch(e){}
   const msg=document.getElementById('calFocusSaveMsg');
   if(msg){msg.classList.add('visible');setTimeout(()=>msg.classList.remove('visible'),2000);}
   // Update timer if not running
   if(!focusTimer.running){
-    if(focusTimer.mode==='session'){focusTimer.secondsLeft=focusSettings.sessionMins*60;focusTimer.totalSeconds=focusSettings.sessionMins*60;}
-    if(focusTimer.mode==='short'){focusTimer.secondsLeft=focusSettings.shortBreakMins*60;focusTimer.totalSeconds=focusSettings.shortBreakMins*60;}
-    if(focusTimer.mode==='long'){focusTimer.secondsLeft=focusSettings.longBreakMins*60;focusTimer.totalSeconds=focusSettings.longBreakMins*60;}
+    if(focusTimer.mode==='session'){focusTimer.secondsLeft=TEST_SESSION_SECS;focusTimer.totalSeconds=TEST_SESSION_SECS;}
+    if(focusTimer.mode==='short'){focusTimer.secondsLeft=TEST_BREAK_SECS;focusTimer.totalSeconds=TEST_BREAK_SECS;}
+    if(focusTimer.mode==='long'){focusTimer.secondsLeft=TEST_BREAK_SECS;focusTimer.totalSeconds=TEST_BREAK_SECS;}
   }
   if(document.getElementById('p-focus').classList.contains('on')) renderFocus();
+  if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
 }
 
 function resetFocusSettings(){
