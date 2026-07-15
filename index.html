@@ -205,7 +205,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .pulse-t-tag:hover{background:var(--t1); color:var(--bg);}
 .pulse-t-date{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3); font-weight:300;}
 
-/* ─── TESTS TAB ─── */
+/* ─── (legacy CSS — unused, harmless) ─── */
 .test-group{margin-bottom:24px}
 .test-group-label{
   margin-bottom:8px;
@@ -367,7 +367,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .chart-line-anim{stroke-dasharray:3000;stroke-dashoffset:3000;animation:dashReveal 1.5s cubic-bezier(.16,1,.3,1) forwards;}
 .chart-area-anim{animation:areaFade .9s ease .15s both;}
 .chart-dot-anim{animation:dotReveal .35s cubic-bezier(.16,1,.3,1) both;}
-.score-chart-legend{display:flex;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap;}
+.chart-pulse-ring{animation:pulseRing 2.2s ease-out infinite;opacity:0;transform-origin:center;}
+@keyframes pulseRing{0%{r:6;opacity:.7;}70%{r:16;opacity:0;}100%{r:16;opacity:0;}}
+.score-chart-legend{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;}
+.score-leg-pill{display:flex;align-items:center;gap:6px;font-size:9.5px;font-family:'JetBrains Mono',monospace;padding:5px 10px;border-radius:99px;border:1px solid var(--b1);transition:transform .2s;}
+.score-leg-pill:hover{transform:translateY(-1px);}
 .score-leg-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;}
 .score-leg-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 
@@ -638,6 +642,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-schedule-title{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:14px;font-weight:500;}
 .cal-sched-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 @media(max-width:500px){.cal-sched-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:460px){.progress-4box{grid-template-columns:repeat(2,1fr)!important;}}
 
 /* ═══════════════════════════════════════════════
    MOBILE RESPONSIVE — 480px and below
@@ -853,6 +858,75 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .focus-doneby-sep{font-size:9px;color:rgba(255,255,255,0.12);margin:0 2px;}
 .focus-doneby-rem{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.01em;transition:color .4s;}
 .focus-doneby-prefix{font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-right:4px;opacity:.7;}
+
+/* ── Log Test — score entry card. Premium, compact, smooth. ── */
+.test-score-card{background:rgba(196,100,100,0.03);border:1px solid rgba(196,100,100,0.16);border-radius:12px;padding:14px 14px 12px;margin-bottom:14px;animation:fadeUp .4s var(--ease) both;}
+.test-score-stagger-1{animation:fadeUp .35s var(--ease) .04s both;}
+.test-score-stagger-2{animation:fadeUp .35s var(--ease) .08s both;}
+.test-score-stagger-3{animation:fadeUp .35s var(--ease) .12s both;}
+.test-score-stagger-4{animation:fadeUp .35s var(--ease) .17s both;}
+.test-score-stagger-5{animation:fadeUp .35s var(--ease) .21s both;}
+.test-score-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;}
+.test-score-elapsed-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.02em;}
+.test-log-type-seg{display:flex;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);border-radius:99px;padding:2px;}
+.test-log-type-opt{background:transparent;border:none;color:var(--t3);border-radius:99px;padding:5px 12px;font-size:9.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.02em;cursor:pointer;transition:all .25s cubic-bezier(.16,1,.3,1);}
+.test-log-type-opt.active{background:rgba(196,100,100,0.22);color:#fff;box-shadow:0 1px 4px rgba(196,100,100,0.25);}
+.test-log-type-opt:hover:not(.active){color:var(--t2);}
+.test-score-name-input{background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.08);padding:6px 1px;font-size:12px;color:var(--t1);outline:none;font-family:inherit;width:100%;margin-bottom:14px;transition:border-color .25s;}
+.test-score-name-input:focus{border-color:rgba(196,100,100,0.4);}
+.test-score-name-input::placeholder{color:var(--t3);opacity:.5;}
+/* Subject grid — three equal compact cards */
+.test-score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px;}
+.test-score-subj-card{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.05);border-radius:9px;padding:8px 6px;transition:border-color .25s cubic-bezier(.16,1,.3,1),background .25s,box-shadow .25s;}
+.test-score-subj-card:focus-within{border-color:rgba(196,100,100,0.35);background:rgba(196,100,100,0.04);box-shadow:0 0 0 3px rgba(196,100,100,0.06);}
+.test-score-subj-card.invalid{border-color:rgba(196,100,100,0.55);background:rgba(196,100,100,0.05);animation:testShake .3s cubic-bezier(.36,.07,.19,.97);}
+@keyframes testShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-2px);}75%{transform:translateX(2px);}}
+.test-score-subj-top{display:flex;align-items:center;gap:5px;margin-bottom:7px;justify-content:center;}
+.test-score-subj-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.test-score-subj-short{font-size:8px;color:var(--t3);letter-spacing:.08em;font-family:'JetBrains Mono',monospace;}
+.test-score-subj-inputs{display:flex;align-items:center;justify-content:center;gap:3px;}
+.test-score-input{width:26px;min-width:0;background:transparent;border:none;padding:2px 0;font-size:12px;color:var(--t1);outline:none;font-family:'JetBrains Mono',monospace;text-align:center;transition:color .2s;
+  -moz-appearance:textfield;}
+.test-score-input::-webkit-outer-spin-button,.test-score-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.test-score-input::placeholder{color:var(--t3);opacity:.3;}
+.test-score-subj-card.invalid .test-score-input{color:var(--red);}
+.test-score-subj-slash{color:var(--t3);opacity:.3;font-size:10px;flex-shrink:0;}
+/* Live preview — instant feedback, smooth colour transitions */
+.test-score-live-preview{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--t3);text-align:center;padding:8px 0;letter-spacing:.02em;transition:color .3s,transform .2s;min-height:14px;}
+.test-score-live-preview.valid{color:var(--red);font-weight:500;animation:previewPop .25s cubic-bezier(.34,1.56,.64,1);}
+@keyframes previewPop{0%{transform:scale(.95);}60%{transform:scale(1.03);}100%{transform:scale(1);}}
+.test-score-live-preview.error{color:rgba(196,100,100,0.6);}
+.test-score-sunday-note{font-size:8.5px;color:rgba(107,158,131,0.75);text-align:center;margin-top:2px;margin-bottom:6px;font-family:'JetBrains Mono',monospace;letter-spacing:.01em;}
+.test-score-btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
+.test-score-discard-btn{background:transparent;border:none;color:var(--t3);padding:8px 10px;font-size:10px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:color .2s;}
+.test-score-discard-btn:hover{color:var(--t2);}
+.test-score-save-btn{background:var(--red);border:1px solid var(--red);color:#fff;border-radius:99px;padding:8px 20px;font-size:10.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);}
+.test-score-save-btn:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.03);}
+.test-score-save-btn:active:not(:disabled){transform:scale(0.97);}
+.test-score-save-btn:disabled{background:rgba(196,100,100,0.12);border-color:rgba(196,100,100,0.12);color:rgba(255,255,255,0.25);cursor:default;}
+/* Test-mode main clock face — layered entrance: ring draws itself in (same
+   language as the chart line-reveal elsewhere in this tracker), then settles
+   into a slow breathing glow. Time digits pop in, label cascades after. */
+.focus-clock-outer.test-mode .focus-arc-bg{stroke:rgba(196,100,100,0.06);}
+.focus-clock-outer.test-mode .test-ring-draw{
+  animation:testRingDraw .85s var(--ease) both, testRingBreathe 2.6s cubic-bezier(.45,0,.55,1) .85s infinite;
+}
+@keyframes testRingDraw{
+  from{stroke-dashoffset:var(--circ);opacity:0;filter:drop-shadow(0 0 0 rgba(196,100,100,0));}
+  to{stroke-dashoffset:0;opacity:1;filter:drop-shadow(0 0 4px rgba(196,100,100,0.3));}
+}
+@keyframes testRingBreathe{
+  0%,100%{opacity:.5;stroke-width:3;filter:drop-shadow(0 0 2px rgba(196,100,100,0.25));}
+  50%{opacity:.95;stroke-width:3.6;filter:drop-shadow(0 0 10px rgba(196,100,100,0.55));}
+}
+.focus-clock-outer.test-mode:not(.running) .test-ring-draw{animation:testRingDraw .85s var(--ease) both;}
+.test-time-pop{animation:testTimePop .5s var(--ease) .2s both;}
+@keyframes testTimePop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
+.test-mode-lbl-in{animation:fadeUp .45s var(--ease) .35s both;}
+.test-stop-in{animation:fadeUp .4s var(--ease) .5s both;}
+.test-stop-pill{background:transparent;border:1.5px solid rgba(196,100,100,0.4);color:var(--red);border-radius:99px;padding:9px 26px;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);}
+.test-stop-pill:hover{background:rgba(196,100,100,0.1);border-color:rgba(196,100,100,0.6);transform:scale(1.03);}
+.test-stop-pill:active{transform:scale(0.97);}
 .focus-stat-cell{flex:1;padding:14px 12px;text-align:center;border-right:1px solid var(--b1);}
 .focus-stat-cell:last-child{border-right:none;}
 .focus-stat-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;}
@@ -1149,7 +1223,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="tab" onclick="go('math',this)">Maths<span class="tbadge" id="bM">0/26</span></button>
     <button class="tab" onclick="go('chem',this)">Chem<span class="tbadge" id="bC">0/23</span></button>
     <button class="tab" onclick="go('phys',this)">Physics<span class="tbadge" id="bP">0/22</span></button>
-    <button class="tab" onclick="go('tests',this)">Tests<span class="tbadge" id="bT">—</span></button>
     <button class="tab" onclick="go('focus',this)">Focus<span class="tbadge" id="bFocus">—</span></button>
     <button class="tab" onclick="go('ana',this)">Analytics</button>
   </div>
@@ -1206,12 +1279,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="cl" id="listP"></div>
   </div>
 
-  <!-- TESTS -->
-  <div class="panel" id="p-tests">
-    <div class="sh"><span class="sh-lbl">Tests</span><span class="sh-val" id="scTests">—</span></div>
-    <div id="testList"></div>
-  </div>
-
   <!-- ANALYTICS -->
   <div class="panel" id="p-ana">
     <div id="anaContent"></div>
@@ -1221,22 +1288,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 <!-- TOAST -->
 <div id="toast"></div>
-
-<!-- SCORE MODAL -->
-<div class="modal-overlay hidden" id="modalOverlay" onclick="closeModalIfOutside(event)">
-  <div class="modal" id="scoreModal">
-    <div class="modal-title" id="modalTitle">Enter Score</div>
-    <div class="modal-sub" id="modalSub">—</div>
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <div id="modalError"></div>
-    <div class="score-rows" id="scoreRows"></div>
-    <div class="score-total-row" id="scoreTotalRow" style="display:none">
-      <span class="score-total-label">Total</span>
-      <span class="score-total-val" id="scoreTotalVal">—</span>
-    </div>
-    <button class="modal-submit" id="modalSubmit" onclick="submitScore()">Save</button>
-  </div>
-</div>
 
 <script>
 /* ═══════════════════════════════════════════════
@@ -1260,32 +1311,6 @@ const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MMAP={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
 
 /* ═══════════════════════════════════════════════
-   TEST SCHEDULE (Updated without "— May" text)
-═══════════════════════════════════════════════ */
-function buildTestSchedule(){
-  const tests=[];
-  const months=[
-    {m:4,label:'May'},{m:5,label:'Jun'},{m:6,label:'Jul'},
-    {m:7,label:'Aug'},{m:8,label:'Sep'},{m:9,label:'Oct'}
-  ];
-  months.forEach(({m,label},mi)=>{
-    const sundays=[];
-    const d=new Date(2026,m,1);
-    while(d.getMonth()===m){if(d.getDay()===0) sundays.push(new Date(d));d.setDate(d.getDate()+1);}
-    for(let i=0;i<Math.min(3,sundays.length);i++){
-      const sd=sundays[i];
-      tests.push({id:`m_${sd.getFullYear()}_${sd.getMonth()}_${i}`,name:`Mains ${i+1}`,date:sundays[i],type:'mains',month:label,monthIdx:mi});
-    }
-    if(sundays.length>=1){
-      const sd=sundays[sundays.length-1];
-      tests.push({id:`a_${sd.getFullYear()}_${sd.getMonth()}_0`,name:`Advanced 1`,date:sundays[sundays.length-1],type:'adv',month:label,monthIdx:mi});
-    }
-  });
-  return tests;
-}
-const TESTS=buildTestSchedule();
-
-/* ═══════════════════════════════════════════════
    STATE & FILTERS
 ═══════════════════════════════════════════════ */
 function ld(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch{return{}}}
@@ -1293,14 +1318,57 @@ function sv(){try{localStorage.setItem(KEY,JSON.stringify(ST))}catch{}}
 let ST=ld();
 const AF={math:'all',chem:'all',phys:'all'}; 
 
+// ── Prefixed localStorage key cache ─────────────────────────────────────────
+// Object.keys(localStorage) enumerates the ENTIRE key space (grows to thousands
+// of keys after months of daily use — every session/ques/focuslog/target key is
+// separate). Several analytics functions each independently re-scan this full
+// space for the same prefixes (fent_sessions_, fent_ques_, fent_focuslog_, etc.)
+// within the SAME synchronous render pass (renderAnalytics → buildSessLineChart
+// → buildFocusActivitySections → buildChapterTimeBreakdown all run back to back).
+// This cache reuses a prefix scan for 150ms — far longer than any single render
+// takes (renders complete in low single-digit milliseconds) but far shorter than
+// any human-perceivable gap, so it can NEVER return stale data across two
+// separate user actions. Zero behavior change — identical keys, identical order,
+// identical timing from the user's perspective.
+const _lsPrefixCache={};
+function getKeysWithPrefix(prefix){
+  const now=Date.now();
+  const c=_lsPrefixCache[prefix];
+  if(c && (now-c.at)<150) return c.keys;
+  const keys=Object.keys(localStorage).filter(k=>k.startsWith(prefix));
+  _lsPrefixCache[prefix]={keys,at:now};
+  return keys;
+}
+// ── End key cache ────────────────────────────────────────────────────────────
+
+// ── Focus log JSON.parse cache ──────────────────────────────────────────────
+// Multiple analytics functions (buildFocusActivitySections, the subject-wise
+// question distribution calc, buildChapterTimeBreakdown) each independently
+// JSON.parse the SAME day's focus log entries within one render pass. This is a
+// completely separate cache from the live "today's log" used during an active
+// Focus session (that always reads fresh via getTodayLog() — untouched, never
+// cached, always instant, guaranteed correct). This cache only serves the
+// read-only historical analytics scans, with the same safe 150ms window.
+const _focusLogParseCache={};
+function getParsedFocusLogByFullKey(fullKey){
+  const now=Date.now();
+  const c=_focusLogParseCache[fullKey];
+  if(c && (now-c.at)<150) return c.data;
+  let data=[];
+  try{ data=JSON.parse(localStorage.getItem(fullKey)||'[]'); }catch{ data=[]; }
+  _focusLogParseCache[fullKey]={data,at:now};
+  return data;
+}
+function getParsedFocusLogByDate(dateStr){
+  return getParsedFocusLogByFullKey('fent_focuslog_'+dateStr);
+}
+// ── End focus log parse cache ────────────────────────────────────────────────
+
 function gs(s,n){const k=s+'_'+n;if(!ST[k])ST[k]={theory:false,module:false,pyq:false,revision:false};return ST[k]}
 function isDone(s,n){const t=gs(s,n);return t.theory&&t.module&&t.pyq&&t.revision}
 function tc(s,n){const t=gs(s,n);return[t.theory,t.module,t.pyq,t.revision].filter(Boolean).length}
 function isAny(s,n){const t=gs(s,n);return t.theory||t.module||t.pyq||t.revision}
 
-function getTestScore(id){return ST['test_'+id]||null}
-function setTestScore(id,data){ST['test_'+id]=data;sv()}
-function isTestDone(id){return !!ST['test_'+id]}
 
 /* ═══════════════════════════════════════════════
    DATE UTILS
@@ -1332,7 +1400,6 @@ function go(tab,btn){
   });
 
   if(tab==='overview'){pulseOffset=0;ovwWeekOffset=0;renderPulse();renderOverviewSummary();}
-  if(tab==='tests') renderTests();
   if(tab==='focus'){renderFocus(); startDoneByTick();}
   if(tab==='ana'){stopDoneByTick(); renderAnalytics(); renderDeckAndLog();}
   if(tab!=='focus') stopDoneByTick();
@@ -1462,15 +1529,7 @@ function updateWeeklyProgress() {
     });
   };
   countChaps(MATH, 'math'); countChaps(CHEM, 'chem'); countChaps(PHYS, 'phys');
-  
-  TESTS.forEach(t => {
-    const td=startOf(t.date);
-    if(td>=wStart && td<=wEnd) {
-      wkTotal += 1;
-      if(isTestDone(t.id)) wkDone++;
-    }
-  });
-  
+
   const wkPct = wkTotal > 0 ? Math.round((wkDone/wkTotal)*100) : 0;
   const fill = document.getElementById('pulseWkBar');
   const text = document.getElementById('pulseWkText');
@@ -1501,9 +1560,6 @@ function stats(){
   document.getElementById('bM').textContent=mCD+'/'+MATH.length;
   document.getElementById('bC').textContent=cCD+'/'+CHEM.length;
   document.getElementById('bP').textContent=pCD+'/'+PHYS.length;
-
-  const doneCnt=TESTS.filter(t=>isTestDone(t.id)).length;
-  document.getElementById('bT').textContent=doneCnt+'/'+TESTS.length;
 }
 
 /* ═══════════════════════════════════════════════
@@ -1544,11 +1600,6 @@ function renderPulse(){
   addChaps(CHEM,'chem','c','CHM');
   addChaps(PHYS,'phys','ph','PHY');
 
-  const testsInWindow=TESTS.filter(t=>{
-    const td=startOf(t.date);
-    return td>=wStart && td<=wEnd;
-  });
-
   // Calculate Weekly Progress
   let wkTotal = 0;
   let wkDone = 0;
@@ -1560,11 +1611,6 @@ function renderPulse(){
     if(t.module) wkDone++;
     if(t.pyq) wkDone++;
     if(t.revision) wkDone++;
-  });
-  
-  testsInWindow.forEach(t => {
-    wkTotal += 1;
-    if(isTestDone(t.id)) wkDone++;
   });
   
   const wkPct = wkTotal > 0 ? Math.round((wkDone/wkTotal)*100) : 0;
@@ -1603,24 +1649,6 @@ function renderPulse(){
     }).join('<div style="height:4px"></div>');
   }
 
-  let testHTML='';
-  if(testsInWindow.length===0){
-    testHTML='<div class="pulse-empty-note">No tests scheduled this week.</div>';
-  } else {
-    testHTML=testsInWindow.map((t,i)=>{
-      const done=isTestDone(t.id);
-      const sc=getTestScore(t.id);
-      const total=t.type==='mains'?300:360;
-      return `<div class="pulse-test-row" style="animation-delay:${i*15}ms; ${done?'opacity:0.5; pointer-events:none;':''}">
-  <div class="pulse-dot test"></div>
-  <span class="pulse-t-name">${t.name}</span>
-  <span class="pulse-t-date">${fmtFull(t.date)}</span>
-  ${done&&sc?`<span class="pulse-t-tag" style="background:transparent; border:none; color:var(--done)">${sc.total}/${total}</span>`:
-  `<span class="pulse-t-tag" onclick="openTestModal('${t.id}')">Enter Score</span>`}
-</div>`;
-    }).join('');
-  }
-
   box.innerHTML=`
 <div class="pulse-box-head">
   <div style="display:flex; justify-content:space-between; width:100%; align-items:baseline; gap:8px;">
@@ -1639,10 +1667,6 @@ function renderPulse(){
     <div class="pulse-section-label">Chapters</div>
     <div class="pulse-items">${chapHTML}</div>
   </div>
-  <div class="pulse-section">
-    <div class="pulse-section-label">Tests</div>
-    <div class="pulse-items">${testHTML}</div>
-  </div>
 </div>`;
 
   setTimeout(updateWeeklyProgress, 50); // animate bar fill
@@ -1655,182 +1679,59 @@ function togglePulseChap(hd){
   arrow.style.transform = wrap.classList.contains('open') ? 'rotate(180deg)' : '';
 }
 
-function renderTests(){
-  const groups={};
-  TESTS.forEach(t=>{
-    if(!groups[t.month]) groups[t.month]=[];
-    groups[t.month].push(t);
-  });
 
-  const pending=TESTS.filter(t=>!isTestDone(t.id)).length;
-  document.getElementById('scTests').textContent=TESTS.filter(t=>isTestDone(t.id)).length+' done · '+pending+' pending';
-
-  let html='';
-  Object.entries(groups).forEach(([month,tests])=>{
-    // Within each month: all Mains first (by date), then all Advanced (by date)
-    const sorted=[...tests].sort((a,b)=>{
-      if(a.type!==b.type) return a.type==='mains'?-1:1;
-      return a.date-b.date;
-    });
-    html+=`<div class="test-group"><div class="test-group-label">${month}</div><div class="test-list">
-${sorted.map((t,i)=>{
-  const done=isTestDone(t.id);
-  const sc=getTestScore(t.id);
-  const total=t.type==='mains'?300:360;
-  if(done&&sc){
-    const pct=Math.round((sc.total/total)*100);
-    const cls=pct>=70?'pct-good':pct>=50?'pct-mid':'pct-low';
-    return `<div class="test-item done-test">
-  <div class="test-dot ${t.type}"></div>
-  <div class="test-name-wrap">
-    <span class="test-name">${t.name}</span>
-    <span class="test-date">${fmtDate(t.date)}</span>
-  </div>
-  <div class="test-right">
-    <span class="test-score-badge">${sc.total}<span style="color:var(--t3);font-size:9px;">/${total}</span></span>
-    <span class="test-pct ${cls}">${pct}%</span>
-    <span class="test-type-badge ${t.type}">${t.type==='adv'?'ADV':'MAINS'}</span>
-  </div>
-</div>`;
-  }
-  return `<div class="test-item" onclick="openTestModal('${t.id}')">
-  <div class="test-dot ${t.type}"></div>
-  <div class="test-name-wrap">
-    <span class="test-name">${t.name}</span>
-    <span class="test-date">${fmtDate(t.date)}</span>
-  </div>
-  <div class="test-right">
-    <span class="test-type-badge ${t.type}">${t.type==='adv'?'ADV':'MAINS'}</span>
-  </div>
-</div>`;
-}).join('')}</div></div>`;
-  });
-  document.getElementById('testList').innerHTML=html;
-}
-
-/* ═══════════════════════════════════════════════
-   SCORE MODAL (Bulletproof Validation added)
-═══════════════════════════════════════════════ */
-let activeTestId=null;
-let activeTestMax=100;
-
-function openTestModal(id){
-  const t=TESTS.find(x=>x.id===id);
-  if(!t) return;
-  activeTestId=id;
-
-  document.getElementById('modalTitle').textContent=t.name;
-  document.getElementById('modalOverlay').classList.remove('hidden');
-
-  const isMains=t.type==='mains';
-  activeTestMax=isMains?100:120;
-  const total=isMains?300:360;
-
-  document.getElementById('modalSub').textContent=(isMains?'Mains':'Advanced')+' · Max '+total;
-
-  document.getElementById('scoreRows').innerHTML=
-    [{l:'Physics',k:'phy'},{l:'Chemistry',k:'chem'},{l:'Maths',k:'math'}].map(s=>`
-<div class="score-row">
-  <span class="score-label">${s.l}</span>
-  <div class="score-input-wrap">
-    <input class="score-input" type="number" min="0" max="${activeTestMax}" id="si_${s.k}" placeholder="0" oninput="updateTotal('${t.type}')">
-    <span class="score-max">/${activeTestMax}</span>
-  </div>
-</div>`).join('');
-
-  document.getElementById('scoreTotalRow').style.display='flex';
-  document.getElementById('scoreTotalVal').textContent='0 / '+total;
-  
-  // Reset error state
-  document.getElementById('modalError').style.display='none';
-  const submitBtn = document.getElementById('modalSubmit');
-  submitBtn.disabled = false;
-  submitBtn.style.opacity = '1';
-  submitBtn.style.cursor = 'pointer';
-
-  setTimeout(()=>{
-    const first=document.querySelector('.score-input');
-    if(first) first.focus();
-  },180);
-}
-
-function updateTotal(type){
-  const keys=['phy','chem','math'];
-  let sum=0;
-  let hasError = false;
-  
-  keys.forEach(k=>{
-    const el=document.getElementById('si_'+k);
-    if(el) {
-      // Force strip out any non-numeric characters immediately
-      el.value = el.value.replace(/[^0-9]/g, '');
-      
-      if(el.value !== "") {
-        let v = parseInt(el.value);
-        if (v > activeTestMax) {
-          v = activeTestMax;
-          el.value = activeTestMax; // Cap it visually
-          hasError = true;
-        }
-        sum += v;
-      }
-    }
-  });
-
-  const errEl = document.getElementById('modalError');
-  const submitBtn = document.getElementById('modalSubmit');
-  
-  if (hasError) {
-    errEl.textContent = 'Maximum score per subject is ' + activeTestMax + '.';
-    errEl.style.display = 'block';
-    // Gentle flash logic for repeated errors
-    setTimeout(() => { errEl.style.display = 'none'; }, 2500); 
-  }
-
-  const total=type==='mains'?300:360;
-  const el=document.getElementById('scoreTotalVal');
-  if(el){
-    el.textContent=sum+' / '+total;
-    el.style.animation='none';void el.offsetWidth;el.style.animation='scoreReveal .2s ease both';
-  }
-}
-
-function submitScore(){
-  const t=TESTS.find(x=>x.id===activeTestId);
-  if(!t) return;
-  const keys=['phy','chem','math'];
-  const scores={};
-  let total=0;
-  let invalid=false;
-  
-  keys.forEach(k=>{
-    const el=document.getElementById('si_'+k);
-    let v=parseInt(el?.value)||0;
-    if (v < 0 || v > activeTestMax) invalid = true;
-    scores[k]=v;total+=v;
-  });
-  
-  if (invalid) return; // safeguard
-  if(total===0){toast('enter at least one score');return;}
-  
-  const maxTotal=t.type==='mains'?300:360;
-  setTestScore(activeTestId,{...scores,total,maxTotal,date:new Date().toISOString()});
-  closeModal();
-  toast('✓ LOGGED');
-  if(document.getElementById('p-tests').classList.contains('on')) renderTests();
-  if(document.getElementById('p-overview').classList.contains('on')) renderPulse();
-  if(document.getElementById('p-ana').classList.contains('on')){ renderAnalytics(); renderDeckAndLog(); }
-}
-
-function closeModal(){
-  document.getElementById('modalOverlay').classList.add('hidden');
-  activeTestId=null;
-}
-function closeModalIfOutside(e){if(e.target.id==='modalOverlay') closeModal();}
 
 /* ═══════════════════════════════════════════════
    ANALYTICS 
 ═══════════════════════════════════════════════ */
+// ── Subject-wise normalized exam stats ──────────────────────────────────────
+// For a set of test entries (each carrying t.subjects = {math:{score,max}, ...}
+// only for subjects actually entered — skipped subjects are simply absent):
+//   1. Every ENTERED subject is normalized to a fixed boundary regardless of its
+//      own max — 100 marks for Mains, 120 for Advanced — via score/max*boundary.
+//   2. A single test's overall % = the mean of its entered subjects' normalized
+//      percentages (i.e. sum(normalized)/ (boundary × entered-count), which is
+//      algebraically identical to averaging each subject's % since every
+//      subject shares the same boundary).
+//   3. The headline average = mean of that per-test % across ALL tests of that
+//      type. Each subject's own average = mean of its % ONLY across tests where
+//      that subject was actually entered — a skipped subject in one test never
+//      touches that subject's running average, and never touches the totals of
+//      OTHER subjects either.
+// Boundary cancels out of the percentage math entirely (score/max*100 is the
+// same number regardless of which boundary you'd scale it to), so it's only
+// applied at the very end, when turning the % back into "marks out of 300/360"
+// for display.
+function computeExamStats(entries, targetTotal){
+  const subj={math:{sum:0,count:0},phys:{sum:0,count:0},chem:{sum:0,count:0}};
+  let totalPctSum=0, totalCount=0;
+  entries.forEach(t=>{
+    const src=t.subjects||{};
+    const keys=Object.keys(src).filter(k=>src[k]&&src[k].max>0);
+    if(keys.length===0) return;
+    let testPctSum=0;
+    keys.forEach(k=>{
+      const {score,max}=src[k];
+      const pct=Math.max(0,Math.min(100,score/max*100));
+      if(subj[k]){ subj[k].sum+=pct; subj[k].count++; }
+      testPctSum+=pct;
+    });
+    totalPctSum+=testPctSum/keys.length;
+    totalCount++;
+  });
+  const subjAvg={};
+  Object.keys(subj).forEach(k=>{ subjAvg[k]= subj[k].count>0 ? subj[k].sum/subj[k].count : null; });
+  const totalAvgPct = totalCount>0 ? totalPctSum/totalCount : null;
+  return {
+    subjAvg,
+    subjCount:{math:subj.math.count,phys:subj.phys.count,chem:subj.chem.count},
+    totalAvgPct,
+    totalCount,
+    targetTotal,
+    totalMarks: totalAvgPct!=null ? totalAvgPct/100*targetTotal : null
+  };
+}
+
 function renderAnalytics(){
   const el=document.getElementById('anaContent');
   const today=new Date(); today.setHours(0,0,0,0);
@@ -1848,13 +1749,20 @@ function renderAnalytics(){
   allSubjs.forEach(({s,ch})=>{const t=gs(s,ch.n);Object.keys(taskTotals).forEach(k=>{if(t[k])taskTotals[k]++;});});
   const taskMax=allSubjs.length;
 
-  /* ── Test averages in marks ── */
-  const doneTests=TESTS.filter(t=>isTestDone(t.id));
-  const mainsDone=doneTests.filter(t=>t.type==='mains');
-  const advDone=doneTests.filter(t=>t.type==='adv');
-  const avgMarks=arr=>arr.length?Math.round(arr.reduce((a,t)=>{const sc=getTestScore(t.id);return a+(sc?sc.total:0);},0)/arr.length):null;
-  const mainsAvg=avgMarks(mainsDone);
-  const advAvg=avgMarks(advDone);
+  /* ── Test averages in marks — sourced from manually-logged tests (fent_testlog_*) ── */
+  let allTestEntries=[];
+  try{
+    getKeysWithPrefix('fent_testlog_').forEach(k=>{
+      const dateStr=k.replace('fent_testlog_','');
+      let arr=[];
+      try{ arr=JSON.parse(localStorage.getItem(k)||'[]'); }catch{}
+      arr.forEach(t=>{ if(t.normalizedTotal!=null) allTestEntries.push({...t, dateStr}); });
+    });
+  }catch{}
+  const mainsDone=allTestEntries.filter(t=>t.testType==='mains');
+  const advDone=allTestEntries.filter(t=>t.testType==='adv');
+  const mainsStats=computeExamStats(mainsDone,300);
+  const advStats=computeExamStats(advDone,360);
 
   /* ── Deadline & backlog ── */
   const allEndDates=allSubjs.map(({ch})=>parseDate(ch.e));
@@ -1899,13 +1807,6 @@ function renderAnalytics(){
     weeks.push({wkStart:new Date(wkPtr),wkEnd:new Date(wkE),wkTotal,wkDone,ratio:wkTotal?wkDone/wkTotal:0,isPast,isCurrent});
     wkPtr.setDate(wkPtr.getDate()+7);
   }
-
-  /* ── Chart score data ── */
-  const chartTests=[...mainsDone,...advDone]
-    .map(t=>{const sc=getTestScore(t.id);return sc?{...t,sc}:null;})
-    .filter(Boolean)
-    .sort((a,b)=>new Date(a.sc.date)-new Date(b.sc.date))
-    .slice(-14);
 
   /* ══ Build HTML ══ */
   let html='';
@@ -2029,27 +1930,17 @@ function renderAnalytics(){
   </div>
 </div>`;
 
-  /* 3 ── Test averages in marks */
-  html+=`<div class="ana-two-col">
-  <div class="ana-card-new">
-    <div class="ana-sect-title">Mains Average</div>
-    <div class="ana-big-new">${mainsAvg!=null?mainsAvg:'—'}</div>
-    <div class="ana-sub-new">${mainsAvg!=null?'marks out of 300':'no data yet'}</div>
-    <div class="ana-meta-new">${mainsDone.length} test${mainsDone.length!==1?'s':''} recorded${mainsAvg!=null?' · '+Math.round(mainsAvg/300*100)+'%':''}</div>
-  </div>
-  <div class="ana-card-new">
-    <div class="ana-sect-title">Advanced Average</div>
-    <div class="ana-big-new">${advAvg!=null?advAvg:'—'}</div>
-    <div class="ana-sub-new">${advAvg!=null?'marks out of 360':'no data yet'}</div>
-    <div class="ana-meta-new">${advDone.length} test${advDone.length!==1?'s':''} recorded${advAvg!=null?' · '+Math.round(advAvg/360*100)+'%':''}</div>
-  </div>
+  /* 3 ── Test averages — subject-wise normalized (see computeExamStats) */
+  html+=`<div class="ana-two-col ana-exam-two-col">
+  ${buildExamStatCard('Mains',mainsStats,'#c2a359',mainsDone.length)}
+  ${buildExamStatCard('Advanced',advStats,'#6b9e83',advDone.length)}
 </div>`;
 
-  /* 4 ── Score trend chart */
-  html+=chartTests.length>0?buildScoreChart(chartTests):`<div class="ana-section">
-  <div class="ana-sect-title">Score Trend</div>
-  <div class="ana-empty-msg">No test scores recorded yet.</div>
-</div>`;
+  /* 4 ── Score trend charts — split Mains / Advanced */
+  const chartTestsMains=mainsDone.map(t=>({type:t.testType,name:t.testName,date:t.dateStr,sc:{total:t.normalizedTotal,maxTotal:t.targetTotal,date:t.dateStr}})).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(-14);
+  const chartTestsAdv=advDone.map(t=>({type:t.testType,name:t.testName,date:t.dateStr,sc:{total:t.normalizedTotal,maxTotal:t.targetTotal,date:t.dateStr}})).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(-14);
+  html+=`${chartTestsMains.length>0?buildScoreChart(chartTestsMains,'Mains Score Trend'):`<div class="ana-section"><div class="ana-sect-title">Mains Score Trend</div><div class="ana-empty-msg">No Mains tests recorded yet.</div></div>`}
+${chartTestsAdv.length>0?buildScoreChart(chartTestsAdv,'Advanced Score Trend'):`<div class="ana-section"><div class="ana-sect-title">Advanced Score Trend</div><div class="ana-empty-msg">No Advanced tests recorded yet.</div></div>`}`;
 
   /* 5 ── Study heatmap */
   html+=buildHeatmap(weeks,today);
@@ -2090,9 +1981,63 @@ function renderAnalytics(){
   });
 }
 
+/* ─── Detailed exam stat card (Mains / Advanced) ───────────────────────────
+   Shows the headline subject-wise-normalized average plus a per-subject
+   breakdown, reusing the same .cbt-bar/.cbt-halo/.cbt-tip reveal-on-paint
+   animation already wired up for Completion-by-Type further up, so no new
+   JS hookup is needed. */
+function buildExamStatCard(label, stats, accentHex, testCount){
+  const boundary = stats.targetTotal===300 ? 100 : 120;
+  const totalMarks = stats.totalAvgPct!=null ? Math.round(stats.totalAvgPct/100*stats.targetTotal) : null;
+  const totalPct = stats.totalAvgPct!=null ? Math.round(stats.totalAvgPct) : null;
+  const goodTh = stats.targetTotal===300 ? 150 : 100;
+  const midTh  = stats.targetTotal===300 ? 100 : 40;
+  const totalColor = totalMarks==null ? 'var(--t3)' : totalMarks>=goodTh?'var(--c)':totalMarks>=midTh?'var(--m)':'var(--red)';
+
+  const subjMeta=[
+    {key:'math',lbl:'Math',hex:'#c2a359',rgb:'194,163,89'},
+    {key:'phys',lbl:'Phys',hex:'#908bb0',rgb:'144,139,176'},
+    {key:'chem',lbl:'Chem',hex:'#6b9e83',rgb:'107,158,131'}
+  ];
+  const subjRows=subjMeta.map(({key,lbl,hex,rgb},i)=>{
+    const avgPct=stats.subjAvg[key];
+    const cnt=stats.subjCount[key];
+    const pctForBar=avgPct!=null?Math.round(avgPct):0;
+    const marksForBoundary=avgPct!=null?Math.round(avgPct/100*boundary):null;
+    const delay=(i*0.09).toFixed(2);
+    const barDelay=(i*0.09+0.12).toFixed(2);
+    return `<div style="display:flex;align-items:center;gap:12px;opacity:0;animation:cbtRowIn .55s cubic-bezier(.16,1,.3,1) ${delay}s forwards;">
+      <span style="font-size:10px;color:${hex};font-weight:400;letter-spacing:.05em;width:36px;flex-shrink:0;">${lbl}</span>
+      <div style="flex:1;height:4px;background:rgba(255,255,255,0.04);border-radius:99px;position:relative;overflow:visible;">
+        <div class="cbt-halo" data-w="${pctForBar}" style="position:absolute;top:50%;transform:translateY(-50%);left:0;height:10px;width:0%;border-radius:99px;background:rgba(${rgb},0.55);filter:blur(7px);transition:width 1.4s cubic-bezier(.16,1,.3,1) ${barDelay}s;pointer-events:none;opacity:0;"></div>
+        <div class="cbt-bar" data-w="${pctForBar}" style="position:absolute;inset:0;width:0%;border-radius:99px;background:linear-gradient(90deg,${hex}99 0%,${hex} 55%,${hex}ee 100%);overflow:hidden;transition:width 1.4s cubic-bezier(.16,1,.3,1) ${barDelay}s;"></div>
+        <div class="cbt-tip" data-w="${pctForBar}" style="position:absolute;top:50%;width:6px;height:6px;border-radius:50%;background:${hex};box-shadow:0 0 10px rgba(${rgb},0.55);transform:translate(-50%,-50%);left:0%;transition:left 1.4s cubic-bezier(.16,1,.3,1) ${barDelay}s;opacity:${pctForBar>2?1:0};pointer-events:none;"></div>
+      </div>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${avgPct!=null?hex:'var(--t3)'};font-weight:300;width:64px;text-align:right;opacity:0.85;">${marksForBoundary!=null?marksForBoundary+'/'+boundary:'—'}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);width:36px;text-align:right;opacity:.55;">${cnt>0?cnt+'x':''}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="ana-card-new ana-exam-card" style="border-top:2px solid ${accentHex};">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px;">
+    <span class="ana-sect-title" style="margin-bottom:0;">${label}</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);">${testCount} test${testCount!==1?'s':''}</span>
+  </div>
+  <div style="display:flex;align-items:baseline;gap:8px;margin:10px 0 2px;">
+    <div class="ana-big-new" style="color:${totalColor};">${totalMarks!=null?totalMarks:'—'}</div>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--t3);">/ ${stats.targetTotal}</span>
+  </div>
+  <div class="ana-sub-new">${totalPct!=null?totalPct+'% avg · subject-normalized':'no data yet'}</div>
+  <div style="display:flex;flex-direction:column;gap:14px;margin-top:18px;padding-top:16px;border-top:1px solid var(--b1);">
+    ${subjRows}
+  </div>
+</div>`;
+}
+
 /* ─── Score Trend Chart (marks-based) ─── */
-function buildScoreChart(tests){
-  const W=560,H=160,PL=52,PR=16,PT=14,PB=36;
+function buildScoreChart(tests,titleLabel){
+  titleLabel = titleLabel || 'Score Trend';
+  const W=900,H=260,PL=54,PR=20,PT=20,PB=40;
   const plotW=W-PL-PR, plotH=H-PT-PB;
   const N=tests.length;
 
@@ -2161,9 +2106,9 @@ function buildScoreChart(tests){
       stroke="${isThreshold?'rgba(255,255,255,.08)':'rgba(255,255,255,.04)'}" 
       stroke-width="${isThreshold?'1':'1'}" 
       stroke-dasharray="${isThreshold?'3,4':''}"/>
-    <text x="${(PL-5).toFixed(1)}" y="${(gy+3.5).toFixed(1)}" text-anchor="end" 
+    <text x="${(PL-7).toFixed(1)}" y="${(gy+4).toFixed(1)}" text-anchor="end" 
       fill="${isThreshold?'rgba(255,255,255,.28)':'#52525b'}" 
-      font-size="${isThreshold?'8':'8'}" 
+      font-size="${isThreshold?'11':'11'}" 
       font-family="JetBrains Mono,monospace">${v}</text>`;
   }).join('');
 
@@ -2179,23 +2124,25 @@ function buildScoreChart(tests){
   const dotsHTML=pts.map((p,i)=>{
     const col=scoreColor(p.t);
     const lbl=p.t.type==='mains'?'M':'A';
-    const delay=(0.25+i*0.06).toFixed(2);
+    const delay=(0.3+i*0.07).toFixed(2);
     const markVal=p.t.sc.total;
-    return `<circle class="chart-dot-anim" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"
-        fill="${col}" stroke="var(--bg)" stroke-width="2.5"
+    const isLast=i===N-1;
+    return `${isLast?`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6" fill="none" stroke="${col}" stroke-width="1.5" class="chart-pulse-ring" style="animation-delay:${(parseFloat(delay)+0.4).toFixed(2)}s"/>`:''}
+      <circle class="chart-dot-anim" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="6"
+        fill="${col}" stroke="var(--bg)" stroke-width="3" filter="url(#dotGlow)"
         style="animation-delay:${delay}s">
         <title>${p.t.name}: ${markVal}/${p.t.sc.maxTotal}</title>
       </circle>
-      <text x="${p.x.toFixed(1)}" y="${(PT+plotH+15).toFixed(1)}" text-anchor="middle" 
-        fill="#52525b" font-size="8" font-family="JetBrains Mono,monospace" 
+      <text x="${p.x.toFixed(1)}" y="${(PT+plotH+22).toFixed(1)}" text-anchor="middle" 
+        fill="#52525b" font-size="10.5" font-family="JetBrains Mono,monospace" 
         class="chart-dot-anim" style="animation-delay:${delay}s">${lbl}</text>
-      <text x="${p.x.toFixed(1)}" y="${(p.y-9).toFixed(1)}" text-anchor="middle" 
-        fill="${col}" font-size="9" font-family="JetBrains Mono,monospace" font-weight="400"
+      <text x="${p.x.toFixed(1)}" y="${(p.y-14).toFixed(1)}" text-anchor="middle" 
+        fill="${col}" font-size="13" font-family="JetBrains Mono,monospace" font-weight="400"
         class="chart-dot-anim" style="animation-delay:${(parseFloat(delay)+0.05).toFixed(2)}s">${markVal}</text>`;
   }).join('');
 
   return `<div class="ana-section">
-  <div class="ana-sect-title">Score Trend</div>
+  <div class="ana-sect-title">${titleLabel}</div>
   <div class="score-chart-wrap">
   <svg class="score-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
     <defs>
@@ -2204,21 +2151,22 @@ function buildScoreChart(tests){
         <stop offset="100%" stop-color="var(--t1)" stop-opacity="0"/>
       </linearGradient>
       <clipPath id="chartClip"><rect x="${PL}" y="${PT}" width="${plotW}" height="${plotH}"/></clipPath>
+      <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
     ${zoneBands}
     ${gridLines}
     <g clip-path="url(#chartClip)">
       <path class="chart-area-anim" d="${areaD}" fill="url(#chartGrad2)"/>
-      <path class="chart-line-anim" d="${lineD}" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path class="chart-line-anim" d="${lineD}" fill="none" stroke="rgba(255,255,255,.32)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
     ${dotsHTML}
   </svg>
   </div>
   <div class="score-chart-legend">
-    <div class="score-leg-item"><span class="score-leg-dot" style="background:var(--c)"></span><span>Good ${hasMains&&hasAdv?'M≥150 / A≥100':hasMains?'≥150 marks':'≥100 marks'}</span></div>
-    <div class="score-leg-item"><span class="score-leg-dot" style="background:var(--m)"></span><span>Mid ${hasMains&&hasAdv?'M≥100 / A≥40':hasMains?'≥100 marks':'≥40 marks'}</span></div>
-    <div class="score-leg-item"><span class="score-leg-dot" style="background:var(--red)"></span><span>Low</span></div>
-    <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);">M = Mains &nbsp; A = Adv</div>
+    <div class="score-leg-pill" style="border-color:rgba(107,158,131,.3);background:rgba(107,158,131,.08);"><span class="score-leg-dot" style="background:var(--c);box-shadow:0 0 6px rgba(107,158,131,.6);"></span><span style="color:var(--c);">Good</span><span style="color:var(--t3);">${hasMains&&hasAdv?'M≥150 / A≥100':hasMains?'≥150 marks':'≥100 marks'}</span></div>
+    <div class="score-leg-pill" style="border-color:rgba(194,163,89,.3);background:rgba(194,163,89,.08);"><span class="score-leg-dot" style="background:var(--m);box-shadow:0 0 6px rgba(194,163,89,.6);"></span><span style="color:var(--m);">Mid</span><span style="color:var(--t3);">${hasMains&&hasAdv?'M≥100 / A≥40':hasMains?'≥100 marks':'≥40 marks'}</span></div>
+    <div class="score-leg-pill" style="border-color:rgba(196,100,100,.3);background:rgba(196,100,100,.08);"><span class="score-leg-dot" style="background:var(--red);box-shadow:0 0 6px rgba(196,100,100,.6);"></span><span style="color:var(--red);">Low</span></div>
+    <div style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);opacity:.6;">M = Mains &nbsp; A = Adv</div>
   </div>
 </div>`;
 }
@@ -2464,20 +2412,34 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   const qTarget=focusSettings.dailyQuesTarget||70;
 
   // Enrich with questions and focus time — read fresh from localStorage every build
+  // Also attach each day's own LOCKED-IN target: today always uses the live current
+  // target (last change of the day wins), past days use whatever target was set
+  // when sessions were actually logged that day (fent_daytarget_ snapshot).
+  // This is critical: changing your target today must NEVER silently re-color or
+  // re-judge past days as if that new target had always applied to them.
   const days=last30.map(d=>{
-    const focusLog=(() => {try{return JSON.parse(localStorage.getItem('fent_focuslog_'+d.k)||'[]');}catch{return[];}})();
+    const focusLog=getParsedFocusLogByDate(d.k);
     const focusMins=Math.round(focusLog.reduce((a,e)=>a+(e.durationSecs||0),0)/60);
+    const isTodayDay=d.d.toDateString()===today.toDateString();
+    const dayTarget=isTodayDay
+      ? target
+      : parseFloat(localStorage.getItem('fent_daytarget_'+d.k)||String(target));
+    const dayQTarget=isTodayDay
+      ? qTarget
+      : parseInt(localStorage.getItem('fent_dayqtarget_'+d.k)||String(qTarget));
     return {
       ...d,
       ques:parseInt(localStorage.getItem('fent_ques_'+d.k)||'0'),
-      focusMins
+      focusMins,
+      dayTarget,
+      dayQTarget
     };
   });
 
   // ── Computed stats ──
   const workDays=days.filter(d=>!d.isSun);
   const pastWork=workDays.filter(d=>d.d<=today);
-  const metDays=pastWork.filter(d=>d.sess>=target).length;
+  const metDays=pastWork.filter(d=>d.sess>=d.dayTarget).length;
 
   // Find the very first day the user logged ANY effort
   let firstEffortDate = null;
@@ -2488,14 +2450,14 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
         candidates.push(new Date(ST[k]+'T00:00:00'));
       }
     });
-    Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{
+    getKeysWithPrefix('fent_sessions_').forEach(k=>{
       const n=parseFloat(localStorage.getItem(k)||'0');
       if(n>0){const d=new Date(k.replace('fent_sessions_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
     });
-    Object.keys(localStorage).filter(k=>k.startsWith('fent_focuslog_')).forEach(k=>{
-      try{const arr=JSON.parse(localStorage.getItem(k)||'[]');if(arr.length>0){const d=new Date(k.replace('fent_focuslog_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}}catch{}
+    getKeysWithPrefix('fent_focuslog_').forEach(k=>{
+      try{const arr=getParsedFocusLogByFullKey(k);if(arr.length>0){const d=new Date(k.replace('fent_focuslog_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}}catch{}
     });
-    Object.keys(localStorage).filter(k=>k.startsWith('fent_ques_')).forEach(k=>{
+    getKeysWithPrefix('fent_ques_').forEach(k=>{
       const n=parseInt(localStorage.getItem(k)||'0');
       if(n>0){const d=new Date(k.replace('fent_ques_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
     });
@@ -2606,13 +2568,30 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   // ── Dashboard metrics — customization-safe (reads live focusSettings) ──
   // Total sessions done all-time
   let totalSessAllTime = 0;
-  try{ Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{
+  try{ getKeysWithPrefix('fent_sessions_').forEach(k=>{
     totalSessAllTime += parseFloat(localStorage.getItem(k)||'0');
   }); totalSessAllTime = Math.round(totalSessAllTime*10)/10; }catch{}
 
+  // Total tests logged + test-derived session credit all-time — purely additive
+  // stats; already baked into totalSessAllTime above (same storage key), never
+  // subtracted or double counted.
+  let totalTestsAllTime = 0;
+  let totalTestCreditAllTime = 0;
+  try{
+    getKeysWithPrefix('fent_testlog_').forEach(k=>{
+      let arr=[];
+      try{ arr=JSON.parse(localStorage.getItem(k)||'[]'); }catch{}
+      totalTestsAllTime += arr.length;
+    });
+    getKeysWithPrefix('fent_testsessioncredit_').forEach(k=>{
+      totalTestCreditAllTime += parseFloat(localStorage.getItem(k)||'0');
+    });
+    totalTestCreditAllTime = Math.round(totalTestCreditAllTime*10)/10;
+  }catch{}
+
   // Total ques done all-time
   let totalQuesAllTime = 0;
-  try{ Object.keys(localStorage).filter(k=>k.startsWith('fent_ques_')).forEach(k=>{
+  try{ getKeysWithPrefix('fent_ques_').forEach(k=>{
     totalQuesAllTime += parseInt(localStorage.getItem(k)||'0');
   }); }catch{}
 
@@ -2650,7 +2629,7 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   for(let i=days.length-1;i>=0;i--){
     const d=days[i];
     if(d.isSun||d.d>today) continue;
-    if(d.sess>=target) streak++;
+    if(d.sess>=d.dayTarget) streak++;
     else break;
   }
 
@@ -2711,7 +2690,7 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
       return `<rect x="${bx.toFixed(1)}" y="${(PT+plotH-2).toFixed(1)}" width="${bw.toFixed(1)}" height="2" rx="1" fill="rgba(255,255,255,0.09)"/>`;
     }
     const isToday=d.d.toDateString()===today.toDateString();
-    const met=d.sess>=target;
+    const met=d.sess>=d.dayTarget;
     const gradId=met?`url(#${uid}gG)`:`url(#${uid}gA)`;
     const capCol=met?'rgba(107,158,131,1)':'rgba(194,163,89,1)';
     const h=Math.max((d.sess/maxSess)*plotH,4);
@@ -2728,7 +2707,7 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
     if(d.d>today) return '';
     const bx=(PL+i*barW).toFixed(1);
     const isToday=d.d.toDateString()===today.toDateString();
-    const met=d.sess>=target;
+    const met=d.sess>=d.dayTarget;
     const sessStr=fmtSessVal(d.sess);
     const dayLabel=`${DAY_NAMES[d.d.getDay()]}, ${MON_NAMES[d.d.getMonth()]} ${d.d.getDate()}`;
     const topLine=isToday?'Today':'';
@@ -2740,8 +2719,10 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
     const dataDay=dayLabel;
     const dataMet=met?1:0;
     const dataIsToday=isToday?1:0;
+    let dataTestCount=0;
+    try{ dataTestCount=(JSON.parse(localStorage.getItem('fent_testlog_'+d.k)||'[]')||[]).length; }catch{}
     return `<rect class="${uid}hit" x="${bx}" y="${PT}" width="${barW.toFixed(1)}" height="${plotH}" fill="transparent" style="cursor:default;"
-      data-day="${dayLabel}" data-sess="${dataSess}" data-target="${target}" data-ques="${dataQues}" data-focus="${dataFocus}" data-issun="${dataIsSun}" data-met="${dataMet}" data-istoday="${dataIsToday}"
+      data-day="${dayLabel}" data-sess="${dataSess}" data-target="${d.dayTarget}" data-ques="${dataQues}" data-focus="${dataFocus}" data-issun="${dataIsSun}" data-met="${dataMet}" data-istoday="${dataIsToday}" data-testcount="${dataTestCount}"
       onmouseenter="scShowTip(this,'${uid}','sess')" onmouseleave="scHideTip('${uid}')"/>`;
   }).join('');
 
@@ -2852,18 +2833,18 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
 
     // Visible dots — only on days that have questions
     const dotsSVG=qAllPts.filter(p=>p.v>0).map((p,pi)=>{
-      const met=p.v>=qTarget;
+      const met=p.v>=p.d.dayQTarget;
       const delay=(pi/qAllPts.length*0.6).toFixed(3);
       return `<circle cx="${p.x.toFixed(1)}" cy="${yQ(p.v).toFixed(1)}" r="2.2" fill="${met?'rgba(107,158,131,0.95)':'rgba(144,139,176,0.85)'}" stroke="rgba(0,0,0,0.6)" stroke-width="0.8" style="transform-box:fill-box;transform-origin:center;transform:scale(0);animation:dotReveal .3s cubic-bezier(.16,1,.3,1) ${delay}s both;"/>`;
     }).join('');
 
     // Invisible hit areas for questions hover
     const qHitAreas=qAllPts.map(p=>{
-      const met=p.v>=qTarget;
+      const met=p.v>=p.d.dayQTarget;
       const dayLabel=`${DAY_NAMES[p.d.d.getDay()]}, ${MON_NAMES[p.d.d.getMonth()]} ${p.d.d.getDate()}`;
       const bx=(PL+p.i*barW).toFixed(1);
       return `<rect class="${uid}qhit" x="${bx}" y="${QPT}" width="${barW.toFixed(1)}" height="${qPlotH}" fill="transparent" style="cursor:default;"
-        data-day="${dayLabel}" data-ques="${p.v}" data-qtarget="${qTarget}" data-met="${met?1:0}" data-focus="${p.d.focusMins}" data-sess="${fmtSessVal(p.d.sess)}"
+        data-day="${dayLabel}" data-ques="${p.v}" data-qtarget="${p.d.dayQTarget}" data-met="${met?1:0}" data-focus="${p.d.focusMins}" data-sess="${fmtSessVal(p.d.sess)}"
         onmouseenter="scShowTip(this,'${uid}','ques')" onmouseleave="scHideTip('${uid}')"/>`;
     }).join('');
 
@@ -2894,10 +2875,23 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
 
   // ── Stat pills ──
   const fmtSessVal2=v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
-  const streakCol=streak>=5?'var(--c)':streak>=2?'var(--m)':'var(--t3)';
   const wastedCol=wastedSessions===0?'var(--c)':wastedSessions<=target*2?'var(--m)':'var(--red)';
   const onTargetPct=pastWork.length>0?Math.round(metDays/pastWork.length*100):0;
   const onTargetCol=onTargetPct>=80?'var(--c)':onTargetPct>=50?'var(--m)':'var(--t3)';
+
+  // Avg sessions/day and avg questions/day — this month, non-Sunday study days
+  // elapsed so far (same `pastWork` set already used for on-target%, i.e.
+  // "total days of the current month minus Sundays" up to today). Each day's
+  // `d.sess` value already IS the session count computed using whatever
+  // session-length setting was active at the moment each chunk of study time
+  // was logged that day (a completed Pomodoro cycle credits 1.0 at its own
+  // current length; manual/test logs credit duration ÷ length-at-log-time) —
+  // so summing d.sess across days and dividing by day-count already produces
+  // exactly "avg sessions/day, each day judged by the setting in force then."
+  const avgSessPerDayMonth = pastWork.length>0 ? pastWork.reduce((a,d)=>a+d.sess,0)/pastWork.length : 0;
+  const avgQuesPerDayMonth = pastWork.length>0 ? pastWork.reduce((a,d)=>a+d.ques,0)/pastWork.length : 0;
+  const avgSessCol = avgSessPerDayMonth>=target?'var(--c)':avgSessPerDayMonth>=target*0.5?'var(--m)':'var(--t3)';
+  const avgQuesCol = avgQuesPerDayMonth>=qTarget?'var(--c)':avgQuesPerDayMonth>=qTarget*0.5?'var(--m)':'var(--t3)';
 
   // Ques catch-up strip — only shown when user has logged questions and is behind
   const quesCatchupStrip = (hasQuesData && quesBehind > 0) ? `
@@ -2913,18 +2907,22 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
       <span style="font-size:9px;color:rgba(107,158,131,0.8);font-family:'JetBrains Mono',monospace;letter-spacing:.04em;">All caught up on questions</span>
     </div>` : '');
 
-  const statPills=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:${(hasQuesData&&quesBehind>=0)?'10px':'16px'};">
+  const statPills=`<div class="progress-4box" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:${(hasQuesData&&quesBehind>=0)?'10px':'16px'};">
     <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;animation:fadeUp .4s var(--ease) .05s both;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:300;color:${streakCol};letter-spacing:-.04em;line-height:1;">${streak}</div>
-      <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;">streak</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;color:${avgSessCol};letter-spacing:-.04em;line-height:1;">${fmtSessVal2(avgSessPerDayMonth)}</div>
+      <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;">avg sess/day</div>
     </div>
     <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;animation:fadeUp .4s var(--ease) .1s both;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:${wastedSessions>=100?'20':'26'}px;font-weight:300;color:${wastedCol};letter-spacing:-.04em;line-height:1;">${firstEffortDate?fmtSessVal2(wastedSessions):'—'}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:${wastedSessions>=100?'18':'22'}px;font-weight:300;color:${wastedCol};letter-spacing:-.04em;line-height:1;">${firstEffortDate?fmtSessVal2(wastedSessions):'—'}</div>
       <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;">sess wasted</div>
     </div>
     <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;animation:fadeUp .4s var(--ease) .15s both;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:300;color:${onTargetCol};letter-spacing:-.04em;line-height:1;">${onTargetPct}<span style="font-size:14px;opacity:.6;">%</span></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;color:${onTargetCol};letter-spacing:-.04em;line-height:1;">${onTargetPct}<span style="font-size:13px;opacity:.6;">%</span></div>
       <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;">on target</div>
+    </div>
+    <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:12px;text-align:center;animation:fadeUp .4s var(--ease) .2s both;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;color:${avgQuesCol};letter-spacing:-.04em;line-height:1;">${fmtSessVal2(avgQuesPerDayMonth)}</div>
+      <div style="font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.08em;text-transform:uppercase;">avg ques/day</div>
     </div>
   </div>
   ${quesCatchupStrip}`;
@@ -3004,6 +3002,7 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
               <div style="font-size:7px;color:var(--t3);margin-top:1px;">days to cover</div>
             </div>
           </div>
+          ${totalTestsAllTime>0?`<div style="margin-top:7px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05);font-size:7px;color:rgba(196,100,100,0.65);font-family:'JetBrains Mono',monospace;">${totalTestsAllTime} test${totalTestsAllTime>1?'s':''} · ${fmtSV(totalTestCreditAllTime)} sess from tests</div>`:''}
         </div>
 
         <!-- Questions block -->
@@ -3110,11 +3109,13 @@ function scShowTip(el, uid, mode){
     const tgt     = parseFloat(el.dataset.target||'4');
     const ques    = parseInt(el.dataset.ques||'0');
     const focus   = parseInt(el.dataset.focus||'0');
+    const testCount = parseInt(el.dataset.testcount||'0');
     const met     = sess>=tgt;
     const fmtV    = v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
     const sessCol = met?'#6b9e83':'#c2a359';
     const dayLbl  = isToday?'<span style="font-size:8px;color:rgba(107,158,131,0.8);font-family:JetBrains Mono,monospace;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:3px;">Today</span>':'';
     const sunNote = isSun?'<div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:4px;">Rest day</div>':'';
+    const testNote = testCount>0?`<div style="font-size:9px;color:#c46464;margin-top:3px;">${testCount} test${testCount>1?'s':''} logged</div>`:'';
 
     html = `${dayLbl}
       <div style="font-size:10px;color:rgba(255,255,255,0.55);font-family:JetBrains Mono,monospace;margin-bottom:6px;">${day}</div>
@@ -3126,6 +3127,7 @@ function scShowTip(el, uid, mode){
         <div style="width:${Math.min(100,tgt>0?sess/tgt*100:0).toFixed(1)}%;height:100%;background:${sessCol};border-radius:1px;transition:width .3s;"></div>
       </div>
       ${focus>0?`<div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;">${focus}m focus${ques>0?' · '+ques+' ques':''}</div>`:(ques>0?`<div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;">${ques} questions</div>`:'')}
+      ${testNote}
       ${sunNote}`;
   } else {
     const ques    = parseInt(el.dataset.ques||'0');
@@ -3184,6 +3186,112 @@ function scHideTip(uid){
 // State for month heatmap navigation
 let anaHmMonth = null; // null = current month
 
+/* ─── Reusable donut/pie chart (thick ring, per-segment sweep-in reveal) ───
+   items: [{key,label,hex,rgb,value,valueLabel}] — value drives proportion,
+   valueLabel is the pre-formatted string shown in the legend (caller formats
+   it, e.g. "13h 22m" for time or a plain integer for question counts) so this
+   function stays unit-agnostic. centerVal/centerSub are the big number +
+   caption shown in the middle of the ring. */
+function shadeHex(hex,percent){
+  hex=hex.replace('#','');
+  const num=parseInt(hex,16);
+  let r=(num>>16)+Math.round(2.55*percent);
+  let g=((num>>8)&0xff)+Math.round(2.55*percent);
+  let b=(num&0xff)+Math.round(2.55*percent);
+  r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b));
+  return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+
+function buildDonutChart(uid, items, centerVal, centerSub){
+  const total=items.reduce((a,it)=>a+(it.value||0),0);
+  const D=94, R=D/2; // orb diameter/radius
+  const WAVE_W=D*2; // two-cycle wave path, tiles seamlessly every D px
+
+  function wavePath(amp){
+    const h=WAVE_W/4;
+    return `M0,0 C${h*0.5},${-amp} ${h*0.5},${-amp} ${h},0 C${h*1.5},${amp} ${h*1.5},${amp} ${h*2},0 `+
+           `C${h*2.5},${-amp} ${h*2.5},${-amp} ${h*3},0 C${h*3.5},${amp} ${h*3.5},${amp} ${h*4},0 `+
+           `L${WAVE_W},${D*1.4} L0,${D*1.4} Z`;
+  }
+
+  const orbsHTML=items.map((it,i)=>{
+    const pct=total>0?Math.round((it.value||0)/total*100):0;
+    const has=(it.value||0)>0;
+    const fillY=R*2*(1-pct/100); // 0 = brimming full, D = empty
+    const delay=(0.15+i*0.14).toFixed(2);
+    const cid=`${uid}orb${i}`;
+    const light=shadeHex(it.hex,20);
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;animation:cbtRowIn .5s cubic-bezier(.16,1,.3,1) ${delay}s forwards;">
+      <div style="position:relative;width:${D}px;height:${D}px;filter:drop-shadow(0 0 ${has?'13px':'0px'} rgba(${it.rgb},0.45));">
+        <svg width="${D}" height="${D}" viewBox="0 0 ${D} ${D}" style="display:block;overflow:visible;">
+          <defs>
+            <clipPath id="${cid}clip"><circle cx="${R}" cy="${R}" r="${R-1.5}"/></clipPath>
+            <linearGradient id="${cid}wg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${light}" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="${it.hex}" stop-opacity="0.95"/>
+            </linearGradient>
+            <radialGradient id="${cid}glass" cx="35%" cy="28%" r="75%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.10"/>
+              <stop offset="45%" stop-color="#ffffff" stop-opacity="0.02"/>
+              <stop offset="100%" stop-color="#000000" stop-opacity="0.12"/>
+            </radialGradient>
+          </defs>
+          <circle cx="${R}" cy="${R}" r="${R-1.5}" fill="rgba(255,255,255,0.025)" stroke="rgba(${it.rgb},${has?0.4:0.14})" stroke-width="1.5"/>
+          ${has?`<g clip-path="url(#${cid}clip)">
+            <g class="orbRise${cid}" style="transform:translateY(${(R*2).toFixed(1)}px);animation:orbRise${cid} 1.5s cubic-bezier(.22,1,.36,1) ${delay}s forwards;">
+              <g class="orbScroll${cid}" style="animation:orbScroll${cid} ${5+i*1.3}s linear infinite;">
+                <path d="${wavePath(2.6)}" fill="${it.hex}" opacity="0.28" transform="translate(0,${fillY.toFixed(1)})"/>
+              </g>
+              <g class="orbScrollB${cid}" style="animation:orbScrollB${cid} ${4+i*1.1}s linear infinite;">
+                <path d="${wavePath(3.4)}" fill="url(#${cid}wg)" transform="translate(0,${fillY.toFixed(1)})"/>
+              </g>
+            </g>
+          </g>`:''}
+          <circle cx="${R}" cy="${R}" r="${R-1.5}" fill="url(#${cid}glass)"/>
+          <style>
+            @keyframes orbRise${cid}{to{transform:translateY(${fillY.toFixed(1)}px);}}
+            @keyframes orbScroll${cid}{from{transform:translateX(0);}to{transform:translateX(-${(WAVE_W/2).toFixed(1)}px);}}
+            @keyframes orbScrollB${cid}{from{transform:translateX(-${(WAVE_W/2).toFixed(1)}px);}to{transform:translateX(0);}}
+          </style>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:300;letter-spacing:-.03em;color:${has?'#fff':'var(--t3)'};text-shadow:0 1px 6px rgba(0,0,0,0.5);">${has?pct+'%':'—'}</span>
+        </div>
+      </div>
+      <span style="font-size:10.5px;color:${it.hex};font-weight:400;letter-spacing:.05em;">${it.label}</span>
+    </div>`;
+  }).join('');
+
+  const legendHTML=items.map((it,i)=>{
+    const pct=total>0?Math.round((it.value||0)/total*100):0;
+    const delay=(0.6+i*0.1).toFixed(2);
+    const has=(it.value||0)>0;
+    return `<div style="position:relative;display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;background:${has?`rgba(${it.rgb},0.07)`:'rgba(255,255,255,0.02)'};border:1px solid ${has?`rgba(${it.rgb},0.18)`:'var(--b1)'};opacity:0;animation:cbtRowIn .5s cubic-bezier(.16,1,.3,1) ${delay}s forwards;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:${it.hex};box-shadow:${has?`0 0 7px rgba(${it.rgb},0.65)`:'none'};flex-shrink:0;"></span>
+        <span style="font-size:10.5px;color:${has?it.hex:'var(--t3)'};font-weight:400;letter-spacing:.04em;flex:1;">${it.label}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--t3);opacity:${has?'.8':'.4'};">${has?pct+'%':''}</span>
+      </div>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:300;color:${has?'var(--t1)':'var(--t3)'};letter-spacing:-.02em;">${it.valueLabel||'—'}</span>
+      <div style="height:3px;border-radius:99px;background:rgba(255,255,255,0.05);overflow:hidden;">
+        <div class="cbt-bar" data-w="${pct}" style="width:0%;height:100%;border-radius:99px;background:linear-gradient(90deg,${it.hex}99,${it.hex});transition:width 1.2s cubic-bezier(.16,1,.3,1) ${(0.75+i*0.1).toFixed(2)}s;"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div style="display:flex;flex-direction:column;gap:4px;margin-top:6px;">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);margin-bottom:6px;">${total>0?centerVal:'—'} <span style="opacity:.6;">${centerSub}</span></div>
+  <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;">
+    <div style="display:flex;gap:18px;flex-shrink:0;">
+      ${orbsHTML}
+    </div>
+    <div style="flex:1;min-width:220px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+      ${legendHTML}
+    </div>
+  </div>
+</div>`;
+}
+
 function buildFocusActivitySections(today){
   // IMPORTANT: todayKey must match how sessions/logs are saved — local calendar date.
   // today is already midnight-local (setHours(0,0,0,0)), so localDateKey(today) is correct.
@@ -3209,7 +3317,7 @@ function buildFocusActivitySections(today){
 
   // Add sessions to dayMap — using parseFloat since sessions are now decimal-counted
   try{
-    Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{
+    getKeysWithPrefix('fent_sessions_').forEach(k=>{
       const d=k.replace('fent_sessions_','');
       const n=parseFloat(localStorage.getItem(k)||'0');
       if(!dayMap[d])dayMap[d]={total:0,subj:{math:0,chem:0,phys:0},task:{},sessions:0};
@@ -3220,9 +3328,9 @@ function buildFocusActivitySections(today){
   // Focus logs aggregation
   const focusLogs={};
   try{
-    Object.keys(localStorage).filter(k=>k.startsWith('fent_focuslog_')).forEach(k=>{
+    getKeysWithPrefix('fent_focuslog_').forEach(k=>{
       const d=k.replace('fent_focuslog_','');
-      const entries=JSON.parse(localStorage.getItem(k)||'[]');
+      const entries=getParsedFocusLogByFullKey(k);
       if(!focusLogs[d])focusLogs[d]={totalSecs:0,subj:{math:0,chem:0,phys:0},task:{theory:0,module:0,pyq:0,revision:0}};
       entries.forEach(e=>{
         focusLogs[d].totalSecs+=e.durationSecs||0;
@@ -3240,12 +3348,13 @@ function buildFocusActivitySections(today){
 
   // Total sessions — float sum across all days
   let totalSessions=0;
-  try{Object.keys(localStorage).filter(k=>k.startsWith('fent_sessions_')).forEach(k=>{totalSessions+=parseFloat(localStorage.getItem(k)||'0');});}catch{}
+  try{getKeysWithPrefix('fent_sessions_').forEach(k=>{totalSessions+=parseFloat(localStorage.getItem(k)||'0');});}catch{}
 
   // Focus target daily
   const target=focusSettings.dailyTarget;
 
   function fmtSecs(s){const m=Math.floor(s/60);const h=Math.floor(m/60);return h>0?`${h}h ${m%60}m`:`${m}m`;}
+  const uid='fa'+Math.floor(Math.random()*99999);
 
   // ── Month Heatmap ──
   // Which month to show
@@ -3289,11 +3398,24 @@ function buildFocusActivitySections(today){
   // Only the final 10% (1 session left) gets a soft green.
   // Full vivid green is reserved exclusively for hitting or beating the goal.
   // This keeps constant visual pressure through the day and makes the reward feel real.
-  const dailyGoal = Math.max(1, focusSettings.dailyTarget || 4);
+  //
+  // CRITICAL: each cell must use the target that was LOCKED IN for that specific day
+  // (fent_daytarget_<date>), not your current live setting. Today always uses the
+  // live current target (last change of the day wins); every other day uses whatever
+  // target was active when sessions were actually logged that day. Without this,
+  // changing your target would retroactively re-color every past day in the whole
+  // calendar as if the new target had always applied — exactly the bug being fixed here.
+  const liveDailyGoal = Math.max(1, focusSettings.dailyTarget || 4);
+  function getCellDailyGoal(cell){
+    if(cell.isToday) return liveDailyGoal;
+    const stored = parseFloat(localStorage.getItem('fent_daytarget_'+cell.k)||'');
+    return Math.max(1, isNaN(stored) ? liveDailyGoal : stored);
+  }
   function hmTaskColor(cell){
     if(!cell.inMonth) return 'rgba(255,255,255,0.0)';
     if(!cell.isPast&&!cell.isToday) return 'rgba(255,255,255,0.04)'; // future: muted
     const sess = cell.tasks.sessions || 0;
+    const dailyGoal = getCellDailyGoal(cell);
     // Sunday — neutral when empty, GREEN scale from first session (bonus day)
     if(cell.isSun){
       if(sess === 0) return 'rgba(255,255,255,0.04)'; // neutral — no target
@@ -3334,10 +3456,20 @@ function buildFocusActivitySections(today){
     // Load individual focus log entries
     let dayLogEntries=[];
     try{dayLogEntries=JSON.parse(localStorage.getItem('fent_focuslog_'+anaHmSelectedDay)||'[]');}catch{}
+    // Test log entries for this day — purely additive display data, the
+    // daySess number above already includes any test-derived credit
+    let dayTestEntries=[];
+    try{dayTestEntries=JSON.parse(localStorage.getItem('fent_testlog_'+anaHmSelectedDay)||'[]');}catch{}
+    const dayTestCount=dayTestEntries.length;
 
     function fmtS(s){const m=Math.floor(s/60);const h=Math.floor(m/60);return h>0?`${h}h ${m%60}m`:`${m}m`;}
     const fmtSess=v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
-    const sessTarget=typeof focusSettings!=='undefined'?focusSettings.dailyTarget:4;
+    // Use the target LOCKED for this specific day — today uses the live current
+    // setting (last change of the day wins), any other day uses its own snapshot.
+    const isSelectedToday=anaHmSelectedDay===localDateKey(today);
+    const sessTarget=isSelectedToday
+      ? (typeof focusSettings!=='undefined'?focusSettings.dailyTarget:4)
+      : (parseFloat(localStorage.getItem('fent_daytarget_'+anaHmSelectedDay)||'')||(typeof focusSettings!=='undefined'?focusSettings.dailyTarget:4));
     const sessMetCol=daySess>=sessTarget?'var(--c)':daySess>0?'var(--m)':'var(--t3)';
 
     if(isSun){
@@ -3357,7 +3489,7 @@ function buildFocusActivitySections(today){
         <div style="font-size:9px;color:rgba(255,255,255,0.25);margin-bottom:6px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;">${daySess>0||dayLogEntries.length>0?'Rest day — bonus sessions count toward wasted debt':'Rest day — no sessions logged'}</div>
         ${daySess>0?`<div class="month-hm-detail-row">
           <span style="font-size:10px;color:var(--t3);flex:1;">Sessions</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}<span style="font-size:9px;color:var(--t3);opacity:.6;"> covers debt</span></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}<span style="font-size:9px;color:var(--t3);opacity:.6;"> covers debt</span>${dayTestCount>0?`<span style="font-size:9px;color:var(--red);opacity:.85;margin-left:5px;">· ${dayTestCount} test${dayTestCount>1?'s':''}</span>`:''}</span>
         </div>`:''}
         ${focusSecs>0?`<div class="month-hm-detail-row">
           <span style="font-size:10px;color:var(--t3);flex:1;">Focus time</span>
@@ -3385,7 +3517,7 @@ function buildFocusActivitySections(today){
       // Sessions row — always shown when there's any focus activity; shows sess/target
       const sessRowHTML=hasFocus?`<div class="month-hm-detail-row">
           <span style="font-size:10px;color:var(--t3);flex:1;">Sessions</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}<span style="font-size:9px;color:var(--t3);opacity:.6;"> / ${sessTarget}</span></span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}<span style="font-size:9px;color:var(--t3);opacity:.6;"> / ${sessTarget}</span>${dayTestCount>0?`<span style="font-size:9px;color:var(--red);opacity:.85;margin-left:5px;">· ${dayTestCount} test${dayTestCount>1?'s':''}</span>`:''}</span>
         </div>`:'';
 
       const statRowsHTML=`
@@ -3400,10 +3532,22 @@ function buildFocusActivitySections(today){
         </div>`:''}
       `;
 
+      // Test entries — compact list with name/score, shown just above chapter log
+      const testEntriesHTML=dayTestEntries.map(t=>{
+        const scoreStr=t.maxScore?`${t.score}/${t.maxScore}`:String(t.score);
+        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(196,100,100,0.08);">
+          <div style="width:4px;height:4px;border-radius:50%;background:var(--red);flex-shrink:0;"></div>
+          <span style="flex:1;font-size:10px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.testName}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--red);flex-shrink:0;">${scoreStr}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);flex-shrink:0;">${fmtS(t.durationSecs)}</span>
+        </div>`;
+      }).join('');
+
       detHTML=`<div class="month-hm-detail" id="${hmDetailId}">
         <div class="month-hm-detail-date">${dateLbl}</div>
         ${!hasFocus&&!hasTasks?`<div style="font-size:11px;color:var(--t3);padding:4px 0;">Nothing logged this day.</div>`:''}
         ${statRowsHTML}
+        ${testEntriesHTML?`<div style="margin-top:8px;border-top:1px solid rgba(196,100,100,0.12);padding-top:8px;">${testEntriesHTML}</div>`:''}
         ${logEntriesHTML?`<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;">${logEntriesHTML}</div>`:''}
         ${dayLogEntries.length>6?`<div style="font-size:9px;color:var(--t3);padding:4px 0;text-align:right;">+${dayLogEntries.length-6} more entries</div>`:''}
       </div>`;
@@ -3492,9 +3636,13 @@ function buildFocusActivitySections(today){
   const last7=[...Array(7)].map((_,i)=>{
     const d=new Date(today);d.setDate(d.getDate()-i);
     const k=localDateKey(d);
-    return {d,k,sess:parseFloat(localStorage.getItem('fent_sessions_'+k)||'0')};
+    const isTodayDay=d.toDateString()===today.toDateString();
+    const dayTarget7=isTodayDay
+      ? target
+      : parseFloat(localStorage.getItem('fent_daytarget_'+k)||String(target));
+    return {d,k,sess:parseFloat(localStorage.getItem('fent_sessions_'+k)||'0'),dayTarget:dayTarget7};
   }).reverse();
-  const metTarget7=last7.filter(d=>d.d.getDay()!==0&&d.sess>=target).length;
+  const metTarget7=last7.filter(d=>d.d.getDay()!==0&&d.sess>=d.dayTarget).length;
   const workDays7=last7.filter(d=>d.d.getDay()!==0).length;
 
   // Subject focus breakdown
@@ -3511,15 +3659,15 @@ function buildFocusActivitySections(today){
 
   // Total questions across all days + today
   let totalQuesAll=0;
-  try{Object.keys(localStorage).filter(k=>k.startsWith('fent_ques_')).forEach(k=>{totalQuesAll+=parseInt(localStorage.getItem(k)||'0');});}catch{}
+  try{getKeysWithPrefix('fent_ques_').forEach(k=>{totalQuesAll+=parseInt(localStorage.getItem(k)||'0');});}catch{}
   const todayQuesCount=parseInt(localStorage.getItem('fent_ques_'+todayKey)||'0');
 
   // Subject-wise questions breakdown — distributed proportionally to focus time per subject
   const subjQues={math:0,chem:0,phys:0};
   try{
-    Object.keys(localStorage).filter(function(k){return k.startsWith('fent_focuslog_');}).forEach(function(key){
+    getKeysWithPrefix('fent_focuslog_').forEach(function(key){
       try{
-        var entries=JSON.parse(localStorage.getItem(key)||'[]');
+        var entries=getParsedFocusLogByFullKey(key);
         var dateStr=key.replace('fent_focuslog_','');
         var dayQ=parseInt(localStorage.getItem('fent_ques_'+dateStr)||'0');
         if(dayQ>0){
@@ -3553,34 +3701,20 @@ ${buildSessLineChart(last30, target, today, hmMonth, hmYear, chartMonthFirst, ch
 
 <div class="stats-section">
   <div class="stats-sect-title">Subject Focus Time</div>
-  <div style="display:flex;flex-direction:column;gap:10px;margin-top:2px;">
-    ${[['math','Math','var(--m)'],['chem','Chem','var(--c)'],['phys','Phys','var(--p)']].map(([s,name,color])=>{
-      const secs=subjFocusSecs[s]||0;
-      const pct=Math.round(secs/totalSubjSecs*100);
-      return `<div class="subj-time-bar-row">
-        <span class="subj-time-name" style="color:${color};">${name}</span>
-        <div class="subj-time-track"><div class="subj-time-fill" data-w="${pct}" style="background:${color};width:0%;"></div></div>
-        <span class="subj-time-val">${fmtSecs(secs)||'—'}</span>
-        <span class="subj-time-pct">${secs>0?pct+'%':''}</span>
-      </div>`;
-    }).join('')}
-  </div>
+  ${buildDonutChart('sft'+uid,[
+    {key:'math',label:'Math',hex:'#c2a359',rgb:'194,163,89',value:subjFocusSecs.math||0,valueLabel:fmtSecs(subjFocusSecs.math||0)},
+    {key:'chem',label:'Chem',hex:'#6b9e83',rgb:'107,158,131',value:subjFocusSecs.chem||0,valueLabel:fmtSecs(subjFocusSecs.chem||0)},
+    {key:'phys',label:'Phys',hex:'#908bb0',rgb:'144,139,176',value:subjFocusSecs.phys||0,valueLabel:fmtSecs(subjFocusSecs.phys||0)}
+  ],focusTimeStr||'—','total')}
 </div>
 
 <div class="stats-section">
   <div class="stats-sect-title">Subject Questions</div>
-  <div style="display:flex;flex-direction:column;gap:10px;margin-top:2px;">
-    ${[['math','Math','var(--m)'],['chem','Chem','var(--c)'],['phys','Phys','var(--p)']].map(([s,name,color])=>{
-      const q=subjQues[s]||0;
-      const pct=totalQuesAll>0?Math.round(q/totalSubjQues*100):0;
-      return `<div class="subj-time-bar-row">
-        <span class="subj-time-name" style="color:${color};">${name}</span>
-        <div class="subj-time-track"><div class="subj-time-fill" data-w="${pct}" style="background:${color};opacity:.75;width:0%;"></div></div>
-        <span class="subj-time-val">${q>0?q:'—'}</span>
-        <span class="subj-time-pct">${q>0?pct+'%':''}</span>
-      </div>`;
-    }).join('')}
-  </div>
+  ${buildDonutChart('sfq'+uid,[
+    {key:'math',label:'Math',hex:'#c2a359',rgb:'194,163,89',value:subjQues.math||0,valueLabel:(subjQues.math||0)>0?String(subjQues.math):'—'},
+    {key:'chem',label:'Chem',hex:'#6b9e83',rgb:'107,158,131',value:subjQues.chem||0,valueLabel:(subjQues.chem||0)>0?String(subjQues.chem):'—'},
+    {key:'phys',label:'Phys',hex:'#908bb0',rgb:'144,139,176',value:subjQues.phys||0,valueLabel:(subjQues.phys||0)>0?String(subjQues.phys):'—'}
+  ],totalQuesAll>0?String(totalQuesAll):'—','total')}
   ${totalQuesAll===0?`<div style="font-size:9px;color:var(--t3);margin-top:10px;opacity:.5;">Log questions during breaks to see subject breakdown.</div>`:''}
 </div>
 
@@ -3617,9 +3751,9 @@ function buildChapterTimeBreakdown(){
   // ── Aggregate every focus log entry across all history, by chapter ──
   const chapMap={};
   try{
-    Object.keys(localStorage).filter(k=>k.startsWith('fent_focuslog_')).forEach(key=>{
+    getKeysWithPrefix('fent_focuslog_').forEach(key=>{
       let entries=[];
-      try{entries=JSON.parse(localStorage.getItem(key)||'[]');}catch{return;}
+      entries=getParsedFocusLogByFullKey(key);
       const dateKey=key.replace('fent_focuslog_','');
       entries.forEach(e=>{
         if(!e||!e.subj||e.chapN===undefined) return;
@@ -3634,7 +3768,7 @@ function buildChapterTimeBreakdown(){
 
   // ── Merge in chapter-tagged questions (new forward-only log) ──
   try{
-    Object.keys(localStorage).filter(k=>k.startsWith('fent_quesbychap_')).forEach(key=>{
+    getKeysWithPrefix('fent_quesbychap_').forEach(key=>{
       let entries=[];
       try{entries=JSON.parse(localStorage.getItem(key)||'[]');}catch{return;}
       entries.forEach(e=>{
@@ -3907,6 +4041,15 @@ let focusTimer = {
   segStart:null,     // Date.now() when current segment started
 };
 
+// ── Log Test — a completely independent stopwatch. Counts UP with no target
+// duration, for logging a mock test you just took. Never reads or writes any
+// field on focusTimer above — the two are mutually exclusive at the UI level
+// only (you can't run both at once), never intertwined in state.
+let testLogTimer = { running:false, startedAt:null, elapsedSecs:0, intervalId:null };
+let testLogOpen=false;       // is the Log Test card expanded
+let testLogScoreStep=false;  // true once stopped, waiting for score entry
+let testLogType='mains';     // 'mains' | 'adv' — selected during score entry
+
 // ── Local date helper — always returns YYYY-MM-DD in the device's local timezone.
 // Using ISO string (.toISOString) gives UTC date which can be the wrong calendar
 // day at night in IST (+5:30) or any UTC+ timezone.
@@ -3953,6 +4096,91 @@ function addQuesToChapter(n, chap){
   saveTodayQuesChapLog(log);
 }
 // ── End chapter-tagged questions log ─────────────────────────────────────────
+
+// ── Log Test storage ─────────────────────────────────────────────────────────
+// fent_testlog_<date>           → array of individual test entries (full detail)
+// fent_testsessioncredit_<date> → running total of session-credit that came
+//                                 specifically from tests that day — a SUBSET
+//                                 of the day's fent_sessions_ value, tracked
+//                                 separately purely so "+1 test" badges can be
+//                                 shown without touching any existing session
+//                                 math anywhere else in the tracker.
+function todayTestLogKey(){ return 'fent_testlog_'+localDateKey(); }
+function getTodayTestLog(){ try{return JSON.parse(localStorage.getItem(todayTestLogKey())||'[]');}catch{return[];} }
+function saveTodayTestLog(l){ try{localStorage.setItem(todayTestLogKey(),JSON.stringify(l));}catch{} }
+function todayTestCreditKey(){ return 'fent_testsessioncredit_'+localDateKey(); }
+function getTodayTestCredit(){ try{return parseFloat(localStorage.getItem(todayTestCreditKey())||'0');}catch{return 0;} }
+
+// Logs a completed test. Its session-credit is added into the SAME pool every
+// other session lives in (fent_sessions_) — meaning the heatmap, wasted-session
+// math, streaks, charts, and dashboard all automatically account for test time
+// correctly with ZERO changes to that already-verified logic, since a test
+// session is just another entry in the same running total.
+// A test can legitimately span MULTIPLE session-lengths (a 3hr mock test on a
+// 90min session setting ≈ 2 sessions worth) so — unlike a manual partial-session
+// log which caps at 1.0 — this credit is intentionally uncapped.
+// Also writes today's target snapshot, exactly like every other session-write
+// path in the tracker, so day-level target locking applies here too.
+// Scoring rule (exactly as specified): each subject's score/max is entered
+// independently and any subject can be skipped entirely. The ENTERED totals are
+// summed (only across subjects actually filled in), then scaled so the summed
+// max becomes the official total for that test type — 300 for Mains, 360 for
+// Advanced — and the entered score scales proportionally with it.
+// Example: entered 122/150 → scaled to 244/300 (122 × 300/150 = 244).
+function logTestSession(durationSecs, testType, subjectScores, testName){
+  const sessionMins = focusSettings.sessionMins || 90;
+  const rawCredit = durationSecs / (sessionMins*60);
+
+  // Sunday exception: tests are still logged and shown everywhere (heatmap,
+  // charts, dashboard, overview) but do NOT count toward session credit on
+  // Sunday. This is intentionally different from regular Pomodoro sessions on
+  // Sunday, which DO count as bonus credit — tests specifically are excluded.
+  const isSundayToday = new Date().getDay() === 0;
+  const credit = isSundayToday ? 0 : rawCredit;
+
+  if(!isSundayToday){
+    const todaySessKey='fent_sessions_'+localDateKey();
+    const curSess=parseFloat(localStorage.getItem(todaySessKey)||'0');
+    localStorage.setItem(todaySessKey, curSess+credit);
+    localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
+
+    const curTestCredit=getTodayTestCredit();
+    try{ localStorage.setItem(todayTestCreditKey(), curTestCredit+credit); }catch{}
+  }
+
+  // Sum only the subjects actually entered (not skipped)
+  let sumScore=0, sumMax=0;
+  const enteredSubjects={};
+  ['phys','chem','math'].forEach(k=>{
+    const s=subjectScores[k];
+    if(s && s.max>0){
+      sumScore+=s.score;
+      sumMax+=s.max;
+      enteredSubjects[k]={score:s.score, max:s.max};
+    }
+  });
+
+  const targetTotal = testType==='mains' ? 300 : 360;
+  const normalizedTotal = sumMax>0 ? Math.round(sumScore*(targetTotal/sumMax)) : null;
+
+  const log=getTodayTestLog();
+  log.push({
+    startedAt: Date.now()-durationSecs*1000,
+    durationSecs,
+    testType,
+    testName: testName || (testType==='mains'?'Mains Test':'Advanced Test'),
+    subjects: enteredSubjects,
+    rawScore: sumScore,
+    rawMax: sumMax,
+    normalizedTotal,
+    targetTotal,
+    sessionCredit: Math.round(credit*100)/100
+  });
+  saveTodayTestLog(log);
+
+  return {credit, normalizedTotal, targetTotal};
+}
+// ── End Log Test storage ──────────────────────────────────────────────────────
 
 
 // ── Crash / unexpected-close recovery ──────────────────────────────────────
@@ -4177,6 +4405,159 @@ let focusManualLogOpen=false;
 let focusManualChap=null;   // selected chapter for manual log
 let focusManualTask=null;   // selected task for manual log
 let focusManualSearch='';   // search string for manual log chapter picker
+// ── Log Test stopwatch controls ─────────────────────────────────────────────
+// Mutually exclusive with the Pomodoro timer at the UI level only — starting a
+// test is blocked while a session is running, and the main Play button is
+// disabled while a test is being logged. No shared state between the two.
+
+function testLogBegin(){
+  if(focusTimer.running){ toast('Pause your current session first'); return; }
+  testLogStart();
+}
+
+function testLogToggleOpen(){
+  if(focusTimer.running){ toast('Pause your current session first'); return; }
+  testLogOpen=!testLogOpen;
+  if(!testLogOpen) testLogCancel();
+  renderFocus();
+}
+
+function testLogStart(){
+  if(focusTimer.running){ toast('Pause your current session first'); return; }
+  const T=testLogTimer;
+  T.running=true;
+  T.startedAt=Date.now();
+  T.elapsedSecs=0;
+  clearInterval(T.intervalId);
+  T.intervalId=setInterval(testLogTick, 500);
+  renderFocus();
+}
+
+function testLogTick(){
+  const T=testLogTimer;
+  if(!T.running) return;
+  T.elapsedSecs=Math.floor((Date.now()-T.startedAt)/1000);
+  const el=document.getElementById('focusTimeBig');
+  if(el){
+    const h=Math.floor(T.elapsedSecs/3600), m=Math.floor((T.elapsedSecs%3600)/60), s=T.elapsedSecs%60;
+    el.textContent=(h>0?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+}
+
+function testLogStop(){
+  const T=testLogTimer;
+  clearInterval(T.intervalId);
+  T.intervalId=null;
+  T.running=false;
+  T.elapsedSecs=Math.floor((Date.now()-T.startedAt)/1000);
+  if(T.elapsedSecs<10){
+    toast('Too short to log — discarded');
+    testLogCancel();
+    return;
+  }
+  testLogScoreStep=true;
+  renderFocus();
+  setTimeout(()=>{const inp=document.getElementById('testScoreInp');if(inp)inp.focus();},30);
+}
+
+function testLogCancel(){
+  const T=testLogTimer;
+  clearInterval(T.intervalId);
+  T.intervalId=null;
+  T.running=false;
+  T.startedAt=null;
+  T.elapsedSecs=0;
+  testLogOpen=false;
+  testLogScoreStep=false;
+  renderFocus();
+}
+
+function testLogSetType(type){
+  testLogType=type;
+  renderFocus();
+}
+
+function testLogSubmit(){
+  const nameInp=document.getElementById('testNameInp');
+  const testName=nameInp&&nameInp.value.trim()?nameInp.value.trim():'';
+
+  const subjectScores={};
+  let anyEntered=false;
+  let validationError='';
+  ['phys','chem','math'].forEach(k=>{
+    if(validationError) return;
+    const sInp=document.getElementById('testScore_'+k);
+    const mInp=document.getElementById('testMax_'+k);
+    const sRaw=sInp?sInp.value.trim():'';
+    const mRaw=mInp?mInp.value.trim():'';
+    if(sRaw===''&&mRaw==='') return; // fully skipped — fine
+    const s=parseFloat(sRaw), m=parseFloat(mRaw);
+    const subjLabel={phys:'Physics',chem:'Chemistry',math:'Maths'}[k];
+    if(isNaN(s)||isNaN(m)){ validationError=subjLabel+': fill both score and max, or leave both blank to skip'; return; }
+    if(m<=0){ validationError=subjLabel+': max must be greater than 0'; return; }
+    if(s<0){ validationError=subjLabel+': score can\'t be negative'; return; }
+    if(s>m){ validationError=subjLabel+': score can\'t exceed max ('+s+' > '+m+')'; return; }
+    subjectScores[k]={score:s, max:m};
+    anyEntered=true;
+  });
+
+  if(validationError){ toast(validationError); return; }
+  if(!anyEntered){ toast('Enter at least one subject\'s score'); return; }
+
+  const result=logTestSession(testLogTimer.elapsedSecs, testLogType, subjectScores, testName);
+  const fmtV=v=>{const r=Math.round(v*100)/100;return r===Math.floor(r)?String(Math.floor(r)):(r<0.1?r.toFixed(2):r.toFixed(1));};
+  const creditMsg=result.credit>0?fmtV(result.credit)+' session'+(result.credit!==1?'s':'')+' credited':'no session credit (Sunday)';
+  toast('✓ Test logged — '+result.normalizedTotal+'/'+result.targetTotal+' · '+creditMsg);
+
+  testLogTimer={running:false,startedAt:null,elapsedSecs:0,intervalId:null};
+  testLogOpen=false;
+  testLogScoreStep=false;
+  testLogType='mains';
+  renderFocus();
+  if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
+}
+
+// Live validation + live normalized-total preview — wired to oninput on every
+// score/max field so the person sees instant feedback instead of only finding
+// out something's wrong after tapping Save.
+function testLogLiveUpdate(){
+  let sumScore=0, sumMax=0, hasInvalid=false, anyEntered=false;
+  ['phys','chem','math'].forEach(k=>{
+    const sInp=document.getElementById('testScore_'+k);
+    const mInp=document.getElementById('testMax_'+k);
+    const rowEl=document.getElementById('testRow_'+k);
+    if(!sInp||!mInp) return;
+    const sRaw=sInp.value.trim(), mRaw=mInp.value.trim();
+    if(sRaw===''&&mRaw===''){ if(rowEl) rowEl.classList.remove('invalid'); return; }
+    const s=parseFloat(sRaw), m=parseFloat(mRaw);
+    const rowInvalid = isNaN(s)||isNaN(m)||m<=0||s<0||s>m;
+    if(rowEl) rowEl.classList.toggle('invalid', rowInvalid);
+    if(rowInvalid){ hasInvalid=true; return; }
+    sumScore+=s; sumMax+=m; anyEntered=true;
+  });
+
+  const previewEl=document.getElementById('testLivePreview');
+  const saveBtn=document.getElementById('testSaveBtn');
+  if(!previewEl) return;
+
+  if(hasInvalid){
+    previewEl.textContent='score can\'t exceed max';
+    previewEl.className='test-score-live-preview error';
+    if(saveBtn) saveBtn.disabled=true;
+  } else if(!anyEntered){
+    previewEl.textContent='enter at least one subject';
+    previewEl.className='test-score-live-preview';
+    if(saveBtn) saveBtn.disabled=true;
+  } else {
+    const targetTotal = testLogType==='mains' ? 300 : 360;
+    const normalized = Math.round(sumScore*(targetTotal/sumMax));
+    previewEl.textContent=sumScore+'/'+sumMax+' → '+normalized+'/'+targetTotal;
+    previewEl.className='test-score-live-preview valid';
+    if(saveBtn) saveBtn.disabled=false;
+  }
+}
+// ── End Log Test stopwatch controls ──────────────────────────────────────────
+
 function focusToggleManualLog(){
   focusManualLogOpen=!focusManualLogOpen;
   if(!focusManualLogOpen){ focusManualChap=null; focusManualTask=null; focusManualSearch=''; }
@@ -4241,11 +4622,19 @@ function focusSubmitManualLog(){
   if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
 }
 
+// Memoized — MATH/CHEM/PHYS content is fixed for the entire session after
+// loadCalibration() runs once at page init (confirmed: the calibration editor's
+// drag-reorder operates on a separate draft object; only a page reload can ever
+// change these arrays). Building this same 69-item array from scratch on every
+// keystroke in the chapter search was pure waste — now built once, reused forever.
+let _allChaptersCache=null;
 function getAllChapters(){
+  if(_allChaptersCache) return _allChaptersCache;
   const all=[];
   MATH.forEach(ch=>all.push({subj:'math',n:ch.n,name:ch.name}));
   CHEM.forEach(ch=>all.push({subj:'chem',n:ch.n,name:ch.name}));
   PHYS.forEach(ch=>all.push({subj:'phys',n:ch.n,name:ch.name}));
+  _allChaptersCache=all;
   return all;
 }
 
@@ -4303,6 +4692,8 @@ function renderFocus(){
     if(i<S.sessionsPerCycle-1) dots.push(`<div class="focus-sess-dot long-break-marker"></div>`);
   }
 
+
+
   // Today's stats
   const todayLog=getTodayLog();
   const totalFocusSecs=todayLog.reduce((a,e)=>a+e.durationSecs,0);
@@ -4323,6 +4714,66 @@ function renderFocus(){
 
   // Log section HTML — new beautiful selector
   const logActive=T.currentChap&&T.currentTask;
+  const canStart=logActive;
+
+  // ── Test-log mode: the main clock face transforms into a stopwatch when a
+  // test is being logged — full ring (a test has no fixed duration, so a
+  // partial/broken-looking arc is wrong), with a slow breathing glow instead
+  // of a dash-offset gap. Reuses #focusTimeBig so the same tick patcher keeps
+  // updating it. Clean single-line label — no cluttered second subtitle.
+  const TL=testLogTimer;
+  const inTestMode = TL.running || testLogScoreStep;
+  let clockFaceHTML, controlsHTML;
+
+  if(inTestMode){
+    const teh=Math.floor(TL.elapsedSecs/3600), tem=Math.floor((TL.elapsedSecs%3600)/60), tes=TL.elapsedSecs%60;
+    const testTimeStr=(teh>0?String(teh).padStart(2,'0')+':':'')+String(tem).padStart(2,'0')+':'+String(tes).padStart(2,'0');
+    clockFaceHTML=`
+  <div class="focus-clock-outer test-mode${TL.running?' running':''}" id="focusClockOuter">
+    <svg class="focus-arc-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+      <circle class="focus-arc-bg" cx="110" cy="110" r="${R}"/>
+      <circle class="focus-arc-fill test-ring-draw" cx="110" cy="110" r="${R}"
+        stroke="#c46464"
+        stroke-dasharray="${CIRC}"
+        stroke-dashoffset="0"
+        style="--circ:${CIRC};"
+        transform="rotate(-90 110 110)"/>
+    </svg>
+    <div class="focus-clock-face">
+      <div class="focus-time-big test-time-pop" id="focusTimeBig" style="color:${TL.running?'#c46464':'var(--t2)'};">${testTimeStr}</div>
+      <div class="focus-mode-lbl test-mode-lbl-in" style="color:#c46464;">${TL.running?'Test':'Stopped'}</div>
+    </div>
+  </div>`;
+    controlsHTML=TL.running
+      ? `<div class="focus-controls test-stop-in"><button class="test-stop-pill" onclick="testLogStop()">Stop Test</button></div>`
+      : '';
+  } else {
+    clockFaceHTML=`
+  <div class="focus-clock-outer${T.running?' running':''} ${modeCls}" id="focusClockOuter">
+    <svg class="focus-arc-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+      <circle class="focus-arc-bg" cx="110" cy="110" r="${R}"/>
+      <circle class="focus-arc-fill" cx="110" cy="110" r="${R}"
+        stroke="${arcStroke}"
+        stroke-dasharray="${CIRC}"
+        stroke-dashoffset="${dashOffset}"
+        transform="rotate(-90 110 110)"
+        style="filter:drop-shadow(0 0 6px ${arcStroke}55);"/>
+    </svg>
+    <div class="focus-clock-face">
+      <div class="focus-time-big" id="focusTimeBig" style="color:${T.running?'var(--t1)':'var(--t2)'};">${timeStr}</div>
+      <div class="focus-mode-lbl" style="color:${modeColor};">${modeLabels[T.mode]}</div>
+      <div class="focus-session-lbl">Session ${T.cycleSessions+1} of ${S.sessionsPerCycle}</div>
+    </div>
+  </div>`;
+    controlsHTML=`<div class="focus-controls">
+    <button class="focus-btn-sm" onclick="focusSkip()" title="Skip">⟫</button>
+    <button class="focus-btn-main${T.running?' running':''}" onclick="focusToggle()" id="focusMainBtn" ${!canStart&&!T.running?'style="opacity:0.4;cursor:not-allowed" title="Select chapter & task first"':''}>
+      ${T.running?'⏸':'▶'}
+    </button>
+    <button class="focus-btn-sm" onclick="focusReset()" title="Reset">↺</button>
+  </div>`;
+  }
+
   const chapDotColors={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'};
   const chapTagColors={math:'MTH',chem:'CHM',phys:'PHY'};
 
@@ -4394,9 +4845,14 @@ function renderFocus(){
     // Header row: label + toggle button
     h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:'+(focusManualLogOpen?'12px':'6px')+';transition:margin .2s;">';
     h+='<span style="font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;font-family:\'JetBrains Mono\',monospace;">Today\'s Focus Log</span>';
+    h+='<div style="display:flex;align-items:center;gap:6px;">';
+    h+='<button onclick="testLogBegin()" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:5px 10px;cursor:pointer;transition:all .2s;">';
+    h+='<svg viewBox="0 0 12 12" width="9" height="9" fill="none"><circle cx="6" cy="6" r="4" stroke="rgba(196,100,100,0.7)" stroke-width="1.6"/></svg>';
+    h+='<span style="font-size:9px;color:var(--t3);font-family:\'JetBrains Mono\',monospace;letter-spacing:.02em;">log test</span></button>';
     h+='<button onclick="focusToggleManualLog()" style="display:flex;align-items:center;gap:5px;background:'+(focusManualLogOpen?'rgba(107,158,131,0.12)':'rgba(255,255,255,0.04)')+';border:1px solid '+(focusManualLogOpen?'rgba(107,158,131,0.28)':'rgba(255,255,255,0.08)')+';border-radius:6px;padding:5px 10px;cursor:pointer;transition:all .2s;">';
     h+='<svg viewBox="0 0 12 12" width="9" height="9" fill="none"><path d="M6 1v10M1 6h10" stroke="'+(focusManualLogOpen?'#6b9e83':'rgba(255,255,255,0.4)')+'" stroke-width="1.8" stroke-linecap="round"/></svg>';
-    h+='<span style="font-size:9px;color:'+(focusManualLogOpen?'var(--c)':'var(--t3)')+';font-family:\'JetBrains Mono\',monospace;letter-spacing:.02em;">log session</span></button></div>';
+    h+='<span style="font-size:9px;color:'+(focusManualLogOpen?'var(--c)':'var(--t3)')+';font-family:\'JetBrains Mono\',monospace;letter-spacing:.02em;">log session</span></button>';
+    h+='</div></div>';
 
     if(focusManualLogOpen){
       h+='<div class="focus-selector-wrap" style="margin-bottom:12px;animation:fadeUp .2s var(--ease) both;border:1px solid rgba(107,158,131,0.15);border-radius:10px;">';
@@ -4454,6 +4910,79 @@ function renderFocus(){
     }
     return h;
   }
+  // Log Test card — string concatenation throughout (nested backtick template
+  // literals inside a template literal caused a real parse error earlier in
+  // this file's history — this pattern avoids that entirely).
+  function buildTestLogHTML(){
+    const T=testLogTimer;
+
+    // Idle — the entry point now lives next to "log session" in the log header.
+    // Nothing to render here at all when not testing.
+    if(!T.running && !testLogScoreStep) return '';
+
+    if(T.running){
+      // Running — the live timer lives in the main clock above; nothing else
+      // needed here. The Stop button is in the main controls row.
+      return '';
+    }
+
+    // ── Score entry — redesigned as a clean card-grid, appears where the
+    // Log Test / log session buttons normally sit.
+    const isSundayNow=new Date().getDay()===0;
+    const eh=Math.floor(T.elapsedSecs/3600), em=Math.floor((T.elapsedSecs%3600)/60), es=T.elapsedSecs%60;
+    const elapsedStr=(eh>0?String(eh).padStart(2,'0')+':':'')+String(em).padStart(2,'0')+':'+String(es).padStart(2,'0');
+
+    let h='<div class="test-score-card">';
+
+    // Header: elapsed chip + type segmented toggle
+    h+='<div class="test-score-head test-score-stagger-1">';
+    h+='<span class="test-score-elapsed-chip">'+elapsedStr+' studied</span>';
+    h+='<div class="test-log-type-seg">';
+    h+='<button class="test-log-type-opt'+(testLogType==='mains'?' active':'')+'" onclick="testLogSetType(\'mains\')">Mains</button>';
+    h+='<button class="test-log-type-opt'+(testLogType==='adv'?' active':'')+'" onclick="testLogSetType(\'adv\')">Advanced</button>';
+    h+='</div>';
+    h+='</div>';
+
+    h+='<input id="testNameInp" class="test-score-name-input test-score-stagger-2" type="text" placeholder="Test name — optional" autocomplete="off"/>';
+
+    // Subject grid — three equal compact cards, each cascading in with its own delay
+    const subjMeta=[
+      {k:'phys',label:'Physics',short:'PHY',col:'var(--p)'},
+      {k:'chem',label:'Chemistry',short:'CHM',col:'var(--c)'},
+      {k:'math',label:'Maths',short:'MTH',col:'var(--m)'}
+    ];
+    h+='<div class="test-score-grid test-score-stagger-3">';
+    subjMeta.forEach(function(s,si){
+      h+='<div class="test-score-subj-card" id="testRow_'+s.k+'" style="animation:fadeUp .35s var(--ease) '+(0.13+si*0.04)+'s both;">';
+      h+='<div class="test-score-subj-top">';
+      h+='<div class="test-score-subj-dot" style="background:'+s.col+';"></div>';
+      h+='<span class="test-score-subj-short">'+s.short+'</span>';
+      h+='</div>';
+      h+='<div class="test-score-subj-inputs">';
+      h+='<input id="testScore_'+s.k+'" class="test-score-input" type="number" placeholder="0" step="any" inputmode="decimal" oninput="testLogLiveUpdate()"/>';
+      h+='<span class="test-score-subj-slash">/</span>';
+      h+='<input id="testMax_'+s.k+'" class="test-score-input" type="number" placeholder="0" step="any" inputmode="decimal" oninput="testLogLiveUpdate()"/>';
+      h+='</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+
+    h+='<div id="testLivePreview" class="test-score-live-preview test-score-stagger-4">enter at least one subject</div>';
+
+    if(isSundayNow){
+      h+='<div class="test-score-sunday-note">Sunday — logged &amp; shown everywhere, no session credit</div>';
+    }
+
+    h+='<div class="test-score-btn-row test-score-stagger-5">';
+    h+='<button class="test-score-discard-btn" onclick="testLogCancel()">Discard</button>';
+    h+='<button class="test-score-save-btn" id="testSaveBtn" onclick="testLogSubmit()" disabled>Save Test</button>';
+    h+='</div>';
+
+    h+='</div>';
+    return h;
+  }
+  const testLogHTML=buildTestLogHTML();
+
   const manualLogHTML=buildManualLogHTML();
 
   // Today's log entries
@@ -4473,7 +5002,25 @@ function renderFocus(){
     }).join('');
   }
 
-  const todayLogHTML='<div class="focus-today-log">'+manualLogHTML+logRowsHTML+'</div>';
+  // Today's tests — shown above the regular log rows in a distinct red tint
+  let testRowsHTML='';
+  const todayTests=getTodayTestLog();
+  if(todayTests.length>0){
+    testRowsHTML=todayTests.slice().reverse().map(function(t,ti){
+      const dm=Math.floor(t.durationSecs/60);
+      const ds=t.durationSecs%60;
+      const durStr=dm>0?(dm+'m '+ds+'s'):(ds+'s');
+      const scoreStr=t.normalizedTotal!=null?(t.normalizedTotal+'/'+t.targetTotal):'—';
+      const typeLbl=t.testType==='mains'?'Mains':'Advanced';
+      return '<div class="focus-log-entry" style="animation-delay:'+(ti*30)+'ms;border-color:rgba(196,100,100,0.1);">'
+        +'<div style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:var(--red);"></div>'
+        +'<span class="focus-log-entry-chap">'+t.testName+' \xb7 <span style="color:var(--red);opacity:.8;font-size:9px;">'+typeLbl+' \xb7 '+scoreStr+'</span></span>'
+        +'<span class="focus-log-entry-dur">'+durStr+'</span>'
+        +'</div>';
+    }).join('');
+  }
+
+  const todayLogHTML='<div class="focus-today-log">'+manualLogHTML+testRowsHTML+logRowsHTML+'</div>';
 
   // Questions box — only during break (short or long), minimal and clean
   const isBreak=T.mode==='short'||T.mode==='long';
@@ -4501,9 +5048,6 @@ function renderFocus(){
     </div>
   </div>`:'';
 
-  // Can start timer? Requires chapter + task selected
-  const canStart=logActive;
-
   // Update Focus tab badge — always instantly in sync with Done Today
   const fbadge=document.getElementById('bFocus');
   if(fbadge) fbadge.textContent=todaySessions>0?fmtSess(todaySessions)+'✓':'—';
@@ -4512,34 +5056,13 @@ function renderFocus(){
 <div class="focus-wrap">
 
   <!-- Clock -->
-  <div class="focus-clock-outer${T.running?' running':''} ${modeCls}" id="focusClockOuter">
-    <svg class="focus-arc-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
-      <circle class="focus-arc-bg" cx="110" cy="110" r="${R}"/>
-      <circle class="focus-arc-fill" cx="110" cy="110" r="${R}"
-        stroke="${arcStroke}"
-        stroke-dasharray="${CIRC}"
-        stroke-dashoffset="${dashOffset}"
-        transform="rotate(-90 110 110)"
-        style="filter:drop-shadow(0 0 6px ${arcStroke}55);"/>
-    </svg>
-    <div class="focus-clock-face">
-      <div class="focus-time-big" id="focusTimeBig" style="color:${T.running?'var(--t1)':'var(--t2)'};">${timeStr}</div>
-      <div class="focus-mode-lbl" style="color:${modeColor};">${modeLabels[T.mode]}</div>
-      <div class="focus-session-lbl">Session ${T.cycleSessions+1} of ${S.sessionsPerCycle}</div>
-    </div>
-  </div>
+  ${clockFaceHTML}
 
   <!-- Session dots -->
-  <div class="focus-sessions-row">${dots.join('')}</div>
+  ${inTestMode?'':`<div class="focus-sessions-row">${dots.join('')}</div>`}
 
   <!-- Controls -->
-  <div class="focus-controls">
-    <button class="focus-btn-sm" onclick="focusSkip()" title="Skip">⟫</button>
-    <button class="focus-btn-main${T.running?' running':''}" onclick="focusToggle()" id="focusMainBtn" ${!canStart&&!T.running?'style="opacity:0.4;cursor:not-allowed" title="Select chapter & task first"':''}>
-      ${T.running?'⏸':'▶'}
-    </button>
-    <button class="focus-btn-sm" onclick="focusReset()" title="Reset">↺</button>
-  </div>
+  ${controlsHTML}
 
   <!-- Stats strip -->
   <div class="focus-stats-strip">
@@ -4577,6 +5100,10 @@ function renderFocus(){
       return `<span class="focus-doneby-prefix">finish by</span><span class="focus-doneby-by${isPaused?' style="color:var(--t2);"':''}" id="focusDoneByVal">${cbStr}</span><span class="focus-doneby-sep">·</span><span class="focus-doneby-rem" id="focusDoneByTill">${tillStr}</span>`;
     })()}
   </div>
+
+  <!-- Log Test — sits in the same "current primary action" zone as chapter
+       selection below, since when a score is pending that IS the current task -->
+  ${testLogHTML}
 
   <!-- Log Section -->
   <div class="focus-log-section">
@@ -4704,6 +5231,10 @@ function commitFocusSegment(){
 
 function focusToggle(){
   const T=focusTimer;
+  if(!T.running && (testLogTimer.running || testLogScoreStep)){
+    toast('Finish logging your test first');
+    return;
+  }
   if(!T.currentChap||!T.currentTask){
     if(!T.running){toast('Select a chapter & task first');return;}
   }
@@ -4735,6 +5266,14 @@ function focusStartInterval(){
   // Store absolute end timestamp — immune to browser interval throttling when tab is hidden
   T.endAt=Date.now()+(T.secondsLeft*1000);
   clearInterval(T.intervalId);
+  // Throttle only the crash-snapshot WRITE (a purely invisible background reliability
+  // feature — never shown to the user, has zero visual output). localStorage.setItem
+  // is a synchronous, blocking browser API; writing it every 500ms for the entire
+  // duration of every study session was unnecessary I/O. Throttled to every ~4s —
+  // worst case this only costs a few extra seconds of crash-recovery precision,
+  // completely imperceptible. The VISIBLE tick — clock digits, progress arc, done-by
+  // countdown — is untouched below and still updates every 500ms exactly as before.
+  let lastSnapAt=0;
   T.intervalId=setInterval(()=>{
     const remaining=Math.ceil((T.endAt-Date.now())/1000);
     if(remaining<=0){
@@ -4743,15 +5282,25 @@ function focusStartInterval(){
       focusOnModeEnd();
     } else {
       T.secondsLeft=remaining;
-      saveCrashSnap();  // keep snapshot fresh every tick
+      const now=Date.now();
+      if(now-lastSnapAt>=4000){ saveCrashSnap(); lastSnapAt=now; }
       updateFocusClockFast();
     }
-  },500); // 500ms tick so we catch the exact end moment quickly even if one tick is late
+  },500); // 500ms tick — UNCHANGED, catches the exact end moment quickly even if one tick is late
 }
 
 function updateFocusClockFast(){
   // Fast DOM update without full re-render
   const T=focusTimer;
+
+  // CRITICAL: while a test is being logged, #focusTimeBig and .focus-arc-fill
+  // belong to the test-mode stopwatch (testLogTick owns them independently via
+  // its own 500ms interval). This function must never touch them in that state
+  // — the 30s background done-by-tick was previously calling this unconditionally
+  // and stomping the live stopwatch with stale/paused Pomodoro countdown data
+  // every 30 seconds, causing a visible flicker/jump. Guard fixes it completely.
+  if(testLogTimer.running || testLogScoreStep) return;
+
   const mins=Math.floor(T.secondsLeft/60);
   const secs=T.secondsLeft%60;
   const timeEl=document.getElementById('focusTimeBig');
@@ -5062,7 +5611,7 @@ function renderOverviewSummary(){
     const isFuture=d>today&&!isToday;
     let daySecs=0,daySess=parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
     let dayQues=0;
-    try{const e=JSON.parse(localStorage.getItem('fent_focuslog_'+k)||'[]');daySecs=e.reduce((a,x)=>a+(x.durationSecs||0),0);}catch{}
+    try{const e=getParsedFocusLogByDate(k);daySecs=e.reduce((a,x)=>a+(x.durationSecs||0),0);}catch{}
     try{dayQues=parseInt(localStorage.getItem('fent_ques_'+k)||'0');}catch{}
     let dayTasks=0;
     const daySubj={math:0,chem:0,phys:0};
@@ -5072,9 +5621,12 @@ function renderOverviewSummary(){
         if(ts[tk]){const tsKey='ts_'+s+'_'+ch.n+'_'+tk;if((ST[tsKey]||todayKey)===k){dayTasks++;daySubj[s]++;}}
       });
     });
+    // Test count for this day — purely additive display data
+    let dayTestCount=0;
+    try{ dayTestCount=(JSON.parse(localStorage.getItem('fent_testlog_'+k)||'[]')||[]).length; }catch{}
     // Always accumulate ALL days including Sunday — Sunday is bonus but counts toward weekly total
     weekTasks+=dayTasks;weekSessions+=daySess;weekFocusSecs+=daySecs;weekQues+=dayQues;
-    weekDayData.push({d,k,secs:daySecs,sess:daySess,tasks:dayTasks,subj:daySubj,ques:dayQues,isSun,isToday,isFuture});
+    weekDayData.push({d,k,secs:daySecs,sess:daySess,tasks:dayTasks,subj:daySubj,ques:dayQues,isSun,isToday,isFuture,testCount:dayTestCount});
   }
   const wfm=Math.floor(weekFocusSecs/60);
   const wfh=Math.floor(wfm/60);
@@ -5139,6 +5691,7 @@ function renderOverviewSummary(){
           ${day.sess>0?`<span class="ovw-day-meta-val" style="color:var(--c);">${fmtSessOvw(day.sess)}<span style="font-size:8px;opacity:.6;">s</span></span>`:''}
           ${day.secs>0?`<span class="ovw-day-meta-val" style="color:var(--t3);">${fmtMins(day.secs)}</span>`:''}
           ${day.ques>0?`<span class="ovw-day-meta-val" style="color:var(--p);opacity:.85;">${day.ques}<span style="font-size:8px;opacity:.6;">q</span></span>`:''}
+          ${day.testCount>0?`<span class="ovw-day-meta-val" style="color:var(--red);opacity:.85;">${day.testCount}<span style="font-size:8px;opacity:.6;">t</span></span>`:''}
         </div>
       </div>`;
     }
@@ -5179,6 +5732,7 @@ function renderOverviewSummary(){
         ${!isFut&&day.sess>0?`<span class="ovw-day-meta-val" style="color:${metTarget?'var(--c)':'var(--m)'};">${fmtSessOvw(day.sess)}<span style="font-size:8px;opacity:.6;">s</span></span>`:''}
         ${!isFut&&day.secs>0?`<span class="ovw-day-meta-val" style="color:var(--t3);">${fmtMins(day.secs)}</span>`:''}
         ${!isFut&&day.ques>0?`<span class="ovw-day-meta-val" style="color:var(--p);opacity:.85;">${day.ques}<span style="font-size:8px;opacity:.6;">q</span></span>`:''}
+        ${!isFut&&day.testCount>0?`<span class="ovw-day-meta-val" style="color:var(--red);opacity:.85;">${day.testCount}<span style="font-size:8px;opacity:.6;">t</span></span>`:''}
       </div>
     </div>`;
   }).join('');
@@ -5233,7 +5787,6 @@ function renderOverviewSummary(){
 
     <div class="cal-tabs">
       <button class="cal-tab on" onclick="calTab('schedule',this)">Schedule</button>
-      <button class="cal-tab" onclick="calTab('tests',this)">Tests</button>
       <button class="cal-tab" onclick="calTab('focus',this)">Focus</button>
     </div>
 
@@ -5252,65 +5805,6 @@ function renderOverviewSummary(){
         <div style="display:flex;align-items:center;gap:12px;">
           <span class="cal-save-msg" id="calSaveMsg">Saved</span>
           <button class="cal-save-btn" onclick="saveSchedule()">Apply</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- TESTS SECTION -->
-    <div class="cal-panel-section" id="calSec-tests">
-      <div class="cal-body">
-        <div class="cal-test-grid">
-          <!-- Mains Slider -->
-          <div class="cal-slider-card">
-            <div class="cal-slider-label">Mains tests / month</div>
-            <div class="cal-slider-val" id="mainsSliderVal">3</div>
-            <div class="cal-slider-sub" id="mainsSliderSub">3 per month — weeks 1, 2, 3</div>
-            <div class="cal-slider-track" id="mainsTrack" onclick="sliderClick(event,'mains')">
-              <div class="cal-slider-fill cal-slider-fill-mains" id="mainsFill" style="width:37.5%">
-                <div class="cal-slider-thumb cal-slider-thumb-mains" id="mainsThumb"></div>
-              </div>
-            </div>
-            <div class="cal-slider-ticks">
-              <span class="cal-slider-tick" id="mainsT0">0</span>
-              <span class="cal-slider-tick" id="mainsT1">1</span>
-              <span class="cal-slider-tick" id="mainsT2">2</span>
-              <span class="cal-slider-tick" id="mainsT3">3</span>
-              <span class="cal-slider-tick" id="mainsT4">4</span>
-              <span class="cal-slider-tick" id="mainsT5">5</span>
-              <span class="cal-slider-tick" id="mainsT6">6</span>
-              <span class="cal-slider-tick" id="mainsT7">7</span>
-              <span class="cal-slider-tick" id="mainsT8">8</span>
-            </div>
-          </div>
-          <!-- Advanced Slider -->
-          <div class="cal-slider-card">
-            <div class="cal-slider-label">Advanced tests / month</div>
-            <div class="cal-slider-val" id="advSliderVal">1</div>
-            <div class="cal-slider-sub" id="advSliderSub">1 per month — last free Sunday</div>
-            <div class="cal-slider-track" id="advTrack" onclick="sliderClick(event,'adv')">
-              <div class="cal-slider-fill cal-slider-fill-adv" id="advFill" style="width:25%">
-                <div class="cal-slider-thumb cal-slider-thumb-adv" id="advThumb"></div>
-              </div>
-            </div>
-            <div class="cal-slider-ticks">
-              <span class="cal-slider-tick" id="advT0">0</span>
-              <span class="cal-slider-tick" id="advT1">1</span>
-              <span class="cal-slider-tick" id="advT2">2</span>
-              <span class="cal-slider-tick" id="advT3">3</span>
-              <span class="cal-slider-tick" id="advT4">4</span>
-            </div>
-          </div>
-        </div>
-        <div class="cal-schedule-preview">
-          <div class="cal-schedule-title">Schedule preview</div>
-          <div id="calTestPreview"></div>
-        </div>
-      </div>
-      <div class="cal-save-bar">
-        <button class="cal-reset-btn" onclick="resetTestSchedule()">Reset to default</button>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span class="cal-save-msg" id="calTestSaveMsg">Saved</span>
-          <button class="cal-save-btn" onclick="saveTestSchedule()">Apply</button>
         </div>
       </div>
     </div>
@@ -5470,8 +5964,6 @@ const PHYS_DEFAULT = JSON.parse(JSON.stringify(PHYS));
 // ── Calibrate state ──
 let calActiveSubj = 'math';
 let calDraftSchedule = {}; // {math:[...], chem:[...], phys:[...]}
-let calMainsPerMonth = 3;
-let calAdvPerMonth = 1;
 let dragSrc = null;
 let dragSrcIdx = -1;
 
@@ -5501,9 +5993,6 @@ function loadCalibration(){
     restoreSubj(saved.math, MATH, MATH_DEFAULT);
     restoreSubj(saved.chem, CHEM, CHEM_DEFAULT);
     restoreSubj(saved.phys, PHYS, PHYS_DEFAULT);
-    // Test counts
-    if(typeof saved.mainsPerMonth === 'number') calMainsPerMonth = Math.min(8, Math.max(0, saved.mainsPerMonth));
-    if(typeof saved.advPerMonth === 'number') calAdvPerMonth = Math.min(4, Math.max(0, saved.advPerMonth));
   } catch(e){}
 }
 
@@ -5512,9 +6001,7 @@ function saveCalibration(){
     const data = {
       math: MATH.map(ch=>({n:ch.n,name:ch.name,s:ch.s,e:ch.e})),
       chem: CHEM.map(ch=>({n:ch.n,name:ch.name,s:ch.s,e:ch.e})),
-      phys: PHYS.map(ch=>({n:ch.n,name:ch.name,s:ch.s,e:ch.e})),
-      mainsPerMonth: calMainsPerMonth,
-      advPerMonth: calAdvPerMonth
+      phys: PHYS.map(ch=>({n:ch.n,name:ch.name,s:ch.s,e:ch.e}))
     };
     localStorage.setItem(CAL_KEY, JSON.stringify(data));
   } catch(e){}
@@ -5571,10 +6058,6 @@ function calTab(section, btn){
   btn.classList.add('on');
   document.querySelectorAll('.cal-panel-section').forEach(s=>s.classList.remove('on'));
   document.getElementById('calSec-'+section).classList.add('on');
-  if(section==='tests'){
-    renderTestSliders();
-    renderTestPreview();
-  }
   if(section==='focus'){
     renderCalFocusSettings();
   }
@@ -6066,230 +6549,7 @@ function refreshAllLists(){
   ['math','chem','phys'].forEach(s=>applyF(s));
 }
 
-/* ═══ TEST SCHEDULE BUILDER ═══ */
-function buildCustomTestSchedule(){
-  const tests = [];
-  // Derive month range from actual chapter dates — no hardcoding
-  const {start: tStart, end: tEnd} = getTrackerRange();
 
-  // Collect every calendar month that overlaps the tracker window
-  const months = [];
-  const ptr = new Date(tStart.getFullYear(), tStart.getMonth(), 1);
-  while(ptr <= tEnd){
-    months.push({
-      y: ptr.getFullYear(),
-      m: ptr.getMonth(),
-      label: MONTHS[ptr.getMonth()]
-    });
-    ptr.setMonth(ptr.getMonth()+1);
-  }
-
-  months.forEach(({y, m, label}, mi) => {
-    const sundays = [];
-    const d = new Date(y, m, 1);
-    while(d.getMonth() === m){
-      // Only include Sundays that fall within the tracker window
-      if(d.getDay() === 0 && d >= tStart && d <= tEnd) sundays.push(new Date(d));
-      d.setDate(d.getDate()+1);
-    }
-    if(!sundays.length) return;
-
-    // Per-month counters — reset to 0 each month so names are "Mains 1", "Mains 2"… per month
-    const occupied = new Array(sundays.length).fill(false);
-    const mainCount = Math.min(calMainsPerMonth, sundays.length);
-    let mainsAssigned = 0;
-    for(let i = 0; i < sundays.length && mainsAssigned < mainCount; i++){
-      // Use date-based ID: m_YYYY_MM_N — stable even if tracker range shifts
-      const sd = sundays[i];
-      const testId = `m_${sd.getFullYear()}_${sd.getMonth()}_${mainsAssigned}`;
-      tests.push({id:testId,name:`Mains ${mainsAssigned+1}`,date:sundays[i],type:'mains',month:label,monthIdx:mi});
-      occupied[i] = true;
-      mainsAssigned++;
-    }
-    const advCount = Math.min(calAdvPerMonth, sundays.length);
-    let advAssigned = 0;
-    for(let i = 0; i < sundays.length && advAssigned < advCount; i++){
-      if(!occupied[i]){
-        const sd = sundays[i];
-        const testId = `a_${sd.getFullYear()}_${sd.getMonth()}_${advAssigned}`;
-        tests.push({id:testId,name:`Advanced ${advAssigned+1}`,date:sundays[i],type:'adv',month:label,monthIdx:mi});
-        occupied[i] = true;
-        advAssigned++;
-      }
-    }
-    // If all Sundays taken by mains and still need adv, wrap to first Sunday
-    if(advAssigned < advCount){
-      for(let i = 0; i < sundays.length && advAssigned < advCount; i++){
-        const sd = sundays[i];
-        const testId = `a_${sd.getFullYear()}_${sd.getMonth()}_${advAssigned}`;
-        tests.push({id:testId,name:`Advanced ${advAssigned+1}`,date:sundays[i],type:'adv',month:label,monthIdx:mi});
-        advAssigned++;
-      }
-    }
-  });
-  tests.sort((a,b)=>a.date-b.date);
-  return tests;
-}
-
-/* ── SLIDER RENDERING ── */
-function renderTestSliders(){
-  updateSliderUI('mains', calMainsPerMonth);
-  updateSliderUI('adv', calAdvPerMonth);
-}
-
-function updateSliderUI(type, val){
-  const max = type==='mains'?8:4;
-  const pct = (val/max)*100;
-  
-  document.getElementById(type==='mains'?'mainsSliderVal':'advSliderVal').textContent = val;
-  document.getElementById(type==='mains'?'mainsFill':'advFill').style.width = pct+'%';
-  
-  // Sub text
-  const subEl = document.getElementById(type==='mains'?'mainsSliderSub':'advSliderSub');
-  if(val === 0){
-    subEl.textContent = 'No tests this month';
-  } else if(type==='mains'){
-    const weekNames = ['week 1','week 2','week 3','week 4','week 5','week 6','week 7','week 8'];
-    subEl.textContent = val+' per month — '+weekNames.slice(0,val).join(', ');
-  } else {
-    subEl.textContent = val+' per month — first available Sunday'+( val>1?'s':'');
-  }
-  
-  // Update tick highlights
-  for(let i=0;i<=max;i++){
-    const tick = document.getElementById((type==='mains'?'mainsT':'advT')+i);
-    if(tick) tick.classList.toggle('active', i===val);
-  }
-}
-
-function sliderClick(e, type){
-  const track = e.currentTarget;
-  const rect = track.getBoundingClientRect();
-  const max = type==='mains'?8:4;
-  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  const val = Math.round(ratio * max);
-  
-  if(type==='mains') calMainsPerMonth = val;
-  else calAdvPerMonth = val;
-  
-  updateSliderUI(type, val);
-  renderTestPreview();
-}
-
-// Drag slider
-(function(){
-  let draggingSlider = null;
-  document.addEventListener('mousedown', e=>{
-    const thumb = e.target.closest('.cal-slider-thumb');
-    if(thumb){
-      const type = thumb.id==='mainsThumb'?'mains':'adv';
-      draggingSlider = type;
-      e.preventDefault();
-    }
-  });
-  document.addEventListener('mousemove', e=>{
-    if(!draggingSlider) return;
-    const track = document.getElementById(draggingSlider==='mains'?'mainsTrack':'advTrack');
-    const rect = track.getBoundingClientRect();
-    const max = draggingSlider==='mains'?8:4;
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const val = Math.round(ratio * max);
-    if(draggingSlider==='mains') calMainsPerMonth = val;
-    else calAdvPerMonth = val;
-    updateSliderUI(draggingSlider, val);
-    renderTestPreview();
-  });
-  document.addEventListener('mouseup', ()=>{ draggingSlider=null; });
-  // Touch support
-  document.addEventListener('touchstart', e=>{
-    const thumb = e.target.closest('.cal-slider-thumb');
-    if(thumb){
-      const type = thumb.id==='mainsThumb'?'mains':'adv';
-      draggingSlider = type;
-    }
-  },{passive:true});
-  document.addEventListener('touchmove', e=>{
-    if(!draggingSlider) return;
-    const track = document.getElementById(draggingSlider==='mains'?'mainsTrack':'advTrack');
-    const rect = track.getBoundingClientRect();
-    const max = draggingSlider==='mains'?8:4;
-    const touch = e.touches[0];
-    const ratio = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
-    const val = Math.round(ratio * max);
-    if(draggingSlider==='mains') calMainsPerMonth = val;
-    else calAdvPerMonth = val;
-    updateSliderUI(draggingSlider, val);
-    renderTestPreview();
-  },{passive:true});
-  document.addEventListener('touchend', ()=>{ draggingSlider=null; });
-})();
-
-/* ── TEST PREVIEW ── */
-function renderTestPreview(){
-  const preview = document.getElementById('calTestPreview');
-  const previewTests = buildCustomTestSchedule();
-  
-  if(previewTests.length === 0){
-    preview.innerHTML = '<div style="font-size:11px;color:var(--t3);text-align:center;padding:16px 0;">No tests scheduled with current settings.</div>';
-    return;
-  }
-  
-  // Group by month
-  const groups = {};
-  const monthOrder = [];
-  previewTests.forEach(t => {
-    if(!groups[t.month]){groups[t.month]=[];monthOrder.push(t.month);}
-    groups[t.month].push(t);
-  });
-  
-  const cards = monthOrder.map(month => {
-    const tests = groups[month];
-    const rows = tests.map(t => {
-      const label = t.type === 'mains' ? 'Mains' : 'Advanced';
-      const dateStr = fmtDate(t.date);
-      return `<div class="cal-sched-test-row">
-        <div class="cal-sched-test-dot ${t.type}"></div>
-        <div class="cal-sched-test-info">
-          <span class="cal-sched-test-label">${label}</span>
-          <span class="cal-sched-test-date">${dateStr}</span>
-        </div>
-      </div>`;
-    }).join('');
-    
-    return `<div class="cal-sched-month-card">
-      <div class="cal-sched-month-name">${month}</div>
-      <div class="cal-sched-month-rows">${rows || '<span class="cal-sched-empty">—</span>'}</div>
-    </div>`;
-  }).join('');
-  
-  preview.innerHTML = `<div class="cal-sched-grid">${cards}</div>`;
-}
-
-/* ── SAVE TEST SCHEDULE ── */
-function saveTestSchedule(){
-  saveCalibration();
-  // Rebuild TESTS global
-  const newTests = buildCustomTestSchedule();
-  TESTS.length = 0;
-  newTests.forEach(t => TESTS.push(t));
-  
-  const msg = document.getElementById('calTestSaveMsg');
-  msg.classList.add('visible');
-  setTimeout(()=>msg.classList.remove('visible'), 2000);
-  
-  // Refresh UI
-  stats();
-  if(document.getElementById('p-tests').classList.contains('on')) renderTests();
-  if(document.getElementById('p-overview').classList.contains('on')) renderPulse();
-  if(document.getElementById('p-ana').classList.contains('on')){ renderAnalytics(); renderDeckAndLog(); }
-}
-
-function resetTestSchedule(){
-  calMainsPerMonth = 3;
-  calAdvPerMonth = 1;
-  renderTestSliders();
-  renderTestPreview();
-}
 
 // ── INIT (must run after all functions defined) ──
 loadCalibration();
@@ -6305,11 +6565,6 @@ document.addEventListener('visibilitychange', ()=>{
 window.addEventListener('pagehide', saveCrashSnap);
 // beforeunload is a best-effort fallback; pagehide is more reliable on mobile
 window.addEventListener('beforeunload', saveCrashSnap);
-(function(){
-  const newTests = buildCustomTestSchedule();
-  TESTS.length = 0;
-  newTests.forEach(t => TESTS.push(t));
-})();
 (function(){
   document.getElementById('listM').innerHTML=MATH.map((ch,i)=>card('math',ch,i)).join('');
   document.getElementById('listC').innerHTML=CHEM.map((ch,i)=>card('chem',ch,i)).join('');
