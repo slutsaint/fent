@@ -3240,10 +3240,10 @@ function buildDonutChart(uid, items, centerVal, centerSub){
           ${has?`<g clip-path="url(#${cid}clip)">
             <g class="orbRise${cid}" style="transform:translateY(${(R*2).toFixed(1)}px);animation:orbRise${cid} 1.5s cubic-bezier(.22,1,.36,1) ${delay}s forwards;">
               <g class="orbScroll${cid}" style="animation:orbScroll${cid} ${5+i*1.3}s linear infinite;">
-                <path d="${wavePath(2.6)}" fill="${it.hex}" opacity="0.28" transform="translate(0,${fillY.toFixed(1)})"/>
+                <path d="${wavePath(2.6)}" fill="${it.hex}" opacity="0.28"/>
               </g>
               <g class="orbScrollB${cid}" style="animation:orbScrollB${cid} ${4+i*1.1}s linear infinite;">
-                <path d="${wavePath(3.4)}" fill="url(#${cid}wg)" transform="translate(0,${fillY.toFixed(1)})"/>
+                <path d="${wavePath(3.4)}" fill="url(#${cid}wg)"/>
               </g>
             </g>
           </g>`:''}
@@ -3662,24 +3662,33 @@ function buildFocusActivitySections(today){
   try{getKeysWithPrefix('fent_ques_').forEach(k=>{totalQuesAll+=parseInt(localStorage.getItem(k)||'0');});}catch{}
   const todayQuesCount=parseInt(localStorage.getItem('fent_ques_'+todayKey)||'0');
 
-  // Subject-wise questions breakdown — distributed proportionally to focus time per subject
+  // Subject-wise questions breakdown — summed DIRECTLY from the chapter-tagged
+  // question log (fent_quesbychap_), which is written every time questions are
+  // logged with a chapter selected, regardless of whether any timed focus
+  // session happened that same day. (Previously this was inferred by
+  // distributing each day's question count proportionally to that day's
+  // focus-time per subject — which silently under-counted, sometimes to zero,
+  // on any day where questions were logged but no matching focus-time entry
+  // existed for that day, e.g. logging during a break session that was too
+  // short to pass the 5s minimum, or logging without ever starting a timer
+  // that day. Reading the tagged log directly has no such dependency.)
   const subjQues={math:0,chem:0,phys:0};
+  let quesTaggedTotal=0;
   try{
-    getKeysWithPrefix('fent_focuslog_').forEach(function(key){
+    getKeysWithPrefix('fent_quesbychap_').forEach(function(key){
       try{
-        var entries=getParsedFocusLogByFullKey(key);
-        var dateStr=key.replace('fent_focuslog_','');
-        var dayQ=parseInt(localStorage.getItem('fent_ques_'+dateStr)||'0');
-        if(dayQ>0){
-          var daySubjSecs={math:0,chem:0,phys:0};
-          entries.forEach(function(e){if(daySubjSecs[e.subj]!==undefined)daySubjSecs[e.subj]+=e.durationSecs||0;});
-          var dayTotal=Object.values(daySubjSecs).reduce(function(a,b){return a+b;},0)||1;
-          Object.keys(subjQues).forEach(function(s){subjQues[s]+=Math.round(dayQ*(daySubjSecs[s]/dayTotal));});
-        }
+        const entries=JSON.parse(localStorage.getItem(key)||'[]');
+        entries.forEach(function(e){
+          if(subjQues[e.subj]!==undefined){ subjQues[e.subj]+=e.ques||0; quesTaggedTotal+=e.ques||0; }
+        });
       }catch(e2){}
     });
   }catch(e1){}
   const totalSubjQues=Math.max(1,Object.values(subjQues).reduce((a,b)=>a+b,0));
+  const subjQuesSum=subjQues.math+subjQues.chem+subjQues.phys;
+  // Any gap between totalQuesAll and quesTaggedTotal means some questions were
+  // logged without a chapter selected — real, honestly-reported, not an error.
+  const quesUntagged=Math.max(0,totalQuesAll-quesTaggedTotal);
 
   return `
 ${hmHTML}
@@ -3714,8 +3723,8 @@ ${buildSessLineChart(last30, target, today, hmMonth, hmYear, chartMonthFirst, ch
     {key:'math',label:'Math',hex:'#c2a359',rgb:'194,163,89',value:subjQues.math||0,valueLabel:(subjQues.math||0)>0?String(subjQues.math):'—'},
     {key:'chem',label:'Chem',hex:'#6b9e83',rgb:'107,158,131',value:subjQues.chem||0,valueLabel:(subjQues.chem||0)>0?String(subjQues.chem):'—'},
     {key:'phys',label:'Phys',hex:'#908bb0',rgb:'144,139,176',value:subjQues.phys||0,valueLabel:(subjQues.phys||0)>0?String(subjQues.phys):'—'}
-  ],totalQuesAll>0?String(totalQuesAll):'—','total')}
-  ${totalQuesAll===0?`<div style="font-size:9px;color:var(--t3);margin-top:10px;opacity:.5;">Log questions during breaks to see subject breakdown.</div>`:''}
+  ],subjQuesSum>0?String(subjQuesSum):'—','total')}
+  ${quesUntagged>0?`<div style="font-size:9px;color:var(--t3);margin-top:10px;opacity:.6;">${quesUntagged} question${quesUntagged!==1?'s':''} logged without a chapter selected — not included in the breakdown above.</div>`:(totalQuesAll===0?`<div style="font-size:9px;color:var(--t3);margin-top:10px;opacity:.5;">Log questions during breaks to see subject breakdown.</div>`:'')}
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
