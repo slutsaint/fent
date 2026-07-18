@@ -793,25 +793,82 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 .focus-wrap{display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 0 24px;}
 
-/* Clock Arc */
-.focus-clock-outer{position:relative;width:220px;height:220px;flex-shrink:0;margin:0 auto;}
-.focus-arc-svg{position:absolute;inset:0;width:100%;height:100%;}
-.focus-arc-bg{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:3;}
-.focus-arc-fill{fill:none;stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset 0.5s linear,stroke 0.8s var(--ease);}
-.focus-clock-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
+/* Clock Orb — a genuinely glass sphere. Near-black glass base, tinted
+   only faintly by the mode's own accent. Depth comes from real glass
+   cues, not colour or particles: a soft low-opacity ambient aura, a
+   thin breathing rim, a broad soft highlight that slowly drifts, and a
+   quiet vignette that darkens toward the lower edge. The liquid is two
+   layers that both sway sideways and bob very slightly, for a more
+   natural water read, with a soft blurred glow where the surface
+   catches light — no hard line, no drifting particles. Every loop uses
+   the same calm custom ease so nothing ever feels like it "ticks" or
+   restarts abruptly, but the pacing itself is quicker/livelier than a
+   first pass — still smooth and premium, just not sleepy. PAUSED
+   visibly withers (desaturates/dims), RUNNING is the calm default, and
+   completing a session triggers one brief bloom — never a continuous
+   effect, always a one-off. */
+.focus-clock-outer{position:relative;width:220px;height:220px;flex-shrink:0;margin:0 auto;animation:focusOrbBodyBreathe 7.5s cubic-bezier(.45,0,.55,1) infinite;}
+.focus-clock-outer:not(.running){animation-play-state:paused;}
+@keyframes focusOrbBodyBreathe{0%,100%{transform:scale(1);}50%{transform:scale(1.006);}}
+.focus-orb-aura{position:absolute;inset:-16px;border-radius:50%;pointer-events:none;filter:blur(20px);animation:focusOrbAuraBreathe 7.5s cubic-bezier(.45,0,.55,1) infinite;transition:filter 1.4s ease,opacity 1.4s ease;z-index:0;}
+.focus-orb-aura.paused{animation-duration:15s;opacity:.14;filter:blur(20px) saturate(.3) brightness(.6);}
+@keyframes focusOrbAuraBreathe{0%,100%{opacity:.2;}50%{opacity:.38;}}
+.focus-orb-svg{position:absolute;inset:0;width:100%;height:100%;z-index:1;transition:filter 1.4s ease;}
+.focus-clock-outer:not(.running) .focus-orb-svg{filter:saturate(.42) brightness(.78);}
+.focus-orb-fillgroup{transition:transform 1.4s cubic-bezier(.45,0,.55,1);}
+.focus-orb-rim{transition:stroke 0.9s var(--ease);animation:focusOrbRimBreathe 6.5s cubic-bezier(.45,0,.55,1) infinite;}
+.focus-orb-rim.paused{animation-duration:15s;opacity:.26;}
+@keyframes focusOrbRimBreathe{0%,100%{opacity:.42;}50%{opacity:.74;}}
+/* Surface glow — a soft blurred light that sits right at the liquid's
+   crest and travels with it as the orb fills/drains, so the water looks
+   lit from within at the exact place it meets the glass, rather than a
+   fixed decorative highlight. */
+.focus-orb-surfglow{filter:blur(9px);pointer-events:none;animation:focusOrbSurfglowPulse 5.5s cubic-bezier(.45,0,.55,1) infinite;transition:transform 1.6s cubic-bezier(.45,0,.55,1),opacity 1.6s ease;}
+.focus-orb-surfglow.paused{animation-play-state:paused;opacity:.1;}
+@keyframes focusOrbSurfglowPulse{0%,100%{opacity:.3;}50%{opacity:.58;}}
+/* Liquid — two layers that sway purely side to side, which reads as
+   calm, deliberate water rather than a chaotic bob. */
+.focus-orb-wave-back{animation:focusOrbSway 13s cubic-bezier(.45,0,.55,1) infinite;transform-origin:center;}
+.focus-orb-wave-front{animation:focusOrbSwayFront 9.2s cubic-bezier(.45,0,.55,1) infinite;transform-origin:center;}
+@keyframes focusOrbSway{0%,100%{transform:translateX(-5px);}50%{transform:translateX(5px);}}
+@keyframes focusOrbSwayFront{0%,100%{transform:translateX(3.5px);}50%{transform:translateX(-3.5px);}}
+.focus-orb-crest{filter:blur(2.4px);animation:focusOrbCrestGlow 5.8s cubic-bezier(.45,0,.55,1) infinite;}
+.focus-orb-crest.paused{animation-play-state:paused;opacity:.07;}
+@keyframes focusOrbCrestGlow{0%,100%{opacity:.2;}50%{opacity:.5;}}
+/* Soft ambient highlight — drifts gently across the glass over a long,
+   slow loop rather than sitting frozen in one spot, so the "light" in
+   the glass feels alive without ever looking like a sweep/shine gimmick. */
+.focus-orb-sheen{pointer-events:none;animation:focusOrbSheenBreathe 8.5s cubic-bezier(.45,0,.55,1) infinite,focusOrbSheenDrift 19s cubic-bezier(.45,0,.55,1) infinite;}
+@keyframes focusOrbSheenBreathe{0%,100%{opacity:.32;}50%{opacity:.56;}}
+@keyframes focusOrbSheenDrift{0%,100%{transform:translate(0,0);}50%{transform:translate(4px,3px);}}
+.focus-orb-sheen.paused{animation-play-state:paused;opacity:.12;}
+.focus-clock-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;z-index:2;}
+.focus-orb-numglow{position:absolute;width:110px;height:60px;border-radius:50%;filter:blur(24px);pointer-events:none;animation:focusOrbNumglowBreathe 6.5s cubic-bezier(.45,0,.55,1) infinite;z-index:1;}
+.focus-orb-numglow.paused{animation-play-state:paused;opacity:.16;}
+@keyframes focusOrbNumglowBreathe{0%,100%{opacity:.18;}50%{opacity:.34;}}
 .focus-time-big{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:300;letter-spacing:-.06em;color:var(--t1);line-height:1;transition:color 0.5s;}
+/* Legibility is structural (dark glass base under light text), so the
+   number needs only a soft, single depth shadow — no outline, no glow
+   ring, nothing announcing itself. A near-imperceptible breathing scale
+   is the only "alive" cue on the digits themselves. */
+.focus-orb-time{text-shadow:0 2px 10px rgba(0,0,0,.55);animation:focusOrbTimeBreathe 6s cubic-bezier(.45,0,.55,1) infinite;}
+.focus-orb-time.paused{text-shadow:0 2px 6px rgba(0,0,0,.4);animation:none;}
+@keyframes focusOrbTimeBreathe{0%,100%{transform:scale(1);}50%{transform:scale(1.007);}}
 .focus-mode-lbl{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);transition:color 0.5s;}
+.focus-orb .focus-mode-lbl{color:var(--t2);}
 .focus-session-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);font-weight:300;margin-top:2px;}
 
-/* Wave ring animation on running */
-.focus-clock-outer.running::after{
+/* Completion bloom — one-shot only, never looping. Fires once when a
+   session or break actually finishes, then is done. */
+.focus-clock-outer.just-completed::after{
   content:'';position:absolute;inset:8px;border-radius:50%;
-  border:1px solid rgba(107,158,131,0.25);
-  animation:waveRing 2.8s ease-out infinite;
+  border:1px solid var(--orb-ring-c,rgba(107,158,131,0.5));
+  animation:focusCompleteRing 1.3s cubic-bezier(0,.6,.3,1) forwards;
   pointer-events:none;
 }
-.focus-clock-outer.break-mode::after{border-color:rgba(144,139,176,0.25);}
-.focus-clock-outer.long-break-mode::after{border-color:rgba(194,163,89,0.25);}
+.focus-clock-outer.just-completed .focus-orb-svg{animation:focusCompleteFlash 1.3s ease-out;}
+@keyframes focusCompleteRing{0%{transform:scale(0.9);opacity:.9;}100%{transform:scale(1.28);opacity:0;}}
+@keyframes focusCompleteFlash{0%,100%{filter:saturate(1) brightness(1);}20%{filter:saturate(1.3) brightness(1.35);}}
 
 /* Controls */
 .focus-controls{display:flex;gap:12px;align-items:center;margin-top:20px;justify-content:center;}
@@ -860,72 +917,76 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .focus-doneby-prefix{font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-right:4px;opacity:.7;}
 
 /* ── Log Test — score entry card. Premium, compact, smooth. ── */
-.test-score-card{background:rgba(196,100,100,0.03);border:1px solid rgba(196,100,100,0.16);border-radius:12px;padding:14px 14px 12px;margin-bottom:14px;animation:fadeUp .4s var(--ease) both;}
+.test-score-card{width:100%;max-width:400px;box-sizing:border-box;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin:20px auto 14px;animation:fadeUp .4s var(--ease) both;}
 .test-score-stagger-1{animation:fadeUp .35s var(--ease) .04s both;}
 .test-score-stagger-2{animation:fadeUp .35s var(--ease) .08s both;}
 .test-score-stagger-3{animation:fadeUp .35s var(--ease) .12s both;}
 .test-score-stagger-4{animation:fadeUp .35s var(--ease) .17s both;}
 .test-score-stagger-5{animation:fadeUp .35s var(--ease) .21s both;}
-.test-score-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;}
-.test-score-elapsed-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.02em;}
-.test-log-type-seg{display:flex;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);border-radius:99px;padding:2px;}
-.test-log-type-opt{background:transparent;border:none;color:var(--t3);border-radius:99px;padding:5px 12px;font-size:9.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.02em;cursor:pointer;transition:all .25s cubic-bezier(.16,1,.3,1);}
-.test-log-type-opt.active{background:rgba(196,100,100,0.22);color:#fff;box-shadow:0 1px 4px rgba(196,100,100,0.25);}
+.test-score-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;}
+.test-score-elapsed-chip{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);letter-spacing:.02em;}
+.test-log-type-seg{display:flex;background:var(--bg);border:1px solid var(--b1);border-radius:20px;padding:2px;}
+.test-log-type-opt{background:transparent;border:none;color:var(--t3);border-radius:20px;padding:4px 11px;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.03em;cursor:pointer;transition:all .22s;}
+.test-log-type-opt.active{background:rgba(196,100,100,0.18);color:#fff;box-shadow:0 0 8px rgba(196,100,100,0.2);}
 .test-log-type-opt:hover:not(.active){color:var(--t2);}
-.test-score-name-input{background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.08);padding:6px 1px;font-size:12px;color:var(--t1);outline:none;font-family:inherit;width:100%;margin-bottom:14px;transition:border-color .25s;}
+.test-score-name-input{background:transparent;border:none;border-bottom:1px solid var(--b1);padding:4px 1px;font-size:12px;color:var(--t1);outline:none;font-family:inherit;width:100%;margin-bottom:7px;transition:border-color .25s;box-sizing:border-box;}
 .test-score-name-input:focus{border-color:rgba(196,100,100,0.4);}
-.test-score-name-input::placeholder{color:var(--t3);opacity:.5;}
-/* Subject grid — three equal compact cards */
-.test-score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px;}
-.test-score-subj-card{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.05);border-radius:9px;padding:8px 6px;transition:border-color .25s cubic-bezier(.16,1,.3,1),background .25s,box-shadow .25s;}
-.test-score-subj-card:focus-within{border-color:rgba(196,100,100,0.35);background:rgba(196,100,100,0.04);box-shadow:0 0 0 3px rgba(196,100,100,0.06);}
-.test-score-subj-card.invalid{border-color:rgba(196,100,100,0.55);background:rgba(196,100,100,0.05);animation:testShake .3s cubic-bezier(.36,.07,.19,.97);}
+.test-score-name-input::placeholder{color:var(--t3);opacity:.55;}
+/* Subject grid — three compact cards, each with a quiet subject-colored
+   underline for identity + a soft glow on the dot, without a full colour wash */
+.test-score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;}
+.test-score-subj-card{background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:6px 4px;transition:border-color .25s,box-shadow .25s;}
+.test-score-subj-card:focus-within{border-color:var(--b2);box-shadow:0 0 0 2px rgba(255,255,255,0.03);}
+.test-score-subj-card.invalid{border-color:rgba(196,100,100,0.5);animation:testShake .3s cubic-bezier(.36,.07,.19,.97);}
 @keyframes testShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-2px);}75%{transform:translateX(2px);}}
-.test-score-subj-top{display:flex;align-items:center;gap:5px;margin-bottom:7px;justify-content:center;}
+.test-score-subj-top{display:flex;align-items:center;gap:5px;margin-bottom:5px;justify-content:center;}
 .test-score-subj-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
-.test-score-subj-short{font-size:8px;color:var(--t3);letter-spacing:.08em;font-family:'JetBrains Mono',monospace;}
+.test-score-subj-short{font-size:9px;color:var(--t3);letter-spacing:.09em;font-family:'JetBrains Mono',monospace;}
 .test-score-subj-inputs{display:flex;align-items:center;justify-content:center;gap:3px;}
-.test-score-input{width:26px;min-width:0;background:transparent;border:none;padding:2px 0;font-size:12px;color:var(--t1);outline:none;font-family:'JetBrains Mono',monospace;text-align:center;transition:color .2s;
+.test-score-input{width:26px;min-width:0;background:transparent;border:none;padding:2px 0;font-size:13px;color:var(--t1);outline:none;font-family:'JetBrains Mono',monospace;font-weight:300;text-align:center;transition:color .2s;
   -moz-appearance:textfield;}
 .test-score-input::-webkit-outer-spin-button,.test-score-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .test-score-input::placeholder{color:var(--t3);opacity:.3;}
 .test-score-subj-card.invalid .test-score-input{color:var(--red);}
-.test-score-subj-slash{color:var(--t3);opacity:.3;font-size:10px;flex-shrink:0;}
-/* Live preview — instant feedback, smooth colour transitions */
-.test-score-live-preview{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--t3);text-align:center;padding:8px 0;letter-spacing:.02em;transition:color .3s,transform .2s;min-height:14px;}
-.test-score-live-preview.valid{color:var(--red);font-weight:500;animation:previewPop .25s cubic-bezier(.34,1.56,.64,1);}
+.test-score-subj-slash{color:var(--t3);opacity:.35;font-size:11px;flex-shrink:0;}
+/* Live preview — instant feedback, warmer pop on a valid total */
+.test-score-live-preview{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);text-align:center;padding:4px 0;letter-spacing:.02em;transition:color .3s,transform .2s;min-height:14px;}
+.test-score-live-preview.valid{color:var(--red);font-weight:500;text-shadow:0 0 12px rgba(196,100,100,0.35);animation:previewPop .25s cubic-bezier(.34,1.56,.64,1);}
 @keyframes previewPop{0%{transform:scale(.95);}60%{transform:scale(1.03);}100%{transform:scale(1);}}
-.test-score-live-preview.error{color:rgba(196,100,100,0.6);}
-.test-score-sunday-note{font-size:8.5px;color:rgba(107,158,131,0.75);text-align:center;margin-top:2px;margin-bottom:6px;font-family:'JetBrains Mono',monospace;letter-spacing:.01em;}
-.test-score-btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
-.test-score-discard-btn{background:transparent;border:none;color:var(--t3);padding:8px 10px;font-size:10px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:color .2s;}
+.test-score-live-preview.error{color:rgba(196,100,100,0.7);}
+.test-score-sunday-note{font-size:9px;color:var(--c);opacity:.75;text-align:center;margin-top:2px;margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:.01em;}
+.test-score-btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:5px;}
+.test-score-discard-btn{background:transparent;border:none;color:var(--t3);padding:7px 9px;font-size:10.5px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:color .2s;}
 .test-score-discard-btn:hover{color:var(--t2);}
-.test-score-save-btn{background:var(--red);border:1px solid var(--red);color:#fff;border-radius:99px;padding:8px 20px;font-size:10.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);}
-.test-score-save-btn:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.03);}
+.test-score-save-btn{background:var(--red);border:1px solid var(--red);color:#fff;border-radius:20px;padding:7px 18px;font-size:10.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);box-shadow:0 0 12px rgba(196,100,100,0.15);}
+.test-score-save-btn:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.03);box-shadow:0 0 18px rgba(196,100,100,0.3);}
 .test-score-save-btn:active:not(:disabled){transform:scale(0.97);}
-.test-score-save-btn:disabled{background:rgba(196,100,100,0.12);border-color:rgba(196,100,100,0.12);color:rgba(255,255,255,0.25);cursor:default;}
-/* Test-mode main clock face — layered entrance: ring draws itself in (same
-   language as the chart line-reveal elsewhere in this tracker), then settles
-   into a slow breathing glow. Time digits pop in, label cascades after. */
-.focus-clock-outer.test-mode .focus-arc-bg{stroke:rgba(196,100,100,0.06);}
-.focus-clock-outer.test-mode .test-ring-draw{
-  animation:testRingDraw .85s var(--ease) both, testRingBreathe 2.6s cubic-bezier(.45,0,.55,1) .85s infinite;
-}
-@keyframes testRingDraw{
-  from{stroke-dashoffset:var(--circ);opacity:0;filter:drop-shadow(0 0 0 rgba(196,100,100,0));}
-  to{stroke-dashoffset:0;opacity:1;filter:drop-shadow(0 0 4px rgba(196,100,100,0.3));}
-}
-@keyframes testRingBreathe{
-  0%,100%{opacity:.5;stroke-width:3;filter:drop-shadow(0 0 2px rgba(196,100,100,0.25));}
-  50%{opacity:.95;stroke-width:3.6;filter:drop-shadow(0 0 10px rgba(196,100,100,0.55));}
-}
-.focus-clock-outer.test-mode:not(.running) .test-ring-draw{animation:testRingDraw .85s var(--ease) both;}
-.test-time-pop{animation:testTimePop .5s var(--ease) .2s both;}
+.test-score-save-btn:disabled{background:transparent;border-color:var(--b1);color:var(--t3);cursor:default;box-shadow:none;}
+/* Test-mode main clock — minimal filling orb, calibrated up a touch: a
+   breathing rim instead of a flat dim one, and richer water with a subtle
+   depth layer + shimmer line — still no blur filters, still restrained. */
+.test-orb-svg{position:absolute;inset:0;width:100%;height:100%;}
+.test-orb-fill{animation:testOrbFillRise 60s linear infinite;}
+.test-orb-fill.paused{animation-play-state:paused;opacity:.55;}
+@keyframes testOrbFillRise{from{transform:translateY(0px);}to{transform:translateY(-194px);}}
+.test-orb-rim{animation:testOrbRimBreathe 3.4s ease-in-out infinite;}
+.test-orb-rim.paused{animation-duration:6s;opacity:.6;}
+@keyframes testOrbRimBreathe{0%,100%{stroke:rgba(154,69,60,0.44);}50%{stroke:rgba(190,92,80,0.78);}}
+.test-orb-wave-back{animation:testOrbSway 5.5s ease-in-out infinite;transform-origin:center;}
+.test-orb-wave-front{animation:testOrbSwayFront 4.1s ease-in-out infinite;transform-origin:center;}
+@keyframes testOrbSwayFront{0%,100%{transform:translateX(3px);}50%{transform:translateX(-3px);}}
+.test-orb-crest{animation:testOrbShimmer 2.6s ease-in-out infinite;}
+.test-orb-crest.paused{animation-play-state:paused;opacity:.3;}
+@keyframes testOrbShimmer{0%,100%{opacity:.3;}50%{opacity:.75;}}
+@keyframes testOrbSway{0%,100%{transform:translateX(-4px);}50%{transform:translateX(4px);}}
+.test-orb-time{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:300;letter-spacing:-.06em;line-height:1;color:var(--t1);animation:testTimePop .5s var(--ease) .1s both;}
+.test-orb-time.paused{color:var(--t2);}
 @keyframes testTimePop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
-.test-mode-lbl-in{animation:fadeUp .45s var(--ease) .35s both;}
+.test-orb-lbl{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#d3897f;animation:fadeUp .45s var(--ease) .3s both;}
+.test-orb-lbl.paused{color:var(--t3);}
 .test-stop-in{animation:fadeUp .4s var(--ease) .5s both;}
-.test-stop-pill{background:transparent;border:1.5px solid rgba(196,100,100,0.4);color:var(--red);border-radius:99px;padding:9px 26px;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);}
-.test-stop-pill:hover{background:rgba(196,100,100,0.1);border-color:rgba(196,100,100,0.6);transform:scale(1.03);}
+.test-stop-pill{background:transparent;border:1.5px solid rgba(154,69,60,0.4);color:#d3897f;border-radius:99px;padding:9px 26px;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);}
+.test-stop-pill:hover{background:rgba(154,69,60,0.12);border-color:rgba(154,69,60,0.65);transform:scale(1.03);}
 .test-stop-pill:active{transform:scale(0.97);}
 .focus-stat-cell{flex:1;padding:14px 12px;text-align:center;border-right:1px solid var(--b1);}
 .focus-stat-cell:last-child{border-right:none;}
@@ -2437,7 +2498,17 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   });
 
   // ── Computed stats ──
-  const workDays=days.filter(d=>!d.isSun);
+  // Day-count rule: Mon–Sat are mandatory and always count toward the
+  // denominator, logged or not. Sunday is optional — it only counts (both
+  // as a denominator day AND with its sess/ques folded into the numerator)
+  // if the user actually logged a session or a test that Sunday (sess>0,
+  // via a completed Pomodoro which credits Sunday as bonus per
+  // logTestSession's comment above, OR ques>0, via a logged test — tests
+  // themselves don't add session credit on Sunday but DO add to ques).
+  // An empty Sunday (nothing logged) contributes to nothing: excluded from
+  // both the day-count and every average that divides by it.
+  const sundayWasLogged=d=>d.sess>0||d.ques>0;
+  const workDays=days.filter(d=>!d.isSun||sundayWasLogged(d));
   const pastWork=workDays.filter(d=>d.d<=today);
   const metDays=pastWork.filter(d=>d.sess>=d.dayTarget).length;
 
@@ -2879,15 +2950,13 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   const onTargetPct=pastWork.length>0?Math.round(metDays/pastWork.length*100):0;
   const onTargetCol=onTargetPct>=80?'var(--c)':onTargetPct>=50?'var(--m)':'var(--t3)';
 
-  // Avg sessions/day and avg questions/day — this month, non-Sunday study days
-  // elapsed so far (same `pastWork` set already used for on-target%, i.e.
-  // "total days of the current month minus Sundays" up to today). Each day's
-  // `d.sess` value already IS the session count computed using whatever
-  // session-length setting was active at the moment each chunk of study time
-  // was logged that day (a completed Pomodoro cycle credits 1.0 at its own
-  // current length; manual/test logs credit duration ÷ length-at-log-time) —
-  // so summing d.sess across days and dividing by day-count already produces
-  // exactly "avg sessions/day, each day judged by the setting in force then."
+  // Avg sessions/day and avg questions/day — this month, using the same
+  // `pastWork` day-set as on-target% above: every weekday elapsed so far,
+  // plus any Sunday that was actually logged (see the workDays comment
+  // above). Each day's `d.sess`/`d.ques` already reflects whatever was
+  // logged that day, so summing across pastWork and dividing by its length
+  // gives exactly "avg per day, counting every mandatory day plus only the
+  // Sundays that had something logged."
   const avgSessPerDayMonth = pastWork.length>0 ? pastWork.reduce((a,d)=>a+d.sess,0)/pastWork.length : 0;
   const avgQuesPerDayMonth = pastWork.length>0 ? pastWork.reduce((a,d)=>a+d.ques,0)/pastWork.length : 0;
   const avgSessCol = avgSessPerDayMonth>=target?'var(--c)':avgSessPerDayMonth>=target*0.5?'var(--m)':'var(--t3)';
@@ -4737,40 +4806,152 @@ function renderFocus(){
   if(inTestMode){
     const teh=Math.floor(TL.elapsedSecs/3600), tem=Math.floor((TL.elapsedSecs%3600)/60), tes=TL.elapsedSecs%60;
     const testTimeStr=(teh>0?String(teh).padStart(2,'0')+':':'')+String(tem).padStart(2,'0')+':'+String(tes).padStart(2,'0');
+    // Minimal filling orb — water darkened/reddened and given more visible
+    // life: bigger wave amplitude, the front layer now sways independently
+    // of the back layer (different timing = parallax rather than everything
+    // moving as one block), and the crest line shimmers instead of sitting
+    // static. Still plain fills/opacity throughout, no blur filters.
+    const D=R*2;
+    const secsIntoMinute=TL.elapsedSecs%60;
+    const waveW=D*2;
+    function mkWave(amp){
+      const q=waveW/4;
+      return `M0,0 C${(q*0.5).toFixed(1)},${-amp} ${(q*0.5).toFixed(1)},${-amp} ${q.toFixed(1)},0 `+
+        `C${(q*1.5).toFixed(1)},${amp} ${(q*1.5).toFixed(1)},${amp} ${(q*2).toFixed(1)},0 `+
+        `C${(q*2.5).toFixed(1)},${-amp} ${(q*2.5).toFixed(1)},${-amp} ${(q*3).toFixed(1)},0 `+
+        `C${(q*3.5).toFixed(1)},${amp} ${(q*3.5).toFixed(1)},${amp} ${(q*4).toFixed(1)},0 `+
+        `L${waveW.toFixed(1)},${(D*1.3).toFixed(1)} L0,${(D*1.3).toFixed(1)} Z`;
+    }
+    const wx=(110-waveW/2).toFixed(1), wy=(110+R).toFixed(1);
+    // Same near-black graphite treatment as the other three modes, just a
+    // whisper of the test/red identity instead of full saturation — same
+    // lightness/intensity family as session/short/long.
+    const testAccent='#9a453d', testAccentDeep='#210f0c', testSparkle='#f3d3cc';
     clockFaceHTML=`
-  <div class="focus-clock-outer test-mode${TL.running?' running':''}" id="focusClockOuter">
-    <svg class="focus-arc-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
-      <circle class="focus-arc-bg" cx="110" cy="110" r="${R}"/>
-      <circle class="focus-arc-fill test-ring-draw" cx="110" cy="110" r="${R}"
-        stroke="#c46464"
-        stroke-dasharray="${CIRC}"
-        stroke-dashoffset="0"
-        style="--circ:${CIRC};"
-        transform="rotate(-90 110 110)"/>
+  <div class="focus-clock-outer test-orb${TL.running?' orb-live running':''}" id="focusClockOuter">
+    <div class="focus-orb-aura${TL.running?'':' paused'}" style="background:radial-gradient(circle,${testAccent}42 0%,transparent 70%);"></div>
+    <svg class="test-orb-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+      <defs>
+        <clipPath id="testOrbClip"><circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}"/></clipPath>
+        <linearGradient id="testOrbWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="${testAccent}" stop-opacity="0.46"/>
+          <stop offset="100%" stop-color="${testAccentDeep}" stop-opacity="0.2"/>
+        </linearGradient>
+        <radialGradient id="testOrbSheenGrad" cx="32%" cy="24%" r="52%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.07"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="testOrbVignetteGrad" cx="50%" cy="46%" r="62%">
+          <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+          <stop offset="72%" stop-color="#000000" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#000000" stop-opacity="0.32"/>
+        </radialGradient>
+      </defs>
+      <circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}" fill="rgba(255,255,255,0.015)"/>
+      <circle cx="110" cy="110" r="${R}" fill="none" stroke="${testAccent}" stroke-width="1" class="test-orb-rim${TL.running?'':' paused'}"/>
+      <g clip-path="url(#testOrbClip)">
+        <g class="test-orb-fill${TL.running?'':' paused'}" style="animation-delay:-${secsIntoMinute}s;">
+          <g class="test-orb-wave-back${TL.running?'':' paused'}">
+            <path d="${mkWave(4.4)}" fill="${testAccent}2c" transform="translate(${wx},${wy})"/>
+          </g>
+          <g class="test-orb-wave-front${TL.running?'':' paused'}">
+            <path d="${mkWave(2.8)}" fill="url(#testOrbWaveGrad)" transform="translate(${wx},${wy})"/>
+            <path d="${mkWave(2.8)}" fill="none" stroke="${testSparkle}" stroke-width="1.1" class="test-orb-crest${TL.running?'':' paused'}" transform="translate(${wx},${wy})"/>
+          </g>
+        </g>
+      </g>
+      <circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}" fill="url(#testOrbVignetteGrad)" pointer-events="none"/>
+      <ellipse cx="76" cy="58" rx="50" ry="32" fill="url(#testOrbSheenGrad)" class="focus-orb-sheen${TL.running?'':' paused'}"/>
     </svg>
     <div class="focus-clock-face">
-      <div class="focus-time-big test-time-pop" id="focusTimeBig" style="color:${TL.running?'#c46464':'var(--t2)'};">${testTimeStr}</div>
-      <div class="focus-mode-lbl test-mode-lbl-in" style="color:#c46464;">${TL.running?'Test':'Stopped'}</div>
+      <div class="focus-orb-numglow${TL.running?'':' paused'}" style="background:radial-gradient(circle,${testAccent}4e 0%,transparent 72%);"></div>
+      <div class="focus-time-big test-orb-time${TL.running?'':' paused'}" id="focusTimeBig">${testTimeStr}</div>
+      <div class="focus-mode-lbl test-orb-lbl${TL.running?'':' paused'}">${TL.running?'Test':'Stopped'}</div>
     </div>
   </div>`;
     controlsHTML=TL.running
       ? `<div class="focus-controls test-stop-in"><button class="test-stop-pill" onclick="testLogStop()">Stop Test</button></div>`
       : '';
   } else {
+    // Genuinely glass OLED orb: near-black base tinted only faintly by
+    // the mode's accent (session is a quiet sapphire, breaks keep their
+    // own hue). Depth comes from real glass cues — a rim glint, a
+    // specular highlight, an inner vignette — not colour or particles.
+    // Legibility stays structural — dark base under light text — no
+    // outline tricks on the text itself.
+    const orbD=R*2;
+    const orbWaveW=orbD*2;
+    const isUrgent=T.running&&progress<0.15&&progress>0;
+    // Same near-black graphite family across all three modes — each just a
+    // whisper of its own hue (teal-green / muted plum / muted bronze)
+    // instead of a saturated colour, so breaks feel like the same glass
+    // object as the session orb, not a different material.
+    // Session colour now mirrors the tracker's own established accent for
+    // Focus Session (--c, the sage-green used on session dots and the
+    // running button border elsewhere in the app) — same hue relationship,
+    // just brought down to the same near-black glass intensity as the rest
+    // of the orb family. Breaks are untouched.
+    const palette={session:'#4d725e',short:'#5c5268',long:'#6e6049'}[T.mode];
+    const paletteDeep={session:'#131c18',short:'#181521',long:'#1c150e'}[T.mode];
+    const sparklePalette={session:'#dfeae4',short:'#e6e0ed',long:'#ede4d1'}[T.mode];
+    const urgentAccent='#c2724a', urgentAccentDeep='#8a4526', urgentSparkle='#ffd9c2';
+    const accent=isUrgent?urgentAccent:palette;
+    const accentDeep=isUrgent?urgentAccentDeep:paletteDeep;
+    const sparkle=isUrgent?urgentSparkle:sparklePalette;
+    function orbWave(amp){
+      const q=orbWaveW/4;
+      return `M0,0 C${(q*0.5).toFixed(1)},${-amp} ${(q*0.5).toFixed(1)},${-amp} ${q.toFixed(1)},0 `+
+        `C${(q*1.5).toFixed(1)},${amp} ${(q*1.5).toFixed(1)},${amp} ${(q*2).toFixed(1)},0 `+
+        `C${(q*2.5).toFixed(1)},${-amp} ${(q*2.5).toFixed(1)},${-amp} ${(q*3).toFixed(1)},0 `+
+        `C${(q*3.5).toFixed(1)},${amp} ${(q*3.5).toFixed(1)},${amp} ${(q*4).toFixed(1)},0 `+
+        `L${orbWaveW.toFixed(1)},${(orbD*1.3).toFixed(1)} L0,${(orbD*1.3).toFixed(1)} Z`;
+    }
+    const orbWx=(110-orbWaveW/2).toFixed(1), orbWy=(110+R).toFixed(1);
     clockFaceHTML=`
-  <div class="focus-clock-outer${T.running?' running':''} ${modeCls}" id="focusClockOuter">
-    <svg class="focus-arc-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
-      <circle class="focus-arc-bg" cx="110" cy="110" r="${R}"/>
-      <circle class="focus-arc-fill" cx="110" cy="110" r="${R}"
-        stroke="${arcStroke}"
-        stroke-dasharray="${CIRC}"
-        stroke-dashoffset="${dashOffset}"
-        transform="rotate(-90 110 110)"
-        style="filter:drop-shadow(0 0 6px ${arcStroke}55);"/>
+  <div class="focus-clock-outer focus-orb${T.running?' running':''}${isUrgent?' urgent':''} ${modeCls}" id="focusClockOuter" style="--orb-ring-c:${accent}80;">
+    <div class="focus-orb-aura${T.running?'':' paused'}" style="background:radial-gradient(circle,${accent}42 0%,transparent 70%);"></div>
+    <svg class="focus-orb-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+      <defs>
+        <clipPath id="focusOrbClip"><circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}"/></clipPath>
+        <linearGradient id="focusOrbWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="${accent}" stop-opacity="0.42"/>
+          <stop offset="100%" stop-color="${accentDeep}" stop-opacity="0.16"/>
+        </linearGradient>
+        <radialGradient id="focusOrbSheenGrad" cx="32%" cy="24%" r="52%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.07"/>
+          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="focusOrbVignetteGrad" cx="50%" cy="46%" r="62%">
+          <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+          <stop offset="72%" stop-color="#000000" stop-opacity="0"/>
+          <stop offset="100%" stop-color="#000000" stop-opacity="0.32"/>
+        </radialGradient>
+        <radialGradient id="focusOrbSurfglowGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="${sparkle}" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="${sparkle}" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}" fill="rgba(255,255,255,0.015)"/>
+      <circle cx="110" cy="110" r="${R}" fill="none" stroke="${accent}" stroke-width="1" class="focus-orb-rim${T.running?'':' paused'}" id="focusOrbRim"/>
+      <g clip-path="url(#focusOrbClip)">
+        <g class="focus-orb-fillgroup" id="focusOrbFillGroup" style="transform:translateY(${(-(progress*2*R)).toFixed(1)}px);">
+          <g class="focus-orb-wave-back${T.running?'':' paused'}">
+            <path d="${orbWave(7)}" fill="${accent}2c" transform="translate(${orbWx},${orbWy})"/>
+          </g>
+          <g class="focus-orb-wave-front${T.running?'':' paused'}">
+            <path d="${orbWave(5)}" fill="url(#focusOrbWaveGrad)" transform="translate(${orbWx},${orbWy})"/>
+            <ellipse cx="${(orbWaveW/2).toFixed(1)}" cy="0" rx="${(orbWaveW*0.34).toFixed(1)}" ry="7" fill="url(#focusOrbSurfglowGrad)" class="focus-orb-surfglow${T.running?'':' paused'}" transform="translate(${orbWx},${orbWy})"/>
+            <path d="${orbWave(5)}" fill="none" stroke="${sparkle}" stroke-width="2" class="focus-orb-crest${T.running?'':' paused'}" id="focusOrbCrest" transform="translate(${orbWx},${orbWy})"/>
+          </g>
+        </g>
+      </g>
+      <circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}" fill="url(#focusOrbVignetteGrad)" pointer-events="none"/>
+      <ellipse cx="76" cy="58" rx="50" ry="32" fill="url(#focusOrbSheenGrad)" class="focus-orb-sheen${T.running?'':' paused'}"/>
     </svg>
     <div class="focus-clock-face">
-      <div class="focus-time-big" id="focusTimeBig" style="color:${T.running?'var(--t1)':'var(--t2)'};">${timeStr}</div>
-      <div class="focus-mode-lbl" style="color:${modeColor};">${modeLabels[T.mode]}</div>
+      <div class="focus-orb-numglow${T.running?'':' paused'}" style="background:radial-gradient(circle,${accent}4e 0%,transparent 72%);"></div>
+      <div class="focus-time-big focus-orb-time${T.running?'':' paused'}" id="focusTimeBig" style="color:${T.running?'var(--t1)':'var(--t2)'};">${timeStr}</div>
+      <div class="focus-mode-lbl">${modeLabels[T.mode]}</div>
       <div class="focus-session-lbl">Session ${T.cycleSessions+1} of ${S.sessionsPerCycle}</div>
     </div>
   </div>`;
@@ -4954,17 +5135,19 @@ function renderFocus(){
 
     h+='<input id="testNameInp" class="test-score-name-input test-score-stagger-2" type="text" placeholder="Test name — optional" autocomplete="off"/>';
 
-    // Subject grid — three equal compact cards, each cascading in with its own delay
+    // Subject grid — three compact cards, subject identified by a small dot
+    // + muted label only (same restrained language as the active-log tag
+    // elsewhere on this page), no heavy colour wash
     const subjMeta=[
-      {k:'phys',label:'Physics',short:'PHY',col:'var(--p)'},
-      {k:'chem',label:'Chemistry',short:'CHM',col:'var(--c)'},
-      {k:'math',label:'Maths',short:'MTH',col:'var(--m)'}
+      {k:'phys',label:'Physics',short:'PHY',col:'#908bb0',rgb:'144,139,176'},
+      {k:'chem',label:'Chemistry',short:'CHM',col:'#6b9e83',rgb:'107,158,131'},
+      {k:'math',label:'Maths',short:'MTH',col:'#c2a359',rgb:'194,163,89'}
     ];
     h+='<div class="test-score-grid test-score-stagger-3">';
     subjMeta.forEach(function(s,si){
-      h+='<div class="test-score-subj-card" id="testRow_'+s.k+'" style="animation:fadeUp .35s var(--ease) '+(0.13+si*0.04)+'s both;">';
+      h+='<div class="test-score-subj-card" id="testRow_'+s.k+'" style="animation:fadeUp .35s var(--ease) '+(0.13+si*0.04)+'s both;border-bottom:2px solid '+s.col+'40;">';
       h+='<div class="test-score-subj-top">';
-      h+='<div class="test-score-subj-dot" style="background:'+s.col+';"></div>';
+      h+='<div class="test-score-subj-dot" style="background:'+s.col+';box-shadow:0 0 4px rgba('+s.rgb+',0.7);"></div>';
       h+='<span class="test-score-subj-short">'+s.short+'</span>';
       h+='</div>';
       h+='<div class="test-score-subj-inputs">';
@@ -5302,7 +5485,7 @@ function updateFocusClockFast(){
   // Fast DOM update without full re-render
   const T=focusTimer;
 
-  // CRITICAL: while a test is being logged, #focusTimeBig and .focus-arc-fill
+  // CRITICAL: while a test is being logged, #focusTimeBig and #focusOrbFillGroup
   // belong to the test-mode stopwatch (testLogTick owns them independently via
   // its own 500ms interval). This function must never touch them in that state
   // — the 30s background done-by-tick was previously calling this unconditionally
@@ -5315,14 +5498,33 @@ function updateFocusClockFast(){
   const timeEl=document.getElementById('focusTimeBig');
   if(timeEl) timeEl.textContent=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
 
-  // Update arc
+  // Update liquid fill level (progress-driven, not a CSS loop — session
+  // length varies with settings, so the exact fraction elapsed each tick
+  // must be computed and applied directly)
   const S=focusSettings;
   const R=97;
-  const CIRC=2*Math.PI*R;
   const progress=T.secondsLeft/T.totalSeconds;
-  const dashOffset=(progress*CIRC).toFixed(2);
-  const arc=document.querySelector('.focus-arc-fill');
-  if(arc) arc.setAttribute('stroke-dashoffset',dashOffset);
+  const fillY=(-(progress*2*R)).toFixed(1);
+  const fillGroup=document.getElementById('focusOrbFillGroup');
+  if(fillGroup) fillGroup.style.transform='translateY('+fillY+'px)';
+
+  // Urgency state — the final 15% of any session/break speeds up and
+  // brightens the shimmer/rim so the last stretch visibly feels different.
+  // Toggled here (not just at render time) so it kicks in mid-session the
+  // moment a live countdown actually crosses the threshold.
+  const outer=document.getElementById('focusClockOuter');
+  if(outer&&T.running){
+    const shouldBeUrgent=progress<0.15&&progress>0;
+    const isUrgent=outer.classList.contains('urgent');
+    if(shouldBeUrgent!==isUrgent){
+      // The urgent state swaps the liquid's gradient colours, which are
+      // baked into the SVG (not CSS-driven) — so do a full re-render right
+      // when the live countdown crosses the threshold, rather than just
+      // toggling a class the fill colour wouldn't actually respond to.
+      renderFocus();
+      return;
+    }
+  }
 
   // Update current log time
   if(T.segStart&&T.currentChap&&T.currentTask){
@@ -5409,6 +5611,16 @@ function focusOnModeEnd(){
     focusStartInterval();
   }
   renderFocus();
+  // One-shot completion bloom — the CSS for this (.just-completed) already
+  // existed but was never actually triggered anywhere, so it never fired.
+  // Fires exactly once per mode transition (session→break or break→session),
+  // then removes itself — never a looping effect, just a brief acknowledgment
+  // that something just finished.
+  const completedOuter=document.getElementById('focusClockOuter');
+  if(completedOuter){
+    completedOuter.classList.add('just-completed');
+    setTimeout(()=>{ completedOuter.classList.remove('just-completed'); }, 1350);
+  }
   // If analytics tab is open, re-render it so the heatmap and charts update instantly
   if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
 }
