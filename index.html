@@ -793,82 +793,120 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 .focus-wrap{display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 0 24px;}
 
-/* Clock Orb — a genuinely glass sphere. Near-black glass base, tinted
-   only faintly by the mode's own accent. Depth comes from real glass
-   cues, not colour or particles: a soft low-opacity ambient aura, a
-   thin breathing rim, a broad soft highlight that slowly drifts, and a
-   quiet vignette that darkens toward the lower edge. The liquid is two
-   layers that both sway sideways and bob very slightly, for a more
-   natural water read, with a soft blurred glow where the surface
-   catches light — no hard line, no drifting particles. Every loop uses
-   the same calm custom ease so nothing ever feels like it "ticks" or
-   restarts abruptly, but the pacing itself is quicker/livelier than a
-   first pass — still smooth and premium, just not sleepy. PAUSED
-   visibly withers (desaturates/dims), RUNNING is the calm default, and
-   completing a session triggers one brief bloom — never a continuous
-   effect, always a one-off. */
-.focus-clock-outer{position:relative;width:220px;height:220px;flex-shrink:0;margin:0 auto;animation:focusOrbBodyBreathe 7.5s cubic-bezier(.45,0,.55,1) infinite;}
-.focus-clock-outer:not(.running){animation-play-state:paused;}
-@keyframes focusOrbBodyBreathe{0%,100%{transform:scale(1);}50%{transform:scale(1.006);}}
-.focus-orb-aura{position:absolute;inset:-16px;border-radius:50%;pointer-events:none;filter:blur(20px);animation:focusOrbAuraBreathe 7.5s cubic-bezier(.45,0,.55,1) infinite;transition:filter 1.4s ease,opacity 1.4s ease;z-index:0;}
-.focus-orb-aura.paused{animation-duration:15s;opacity:.14;filter:blur(20px) saturate(.3) brightness(.6);}
-@keyframes focusOrbAuraBreathe{0%,100%{opacity:.2;}50%{opacity:.38;}}
-.focus-orb-svg{position:absolute;inset:0;width:100%;height:100%;z-index:1;transition:filter 1.4s ease;}
-.focus-clock-outer:not(.running) .focus-orb-svg{filter:saturate(.42) brightness(.78);}
-.focus-orb-fillgroup{transition:transform 1.4s cubic-bezier(.45,0,.55,1);}
-.focus-orb-rim{transition:stroke 0.9s var(--ease);animation:focusOrbRimBreathe 6.5s cubic-bezier(.45,0,.55,1) infinite;}
-.focus-orb-rim.paused{animation-duration:15s;opacity:.26;}
-@keyframes focusOrbRimBreathe{0%,100%{opacity:.42;}50%{opacity:.74;}}
-/* Surface glow — a soft blurred light that sits right at the liquid's
-   crest and travels with it as the orb fills/drains, so the water looks
-   lit from within at the exact place it meets the glass, rather than a
-   fixed decorative highlight. */
-.focus-orb-surfglow{filter:blur(9px);pointer-events:none;animation:focusOrbSurfglowPulse 5.5s cubic-bezier(.45,0,.55,1) infinite;transition:transform 1.6s cubic-bezier(.45,0,.55,1),opacity 1.6s ease;}
-.focus-orb-surfglow.paused{animation-play-state:paused;opacity:.1;}
-@keyframes focusOrbSurfglowPulse{0%,100%{opacity:.3;}50%{opacity:.58;}}
-/* Liquid — two layers that sway purely side to side, which reads as
-   calm, deliberate water rather than a chaotic bob. */
-.focus-orb-wave-back{animation:focusOrbSway 13s cubic-bezier(.45,0,.55,1) infinite;transform-origin:center;}
-.focus-orb-wave-front{animation:focusOrbSwayFront 9.2s cubic-bezier(.45,0,.55,1) infinite;transform-origin:center;}
-@keyframes focusOrbSway{0%,100%{transform:translateX(-5px);}50%{transform:translateX(5px);}}
-@keyframes focusOrbSwayFront{0%,100%{transform:translateX(3.5px);}50%{transform:translateX(-3.5px);}}
-.focus-orb-crest{filter:blur(2.4px);animation:focusOrbCrestGlow 5.8s cubic-bezier(.45,0,.55,1) infinite;}
-.focus-orb-crest.paused{animation-play-state:paused;opacity:.07;}
-@keyframes focusOrbCrestGlow{0%,100%{opacity:.2;}50%{opacity:.5;}}
-/* Soft ambient highlight — drifts gently across the glass over a long,
-   slow loop rather than sitting frozen in one spot, so the "light" in
-   the glass feels alive without ever looking like a sweep/shine gimmick. */
-.focus-orb-sheen{pointer-events:none;animation:focusOrbSheenBreathe 8.5s cubic-bezier(.45,0,.55,1) infinite,focusOrbSheenDrift 19s cubic-bezier(.45,0,.55,1) infinite;}
-@keyframes focusOrbSheenBreathe{0%,100%{opacity:.32;}50%{opacity:.56;}}
-@keyframes focusOrbSheenDrift{0%,100%{transform:translate(0,0);}50%{transform:translate(4px,3px);}}
-.focus-orb-sheen.paused{animation-play-state:paused;opacity:.12;}
-.focus-clock-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;z-index:2;}
-.focus-orb-numglow{position:absolute;width:110px;height:60px;border-radius:50%;filter:blur(24px);pointer-events:none;animation:focusOrbNumglowBreathe 6.5s cubic-bezier(.45,0,.55,1) infinite;z-index:1;}
-.focus-orb-numglow.paused{animation-play-state:paused;opacity:.16;}
-@keyframes focusOrbNumglowBreathe{0%,100%{opacity:.18;}50%{opacity:.34;}}
-.focus-time-big{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:300;letter-spacing:-.06em;color:var(--t1);line-height:1;transition:color 0.5s;}
-/* Legibility is structural (dark glass base under light text), so the
-   number needs only a soft, single depth shadow — no outline, no glow
-   ring, nothing announcing itself. A near-imperceptible breathing scale
-   is the only "alive" cue on the digits themselves. */
-.focus-orb-time{text-shadow:0 2px 10px rgba(0,0,0,.55);animation:focusOrbTimeBreathe 6s cubic-bezier(.45,0,.55,1) infinite;}
-.focus-orb-time.paused{text-shadow:0 2px 6px rgba(0,0,0,.4);animation:none;}
-@keyframes focusOrbTimeBreathe{0%,100%{transform:scale(1);}50%{transform:scale(1.007);}}
-.focus-mode-lbl{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);transition:color 0.5s;}
-.focus-orb .focus-mode-lbl{color:var(--t2);}
-.focus-session-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);font-weight:300;margin-top:2px;}
+/* ============================================================
+   FOCUS TIMER — "Hourglass" (complete rebuild)
+   ------------------------------------------------------------
+   A real hourglass: two glass bulbs joined at a narrow neck, sand
+   draining from the top bulb into the bottom one as the session
+   elapses, with a continuous thin stream of glowing grains falling
+   through the neck. Continuous flow — not a discrete per-second
+   pulse — is what carries the "alive" feeling here; real sand
+   doesn't tick, it flows, so the falling grains do that work.
+   Everything below the glow duplicates is drawn once and only
+   moved (translateY / opacity), so all of it stays hardware-
+   accelerated. Colour lives in --accent/--accent2 custom
+   properties, so URGENT (final 15%) is a pure class-toggle with
+   zero recompute. PAUSED visibly withers the whole glass (dims/
+   desaturates + freezes the grains); completing a session triggers
+   one soft brightening breath through the glow layers, once. */
 
-/* Completion bloom — one-shot only, never looping. Fires once when a
-   session or break actually finishes, then is done. */
-.focus-clock-outer.just-completed::after{
-  content:'';position:absolute;inset:8px;border-radius:50%;
-  border:1px solid var(--orb-ring-c,rgba(107,158,131,0.5));
-  animation:focusCompleteRing 1.3s cubic-bezier(0,.6,.3,1) forwards;
-  pointer-events:none;
+/* Test Mode's stopwatch (separate, untouched feature) still uses
+   this same base class at a fixed 220×220 for its own circular
+   orb — so sizing for the new composition is scoped under
+   .focus-field only and must never leak into the bare rule. */
+.focus-clock-outer{position:relative;flex-shrink:0;margin:0 auto;}
+.focus-clock-outer:not(.focus-field){width:220px;height:220px;}
+.focus-clock-outer.focus-field{
+  width:100%;max-width:260px;box-sizing:border-box;
+  display:flex;flex-direction:column;align-items:center;
+  padding:28px 24px 24px;
+  background:rgba(255,255,255,0.018);border:1px solid rgba(255,255,255,0.07);
+  border-radius:20px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  transition:border-color .6s ease;
 }
-.focus-clock-outer.just-completed .focus-orb-svg{animation:focusCompleteFlash 1.3s ease-out;}
-@keyframes focusCompleteRing{0%{transform:scale(0.9);opacity:.9;}100%{transform:scale(1.28);opacity:0;}}
-@keyframes focusCompleteFlash{0%,100%{filter:saturate(1) brightness(1);}20%{filter:saturate(1.3) brightness(1.35);}}
+.focus-clock-outer.focus-field.running{border-color:var(--accent-border,rgba(255,255,255,0.07));}
+
+.focus-clock-outer.focus-field .focus-mode-lbl{margin-bottom:14px;}
+
+/* The glass itself — thin, gradient-lit stroke (brighter where light
+   would hit from above), a static soft sheen per bulb, and a slow
+   traveling reflection sweep for the sense of real curved glass
+   catching light as if turning gently — not just a flat outline. */
+.hg-glass{stroke:url(#hgGlassGrad);fill:none;stroke-width:1.3;stroke-linejoin:round;transition:opacity .6s ease;}
+.focus-clock-outer.focus-field:not(.running) .hg-glass{opacity:.6;}
+.hg-sheen{fill:url(#hgSheenGrad);pointer-events:none;}
+.hg-sweep{fill:url(#hgSweepGrad);pointer-events:none;animation:hgSweepDrift 9s cubic-bezier(.45,0,.55,1) infinite;}
+.hg-sweep.paused{animation-play-state:paused;opacity:.15;}
+@keyframes hgSweepDrift{0%,100%{transform:translate(-6px,-4px);opacity:.5;}50%{transform:translate(5px,5px);opacity:.85;}}
+
+/* A single soft ambient halo behind the whole figure — the only
+   "glow" that isn't physically tied to the sand — kept extremely
+   low-opacity so it reads as OLED light bleed, not decoration. */
+.hg-halo{position:absolute;top:50%;left:50%;width:70%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;filter:blur(28px);background:radial-gradient(circle,var(--accent) 0%,transparent 70%);opacity:.14;animation:hgHaloBreathe 7s cubic-bezier(.45,0,.55,1) infinite;transition:opacity .6s ease;}
+.focus-clock-outer.focus-field:not(.running) .hg-halo{opacity:.04;animation-play-state:paused;}
+@keyframes hgHaloBreathe{0%,100%{opacity:.1;}50%{opacity:.2;}}
+
+/* Sand — crisp fill plus a softly blurred duplicate underneath for a
+   restrained glow (kept low-opacity and tightly blurred so it reads
+   as light IN the sand, not a coloured haze around it). Both driven
+   by the same transform so the glow travels with the level exactly. */
+.hg-sand-fill{fill:var(--accent);transition:transform 1.1s cubic-bezier(.45,0,.55,1),fill .6s ease;will-change:transform;}
+.hg-sand-glow{fill:var(--accent2);transition:transform 1.1s cubic-bezier(.45,0,.55,1),opacity .6s ease,fill .6s ease;will-change:transform;filter:blur(4px);mix-blend-mode:screen;opacity:.32;}
+.focus-clock-outer.focus-field:not(.running) .hg-sand-glow{opacity:.08;}
+.focus-clock-outer.focus-field:not(.running) .hg-sand-fill{filter:saturate(.35) brightness(.7);}
+/* The exposed sand surface (where it's draining away up top, piling
+   up down below) gets its own quiet shimmer — light catching moving
+   grains right where the motion is actually happening. */
+.hg-surface{fill:var(--accent2);opacity:.3;filter:blur(1px);animation:hgSurfaceShimmer 2.2s ease-in-out infinite;}
+.hg-surface.paused{animation-play-state:paused;opacity:.05;}
+@keyframes hgSurfaceShimmer{0%,100%{opacity:.18;}50%{opacity:.42;}}
+/* The pile's peak breathes very slightly — sand doesn't land in a
+   perfectly static mound, it settles continuously. Nested in its own
+   group so this scale animation composes with (not fights) the JS-
+   driven translateY on its parent. */
+.hg-cone-inner{transform-origin:60px 90px;animation:hgConeSettle 2.8s cubic-bezier(.45,0,.55,1) infinite;}
+.hg-cone-inner.paused{animation-play-state:paused;}
+@keyframes hgConeSettle{0%,100%{transform:scaleY(1);}50%{transform:scaleY(1.05);}}
+
+/* Falling stream — a soft continuous line plus grains riding over it,
+   a denser and more visibly "active" trickle than grains alone. */
+.hg-stream{stroke:var(--accent2);stroke-width:1;opacity:.4;animation:hgStreamFlow 1.3s linear infinite;}
+.hg-stream.paused{animation-play-state:paused;opacity:.06;}
+@keyframes hgStreamFlow{0%{stroke-dashoffset:6;}100%{stroke-dashoffset:0;}}
+
+/* Falling grains — a continuous, fluid trickle through the neck, each
+   with a slight independent horizontal drift so they don't fall in
+   lockstep like a mechanical loop — real grains don't line up. */
+.hg-grain{fill:var(--accent2);filter:blur(.2px);animation:hgGrainFall 1s cubic-bezier(.3,0,.4,1) infinite;}
+.hg-grain.paused{animation-play-state:paused;opacity:.08;}
+@keyframes hgGrainFall{0%{transform:translate(0,0);opacity:0;}12%{opacity:.95;}50%{transform:translate(.6px,8px);}88%{opacity:.7;}100%{transform:translate(-.4px,16px);opacity:0;}}
+.hg-neck-glow{fill:var(--accent2);opacity:.5;filter:blur(3px);animation:hgNeckPulse 2.6s cubic-bezier(.45,0,.55,1) infinite;}
+.hg-neck-glow.paused{animation-play-state:paused;opacity:.1;}
+@keyframes hgNeckPulse{0%,100%{opacity:.35;}50%{opacity:.6;}}
+
+.ff-core{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:100%;}
+.focus-clock-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;z-index:2;}
+.hg-figure{display:block;margin:0 auto;position:relative;z-index:1;animation:hgFigureBreathe 6.5s cubic-bezier(.45,0,.55,1) infinite;}
+.hg-figure.paused{animation-play-state:paused;}
+@keyframes hgFigureBreathe{0%,100%{transform:scale(1);}50%{transform:scale(1.007);}}
+.focus-time-big{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:300;letter-spacing:-.06em;color:var(--t1);line-height:1;transition:color 0.5s;}
+.focus-clock-outer.focus-field .focus-time-big{font-size:34px;margin-top:18px;text-shadow:0 2px 12px rgba(0,0,0,.5);}
+.focus-clock-outer.focus-field:not(.running) .focus-time-big{color:var(--t2);}
+.focus-clock-outer.focus-field .focus-session-lbl{margin-top:6px;color:var(--t3);}
+
+/* Urgent color-shift (final ~15% of any session/break) intentionally
+   removed — the hourglass now keeps its mode's own color all the way
+   through to zero, no separate "urgent" palette. */
+
+.focus-mode-lbl{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);transition:color 0.5s;}
+.focus-session-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);font-weight:300;}
+
+/* Completion — one soft brightening breath through the glow layers,
+   then done. Never a ring snap, never a full-panel wash. */
+.focus-clock-outer.focus-field.just-completed .hg-sand-glow{animation:hgCompletionBreath 1.3s cubic-bezier(0,.6,.3,1);}
+.focus-clock-outer.focus-field.just-completed .ff-core{animation:ffCompletionSettle 1.3s cubic-bezier(.16,1,.3,1);}
+@keyframes hgCompletionBreath{0%{opacity:.55;}30%{opacity:1;}100%{opacity:.55;}}
+@keyframes ffCompletionSettle{0%{transform:scale(1);}30%{transform:scale(1.018);}100%{transform:scale(1);}}
 
 /* Controls */
 .focus-controls{display:flex;gap:12px;align-items:center;margin-top:20px;justify-content:center;}
@@ -971,7 +1009,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 @keyframes testOrbFillRise{from{transform:translateY(0px);}to{transform:translateY(-194px);}}
 .test-orb-rim{animation:testOrbRimBreathe 3.4s ease-in-out infinite;}
 .test-orb-rim.paused{animation-duration:6s;opacity:.6;}
-@keyframes testOrbRimBreathe{0%,100%{stroke:rgba(154,69,60,0.44);}50%{stroke:rgba(190,92,80,0.78);}}
+@keyframes testOrbRimBreathe{0%,100%{stroke:rgba(196,100,100,0.4);}50%{stroke:rgba(214,128,128,0.68);}}
 .test-orb-wave-back{animation:testOrbSway 5.5s ease-in-out infinite;transform-origin:center;}
 .test-orb-wave-front{animation:testOrbSwayFront 4.1s ease-in-out infinite;transform-origin:center;}
 @keyframes testOrbSwayFront{0%,100%{transform:translateX(3px);}50%{transform:translateX(-3px);}}
@@ -982,11 +1020,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .test-orb-time{font-family:'JetBrains Mono',monospace;font-size:42px;font-weight:300;letter-spacing:-.06em;line-height:1;color:var(--t1);animation:testTimePop .5s var(--ease) .1s both;}
 .test-orb-time.paused{color:var(--t2);}
 @keyframes testTimePop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
-.test-orb-lbl{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:#d3897f;animation:fadeUp .45s var(--ease) .3s both;}
+.test-orb-lbl{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--red);animation:fadeUp .45s var(--ease) .3s both;}
 .test-orb-lbl.paused{color:var(--t3);}
 .test-stop-in{animation:fadeUp .4s var(--ease) .5s both;}
-.test-stop-pill{background:transparent;border:1.5px solid rgba(154,69,60,0.4);color:#d3897f;border-radius:99px;padding:9px 26px;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);}
-.test-stop-pill:hover{background:rgba(154,69,60,0.12);border-color:rgba(154,69,60,0.65);transform:scale(1.03);}
+.test-stop-pill{background:transparent;border:1.5px solid rgba(196,100,100,0.4);color:var(--red);border-radius:99px;padding:9px 26px;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);}
+.test-stop-pill:hover{background:rgba(196,100,100,0.1);border-color:rgba(196,100,100,0.6);transform:scale(1.03);}
 .test-stop-pill:active{transform:scale(0.97);}
 .focus-stat-cell{flex:1;padding:14px 12px;text-align:center;border-right:1px solid var(--b1);}
 .focus-stat-cell:last-child{border-right:none;}
@@ -2498,17 +2536,7 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   });
 
   // ── Computed stats ──
-  // Day-count rule: Mon–Sat are mandatory and always count toward the
-  // denominator, logged or not. Sunday is optional — it only counts (both
-  // as a denominator day AND with its sess/ques folded into the numerator)
-  // if the user actually logged a session or a test that Sunday (sess>0,
-  // via a completed Pomodoro which credits Sunday as bonus per
-  // logTestSession's comment above, OR ques>0, via a logged test — tests
-  // themselves don't add session credit on Sunday but DO add to ques).
-  // An empty Sunday (nothing logged) contributes to nothing: excluded from
-  // both the day-count and every average that divides by it.
-  const sundayWasLogged=d=>d.sess>0||d.ques>0;
-  const workDays=days.filter(d=>!d.isSun||sundayWasLogged(d));
+  const workDays=days.filter(d=>!d.isSun);
   const pastWork=workDays.filter(d=>d.d<=today);
   const metDays=pastWork.filter(d=>d.sess>=d.dayTarget).length;
 
@@ -2950,13 +2978,15 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   const onTargetPct=pastWork.length>0?Math.round(metDays/pastWork.length*100):0;
   const onTargetCol=onTargetPct>=80?'var(--c)':onTargetPct>=50?'var(--m)':'var(--t3)';
 
-  // Avg sessions/day and avg questions/day — this month, using the same
-  // `pastWork` day-set as on-target% above: every weekday elapsed so far,
-  // plus any Sunday that was actually logged (see the workDays comment
-  // above). Each day's `d.sess`/`d.ques` already reflects whatever was
-  // logged that day, so summing across pastWork and dividing by its length
-  // gives exactly "avg per day, counting every mandatory day plus only the
-  // Sundays that had something logged."
+  // Avg sessions/day and avg questions/day — this month, non-Sunday study days
+  // elapsed so far (same `pastWork` set already used for on-target%, i.e.
+  // "total days of the current month minus Sundays" up to today). Each day's
+  // `d.sess` value already IS the session count computed using whatever
+  // session-length setting was active at the moment each chunk of study time
+  // was logged that day (a completed Pomodoro cycle credits 1.0 at its own
+  // current length; manual/test logs credit duration ÷ length-at-log-time) —
+  // so summing d.sess across days and dividing by day-count already produces
+  // exactly "avg sessions/day, each day judged by the setting in force then."
   const avgSessPerDayMonth = pastWork.length>0 ? pastWork.reduce((a,d)=>a+d.sess,0)/pastWork.length : 0;
   const avgQuesPerDayMonth = pastWork.length>0 ? pastWork.reduce((a,d)=>a+d.ques,0)/pastWork.length : 0;
   const avgSessCol = avgSessPerDayMonth>=target?'var(--c)':avgSessPerDayMonth>=target*0.5?'var(--m)':'var(--t3)';
@@ -4738,6 +4768,53 @@ function stopDoneByTick(){
 }
 // ── End done-by tick ────────────────────────────────────────────────────────
 
+// ── Hourglass sand-level physics (area-conserved, not just linear-height) ───
+// The sand rects are straight-edged rectangles sliding behind a curved bulb
+// clip-path. Because the bulb narrows toward the neck, sliding the rect by an
+// equal LINEAR distance in the top bulb and the bottom bulb does NOT reveal/
+// cover equal AREA — the visible "how full does it look" fraction is a
+// nonlinear (S-shaped) function of the rect's travel. That mismatch is why
+// the bottom looked already-full while the top still visibly had sand left:
+// at the same moment in time the two bulbs were showing different area
+// fractions even though they'd travelled the same linear distance.
+//
+// Fix: these two tables are the exact visible-area-fraction curve for each
+// bulb (computed once offline from this file's own bulbPath/bulbClip curve
+// math, 41 samples from u=0 to u=1 in steps of 0.025, where u is the rect's
+// travel as a fraction of `travel`). At render time we do the INVERSE lookup:
+// given the desired area fraction (which must equal the real timer fraction,
+// not an arbitrary linear guess), find the exact u that produces it. This
+// guarantees top-remaining-area + bottom-filled-area == 100% of the sand at
+// every instant, matching a real hourglass, with zero UI/markup changes.
+const HG_TOP_AREA=[1,1,1,1,1,1,0.9617,0.9234,0.8853,0.8472,0.8092,0.7715,0.7339,0.6966,0.6596,0.623,0.5867,0.5509,0.5155,0.4807,0.4465,0.4128,0.3799,0.3477,0.3163,0.2858,0.2563,0.2277,0.2003,0.174,0.1491,0.1255,0.1034,0.0829,0.0642,0.0474,0.0327,0.0203,0.0105,0.0036,0];
+const HG_BOT_AREA=[1,1,1,1,1,0.9964,0.9895,0.9797,0.9673,0.9526,0.9358,0.9171,0.8966,0.8745,0.8509,0.826,0.7997,0.7723,0.7437,0.7142,0.6837,0.6523,0.6201,0.5872,0.5535,0.5193,0.4845,0.4491,0.4133,0.377,0.3404,0.3034,0.2661,0.2285,0.1908,0.1528,0.1147,0.0766,0.0383,0,0];
+function hgInverseAreaU(table,targetFrac){
+  // table[i] = visible area fraction remaining at u=i/40. Monotonically
+  // falls from 1 to 0 as u goes 0→1. We want the u whose area fraction
+  // equals targetFrac, so we walk the table and linearly interpolate
+  // between the two samples that bracket it.
+  const t=Math.max(0,Math.min(1,targetFrac));
+  const n=table.length-1;
+  for(let i=0;i<n;i++){
+    const a=table[i], b=table[i+1];
+    if(t<=a+1e-9 && t>=b-1e-9){
+      const span=a-b;
+      const frac=span<=1e-9?0:(a-t)/span;
+      return (i+frac)/n;
+    }
+  }
+  return t>table[0]?0:1;
+}
+function hgSandU(fillX){
+  // fillX is T.secondsLeft/T.totalSeconds — the fraction of TIME remaining.
+  // Top's visible remaining sand area must equal fillX (drains in step with
+  // real elapsed time); bottom's visible filled area must equal 1-fillX
+  // (the exact complement) — so together they always account for all the
+  // sand, with no bulb ever "racing ahead" of the other.
+  return {uTop:hgInverseAreaU(HG_TOP_AREA,fillX), uBot:hgInverseAreaU(HG_BOT_AREA,1-fillX)};
+}
+// ── End hourglass sand-level physics ─────────────────────────────────────────
+
 function renderFocus(){
   const el=document.getElementById('focusContent');
   if(!el) return;
@@ -4823,48 +4900,30 @@ function renderFocus(){
         `L${waveW.toFixed(1)},${(D*1.3).toFixed(1)} L0,${(D*1.3).toFixed(1)} Z`;
     }
     const wx=(110-waveW/2).toFixed(1), wy=(110+R).toFixed(1);
-    // Same near-black graphite treatment as the other three modes, just a
-    // whisper of the test/red identity instead of full saturation — same
-    // lightness/intensity family as session/short/long.
-    const testAccent='#9a453d', testAccentDeep='#210f0c', testSparkle='#f3d3cc';
     clockFaceHTML=`
-  <div class="focus-clock-outer test-orb${TL.running?' orb-live running':''}" id="focusClockOuter">
-    <div class="focus-orb-aura${TL.running?'':' paused'}" style="background:radial-gradient(circle,${testAccent}42 0%,transparent 70%);"></div>
-    <svg class="test-orb-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
+  <div class="focus-clock-outer test-orb${TL.running?' orb-live':''}" id="focusClockOuter">
+    <svg class="test-orb-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <clipPath id="testOrbClip"><circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}"/></clipPath>
         <linearGradient id="testOrbWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="${testAccent}" stop-opacity="0.46"/>
-          <stop offset="100%" stop-color="${testAccentDeep}" stop-opacity="0.2"/>
+          <stop offset="0%" stop-color="#c85a4a" stop-opacity="0.75"/>
+          <stop offset="100%" stop-color="#7a2424" stop-opacity="0.72"/>
         </linearGradient>
-        <radialGradient id="testOrbSheenGrad" cx="32%" cy="24%" r="52%">
-          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.07"/>
-          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-        </radialGradient>
-        <radialGradient id="testOrbVignetteGrad" cx="50%" cy="46%" r="62%">
-          <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
-          <stop offset="72%" stop-color="#000000" stop-opacity="0"/>
-          <stop offset="100%" stop-color="#000000" stop-opacity="0.32"/>
-        </radialGradient>
       </defs>
-      <circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}" fill="rgba(255,255,255,0.015)"/>
-      <circle cx="110" cy="110" r="${R}" fill="none" stroke="${testAccent}" stroke-width="1" class="test-orb-rim${TL.running?'':' paused'}"/>
+      <circle cx="110" cy="110" r="${R}" fill="none" stroke="rgba(196,100,100,0.4)" stroke-width="1.8" class="test-orb-rim${TL.running?'':' paused'}"/>
       <g clip-path="url(#testOrbClip)">
         <g class="test-orb-fill${TL.running?'':' paused'}" style="animation-delay:-${secsIntoMinute}s;">
           <g class="test-orb-wave-back${TL.running?'':' paused'}">
-            <path d="${mkWave(4.4)}" fill="${testAccent}2c" transform="translate(${wx},${wy})"/>
+            <path d="${mkWave(4.4)}" fill="rgba(140,35,35,0.28)" transform="translate(${wx},${wy})"/>
           </g>
           <g class="test-orb-wave-front${TL.running?'':' paused'}">
             <path d="${mkWave(2.8)}" fill="url(#testOrbWaveGrad)" transform="translate(${wx},${wy})"/>
-            <path d="${mkWave(2.8)}" fill="none" stroke="${testSparkle}" stroke-width="1.1" class="test-orb-crest${TL.running?'':' paused'}" transform="translate(${wx},${wy})"/>
+            <path d="${mkWave(2.8)}" fill="none" stroke="rgba(230,150,135,0.5)" stroke-width="1.1" class="test-orb-crest${TL.running?'':' paused'}" transform="translate(${wx},${wy})"/>
           </g>
         </g>
       </g>
-      <circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}" fill="url(#testOrbVignetteGrad)" pointer-events="none"/>
-      <ellipse cx="76" cy="58" rx="50" ry="32" fill="url(#testOrbSheenGrad)" class="focus-orb-sheen${TL.running?'':' paused'}"/>
     </svg>
     <div class="focus-clock-face">
-      <div class="focus-orb-numglow${TL.running?'':' paused'}" style="background:radial-gradient(circle,${testAccent}4e 0%,transparent 72%);"></div>
       <div class="focus-time-big test-orb-time${TL.running?'':' paused'}" id="focusTimeBig">${testTimeStr}</div>
       <div class="focus-mode-lbl test-orb-lbl${TL.running?'':' paused'}">${TL.running?'Test':'Stopped'}</div>
     </div>
@@ -4873,85 +4932,117 @@ function renderFocus(){
       ? `<div class="focus-controls test-stop-in"><button class="test-stop-pill" onclick="testLogStop()">Stop Test</button></div>`
       : '';
   } else {
-    // Genuinely glass OLED orb: near-black base tinted only faintly by
-    // the mode's accent (session is a quiet sapphire, breaks keep their
-    // own hue). Depth comes from real glass cues — a rim glint, a
-    // specular highlight, an inner vignette — not colour or particles.
-    // Legibility stays structural — dark base under light text — no
-    // outline tricks on the text itself.
-    const orbD=R*2;
-    const orbWaveW=orbD*2;
-    const isUrgent=T.running&&progress<0.15&&progress>0;
-    // Same near-black graphite family across all three modes — each just a
-    // whisper of its own hue (teal-green / muted plum / muted bronze)
-    // instead of a saturated colour, so breaks feel like the same glass
-    // object as the session orb, not a different material.
-    // Session colour now mirrors the tracker's own established accent for
-    // Focus Session (--c, the sage-green used on session dots and the
-    // running button border elsewhere in the app) — same hue relationship,
-    // just brought down to the same near-black glass intensity as the rest
-    // of the orb family. Breaks are untouched.
-    const palette={session:'#4d725e',short:'#5c5268',long:'#6e6049'}[T.mode];
-    const paletteDeep={session:'#131c18',short:'#181521',long:'#1c150e'}[T.mode];
-    const sparklePalette={session:'#dfeae4',short:'#e6e0ed',long:'#ede4d1'}[T.mode];
-    const urgentAccent='#c2724a', urgentAccentDeep='#8a4526', urgentSparkle='#ffd9c2';
-    const accent=isUrgent?urgentAccent:palette;
-    const accentDeep=isUrgent?urgentAccentDeep:paletteDeep;
-    const sparkle=isUrgent?urgentSparkle:sparklePalette;
-    function orbWave(amp){
-      const q=orbWaveW/4;
-      return `M0,0 C${(q*0.5).toFixed(1)},${-amp} ${(q*0.5).toFixed(1)},${-amp} ${q.toFixed(1)},0 `+
-        `C${(q*1.5).toFixed(1)},${amp} ${(q*1.5).toFixed(1)},${amp} ${(q*2).toFixed(1)},0 `+
-        `C${(q*2.5).toFixed(1)},${-amp} ${(q*2.5).toFixed(1)},${-amp} ${(q*3).toFixed(1)},0 `+
-        `C${(q*3.5).toFixed(1)},${amp} ${(q*3.5).toFixed(1)},${amp} ${(q*4).toFixed(1)},0 `+
-        `L${orbWaveW.toFixed(1)},${(orbD*1.3).toFixed(1)} L0,${(orbD*1.3).toFixed(1)} Z`;
+    // ============================================================
+    // FOCUS TIMER — "Hourglass" rebuild (curved glass pass).
+    // Real curved bulbs (cubic bezier, not straight diagonals), a
+    // deep ocean-blue sand, a static glass sheen per bulb for an
+    // actual reflective surface, and a cone-shaped pile at the
+    // bottom (sand falling in one spot naturally mounds, it doesn't
+    // sit flat) plus a visible flowing stream line behind the grains
+    // for a denser, more legibly "active" trickle.
+    const palette={session:['#0e5a50','#4fceb0'],short:['#5a4f8a','#a99ee6'],long:['#8a6a2e','#d6ae5f']}[T.mode];
+    const [accent,accent2]=palette;
+    const fillX=Math.max(0,Math.min(1,progress));
+    // Hourglass geometry — viewBox 0 0 120 180. Two curved bulbs joined
+    // at a narrow neck. Glass + clip paths share the same curve shape
+    // (clip insets a few px inward for glass thickness), so the sand
+    // always follows the bulb's true curve instead of a straight edge.
+    const HG={topRimY:14,neckY:90,bottomRimY:166,leftX:14,rightX:106,neckL:56,neckR:64};
+    function bulbPath(inset){
+      const t=HG.topRimY+inset, b=HG.bottomRimY-inset, L=HG.leftX+inset, R=HG.rightX-inset;
+      const nL=HG.neckL+inset*0.5, nR=HG.neckR-inset*0.5, midY=HG.neckY;
+      const c1=t+(midY-t)*0.44, c2=t+(midY-t)*0.80;
+      const c3=midY+(b-midY)*0.20, c4=midY+(b-midY)*0.56;
+      const bulge=R-14;
+      return `M${L},${t} L${R},${t} `+
+        `C${R},${c1.toFixed(1)} ${bulge.toFixed(1)},${c2.toFixed(1)} ${nR.toFixed(1)},${midY} `+
+        `C${bulge.toFixed(1)},${c3.toFixed(1)} ${R},${c4.toFixed(1)} ${R},${b} `+
+        `L${L},${b} `+
+        `C${L},${c4.toFixed(1)} ${(L+14).toFixed(1)},${c3.toFixed(1)} ${nL.toFixed(1)},${midY} `+
+        `C${(L+14).toFixed(1)},${c2.toFixed(1)} ${L},${c1.toFixed(1)} ${L},${t} Z`;
     }
-    const orbWx=(110-orbWaveW/2).toFixed(1), orbWy=(110+R).toFixed(1);
+    function bulbClip(which,inset){
+      const t=HG.topRimY+inset, b=HG.bottomRimY-inset, L=HG.leftX+inset, R=HG.rightX-inset;
+      const nL=HG.neckL+inset*0.5, nR=HG.neckR-inset*0.5, midY=HG.neckY;
+      const c1=t+(midY-t)*0.44, c2=t+(midY-t)*0.80;
+      const c3=midY+(b-midY)*0.20, c4=midY+(b-midY)*0.56;
+      const bulge=R-14;
+      if(which==='top') return `M${L},${t} L${R},${t} C${R},${c1.toFixed(1)} ${bulge.toFixed(1)},${c2.toFixed(1)} ${nR.toFixed(1)},${midY-2} L${nL.toFixed(1)},${midY-2} C${(L+14).toFixed(1)},${c2.toFixed(1)} ${L},${c1.toFixed(1)} ${L},${t} Z`;
+      return `M${nL.toFixed(1)},${midY+2} L${nR.toFixed(1)},${midY+2} C${bulge.toFixed(1)},${c3.toFixed(1)} ${R},${c4.toFixed(1)} ${R},${b} L${L},${b} C${L},${c4.toFixed(1)} ${(L+14).toFixed(1)},${c3.toFixed(1)} ${nL.toFixed(1)},${midY+2} Z`;
+    }
+    // Both bulbs are the same height, so both must travel the exact same
+    // distance — this is what makes the drain rate at the top and the
+    // fill rate at the bottom perfect mirror images of each other at
+    // every instant, not just at the start/end states.
+    const travel=(HG.neckY-HG.topRimY)+4;
+    // The pile's peak triangle pokes a few px above the flat sand top, so
+    // it alone needs a bit more travel to fully clear when empty — kept
+    // separate so it never skews the main sand body's shared rate above.
+    const coneTravel=(HG.bottomRimY-HG.neckY)+14;
+    const {uTop,uBot}=hgSandU(fillX);
+    const topSandY=(uTop*travel).toFixed(1);
+    const botSandY=(uBot*travel).toFixed(1);
+    const botConeSandY=(uBot*coneTravel).toFixed(1);
+    const glassPath=bulbPath(0);
+    const topClipPath=bulbClip('top',4);
+    const botClipPath=bulbClip('bot',4);
+    // Cone peak on the bottom pile — sand falling in one spot mounds up;
+    // the wrapping <g> carries the JS-driven translateY (matching the
+    // fill/glow), while the polygon inside independently breathes via
+    // CSS — nested transforms compose instead of fighting each other.
+    const coneY=HG.neckY-4;
+    const pausedCls=T.running?'':' paused';
     clockFaceHTML=`
-  <div class="focus-clock-outer focus-orb${T.running?' running':''}${isUrgent?' urgent':''} ${modeCls}" id="focusClockOuter" style="--orb-ring-c:${accent}80;">
-    <div class="focus-orb-aura${T.running?'':' paused'}" style="background:radial-gradient(circle,${accent}42 0%,transparent 70%);"></div>
-    <svg class="focus-orb-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
-      <defs>
-        <clipPath id="focusOrbClip"><circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}"/></clipPath>
-        <linearGradient id="focusOrbWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="${accent}" stop-opacity="0.42"/>
-          <stop offset="100%" stop-color="${accentDeep}" stop-opacity="0.16"/>
-        </linearGradient>
-        <radialGradient id="focusOrbSheenGrad" cx="32%" cy="24%" r="52%">
-          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.07"/>
-          <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
-        </radialGradient>
-        <radialGradient id="focusOrbVignetteGrad" cx="50%" cy="46%" r="62%">
-          <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
-          <stop offset="72%" stop-color="#000000" stop-opacity="0"/>
-          <stop offset="100%" stop-color="#000000" stop-opacity="0.32"/>
-        </radialGradient>
-        <radialGradient id="focusOrbSurfglowGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="${sparkle}" stop-opacity="0.55"/>
-          <stop offset="100%" stop-color="${sparkle}" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-      <circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}" fill="rgba(255,255,255,0.015)"/>
-      <circle cx="110" cy="110" r="${R}" fill="none" stroke="${accent}" stroke-width="1" class="focus-orb-rim${T.running?'':' paused'}" id="focusOrbRim"/>
-      <g clip-path="url(#focusOrbClip)">
-        <g class="focus-orb-fillgroup" id="focusOrbFillGroup" style="transform:translateY(${(-(progress*2*R)).toFixed(1)}px);">
-          <g class="focus-orb-wave-back${T.running?'':' paused'}">
-            <path d="${orbWave(7)}" fill="${accent}2c" transform="translate(${orbWx},${orbWy})"/>
-          </g>
-          <g class="focus-orb-wave-front${T.running?'':' paused'}">
-            <path d="${orbWave(5)}" fill="url(#focusOrbWaveGrad)" transform="translate(${orbWx},${orbWy})"/>
-            <ellipse cx="${(orbWaveW/2).toFixed(1)}" cy="0" rx="${(orbWaveW*0.34).toFixed(1)}" ry="7" fill="url(#focusOrbSurfglowGrad)" class="focus-orb-surfglow${T.running?'':' paused'}" transform="translate(${orbWx},${orbWy})"/>
-            <path d="${orbWave(5)}" fill="none" stroke="${sparkle}" stroke-width="2" class="focus-orb-crest${T.running?'':' paused'}" id="focusOrbCrest" transform="translate(${orbWx},${orbWy})"/>
-          </g>
-        </g>
-      </g>
-      <circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}" fill="url(#focusOrbVignetteGrad)" pointer-events="none"/>
-      <ellipse cx="76" cy="58" rx="50" ry="32" fill="url(#focusOrbSheenGrad)" class="focus-orb-sheen${T.running?'':' paused'}"/>
-    </svg>
-    <div class="focus-clock-face">
-      <div class="focus-orb-numglow${T.running?'':' paused'}" style="background:radial-gradient(circle,${accent}4e 0%,transparent 72%);"></div>
-      <div class="focus-time-big focus-orb-time${T.running?'':' paused'}" id="focusTimeBig" style="color:${T.running?'var(--t1)':'var(--t2)'};">${timeStr}</div>
+  <div class="focus-clock-outer focus-field${T.running?' running':''} ${modeCls}" id="focusClockOuter" style="--accent:${accent};--accent2:${accent2};--accent-border:${accent}2e;">
+    <div class="ff-core">
       <div class="focus-mode-lbl">${modeLabels[T.mode]}</div>
+      <div class="hg-halo${pausedCls}"></div>
+      <svg class="hg-figure${pausedCls}" width="112" height="168" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="hgGlassGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+            <stop offset="50%" stop-color="#ffffff" stop-opacity="0.22"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.12"/>
+          </linearGradient>
+          <linearGradient id="hgSheenGrad" x1="10%" y1="0%" x2="55%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.10"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </linearGradient>
+          <radialGradient id="hgSweepGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="hgTopClip"><path d="${topClipPath}"/></clipPath>
+          <clipPath id="hgBotClip"><path d="${botClipPath}"/></clipPath>
+        </defs>
+        <g clip-path="url(#hgTopClip)">
+          <rect class="hg-sand-glow" id="hgTopGlow" x="${HG.leftX}" y="${HG.topRimY-6}" width="${HG.rightX-HG.leftX}" height="${HG.neckY-HG.topRimY+10}" style="transform:translateY(${topSandY}px);"/>
+          <rect class="hg-sand-fill" id="hgTopFill" x="${HG.leftX}" y="${HG.topRimY-6}" width="${HG.rightX-HG.leftX}" height="${HG.neckY-HG.topRimY+10}" opacity="0.9" style="transform:translateY(${topSandY}px);"/>
+          <rect class="hg-surface${pausedCls}" id="hgTopSurface" x="${HG.leftX}" y="${HG.topRimY-6.5}" width="${HG.rightX-HG.leftX}" height="1.6" style="transform:translateY(${topSandY}px);"/>
+          <ellipse class="hg-sweep" cx="${HG.leftX+18}" cy="${HG.topRimY+22}" rx="16" ry="26"/>
+        </g>
+        <g clip-path="url(#hgBotClip)">
+          <rect class="hg-sand-glow" id="hgBotGlow" x="${HG.leftX}" y="${HG.neckY-6}" width="${HG.rightX-HG.leftX}" height="${HG.bottomRimY-HG.neckY+10}" style="transform:translateY(${botSandY}px);"/>
+          <rect class="hg-sand-fill" id="hgBotFill" x="${HG.leftX}" y="${HG.neckY-6}" width="${HG.rightX-HG.leftX}" height="${HG.bottomRimY-HG.neckY+10}" opacity="0.9" style="transform:translateY(${botSandY}px);"/>
+          <g id="hgBotConeWrap" style="transform:translateY(${botConeSandY}px);">
+            <polygon class="hg-sand-fill hg-cone-inner${pausedCls}" points="50,${coneY} 70,${coneY} 60,${coneY-9}" opacity="0.9"/>
+          </g>
+          <rect class="hg-surface${pausedCls}" id="hgBotSurface" x="${HG.leftX}" y="${HG.neckY-6.5}" width="${HG.rightX-HG.leftX}" height="1.6" style="transform:translateY(${botSandY}px);"/>
+          <ellipse class="hg-sweep" cx="${HG.rightX-18}" cy="${HG.bottomRimY-24}" rx="16" ry="26" style="animation-delay:-4s;"/>
+        </g>
+        <path class="hg-glass" d="${bulbPath(0)}"/>
+        <path class="hg-sheen" d="${bulbClip('top',6)}"/>
+        <path class="hg-sheen" d="${bulbClip('bot',6)}"/>
+        <line class="hg-stream${pausedCls}" x1="60" y1="${HG.neckY-6}" x2="60" y2="${HG.neckY+8}" stroke-dasharray="2 2"/>
+        <ellipse class="hg-neck-glow${pausedCls}" cx="60" cy="${HG.neckY}" rx="5" ry="3"/>
+        <circle class="hg-grain${pausedCls}" cx="60" cy="${HG.neckY-3}" r="1.3" style="animation-delay:0s;"/>
+        <circle class="hg-grain${pausedCls}" cx="59" cy="${HG.neckY-3}" r="1" style="animation-delay:.3s;"/>
+        <circle class="hg-grain${pausedCls}" cx="61" cy="${HG.neckY-3}" r="1" style="animation-delay:.6s;"/>
+        <circle class="hg-grain${pausedCls}" cx="60" cy="${HG.neckY-3}" r="0.8" style="animation-delay:.9s;"/>
+        <line class="hg-glass" x1="${HG.leftX-4}" y1="${HG.topRimY}" x2="${HG.rightX+4}" y2="${HG.topRimY}"/>
+        <line class="hg-glass" x1="${HG.leftX-4}" y1="${HG.bottomRimY}" x2="${HG.rightX+4}" y2="${HG.bottomRimY}"/>
+      </svg>
+      <div class="focus-time-big" id="focusTimeBig">${timeStr}</div>
       <div class="focus-session-lbl">Session ${T.cycleSessions+1} of ${S.sessionsPerCycle}</div>
     </div>
   </div>`;
@@ -5470,6 +5561,7 @@ function focusStartInterval(){
     const remaining=Math.ceil((T.endAt-Date.now())/1000);
     if(remaining<=0){
       T.secondsLeft=0;
+      updateFocusClockFast(); // paint the true fully-drained/filled frame — previously skipped straight to focusOnModeEnd, so this state was never actually shown
       clearCrashSnap(); // session completed normally — no crash recovery needed
       focusOnModeEnd();
     } else {
@@ -5485,7 +5577,7 @@ function updateFocusClockFast(){
   // Fast DOM update without full re-render
   const T=focusTimer;
 
-  // CRITICAL: while a test is being logged, #focusTimeBig and #focusOrbFillGroup
+  // CRITICAL: while a test is being logged, #focusTimeBig and the meter
   // belong to the test-mode stopwatch (testLogTick owns them independently via
   // its own 500ms interval). This function must never touch them in that state
   // — the 30s background done-by-tick was previously calling this unconditionally
@@ -5496,35 +5588,38 @@ function updateFocusClockFast(){
   const mins=Math.floor(T.secondsLeft/60);
   const secs=T.secondsLeft%60;
   const timeEl=document.getElementById('focusTimeBig');
-  if(timeEl) timeEl.textContent=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
-
-  // Update liquid fill level (progress-driven, not a CSS loop — session
-  // length varies with settings, so the exact fraction elapsed each tick
-  // must be computed and applied directly)
-  const S=focusSettings;
-  const R=97;
-  const progress=T.secondsLeft/T.totalSeconds;
-  const fillY=(-(progress*2*R)).toFixed(1);
-  const fillGroup=document.getElementById('focusOrbFillGroup');
-  if(fillGroup) fillGroup.style.transform='translateY('+fillY+'px)';
-
-  // Urgency state — the final 15% of any session/break speeds up and
-  // brightens the shimmer/rim so the last stretch visibly feels different.
-  // Toggled here (not just at render time) so it kicks in mid-session the
-  // moment a live countdown actually crosses the threshold.
-  const outer=document.getElementById('focusClockOuter');
-  if(outer&&T.running){
-    const shouldBeUrgent=progress<0.15&&progress>0;
-    const isUrgent=outer.classList.contains('urgent');
-    if(shouldBeUrgent!==isUrgent){
-      // The urgent state swaps the liquid's gradient colours, which are
-      // baked into the SVG (not CSS-driven) — so do a full re-render right
-      // when the live countdown crosses the threshold, rather than just
-      // toggling a class the fill colour wouldn't actually respond to.
-      renderFocus();
-      return;
-    }
+  if(timeEl){
+    const newText=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+    if(timeEl.textContent!==newText) timeEl.textContent=newText;
   }
+
+  // Update the hourglass sand levels (progress-driven, not a CSS loop —
+  // session length varies with settings, so the exact fraction elapsed
+  // each tick must be computed and applied directly). Same geometry
+  // constants as the render function, so travel distance always matches
+  // the glass exactly regardless of which path last drew it.
+  const S=focusSettings;
+  const progress=T.secondsLeft/T.totalSeconds;
+  const fillX=Math.max(0,Math.min(1,progress));
+  const HG={topRimY:14,neckY:90,bottomRimY:166};
+  const travel=(HG.neckY-HG.topRimY)+4;
+  const coneTravel=(HG.bottomRimY-HG.neckY)+14; // extra margin so the cone's peak (which sits higher than the base rect) fully clears too
+  const {uTop:uTopT,uBot:uBotT}=hgSandU(fillX);
+  const topSandY=(uTopT*travel).toFixed(1)+'px';
+  const botSandY=(uBotT*travel).toFixed(1)+'px';
+  const botConeSandY=(uBotT*coneTravel).toFixed(1)+'px';
+  const topFill=document.getElementById('hgTopFill'), topGlow=document.getElementById('hgTopGlow');
+  const botFill=document.getElementById('hgBotFill'), botGlow=document.getElementById('hgBotGlow');
+  const topSurface=document.getElementById('hgTopSurface'), botSurface=document.getElementById('hgBotSurface');
+  const botConeWrap=document.getElementById('hgBotConeWrap');
+  if(topFill){topFill.style.transform='translateY('+topSandY+')';}
+  if(topGlow){topGlow.style.transform='translateY('+topSandY+')';}
+  if(topSurface){topSurface.style.transform='translateY('+topSandY+')';}
+  if(botFill){botFill.style.transform='translateY('+botSandY+')';}
+  if(botGlow){botGlow.style.transform='translateY('+botSandY+')';}
+  if(botSurface){botSurface.style.transform='translateY('+botSandY+')';}
+  if(botConeWrap){botConeWrap.style.transform='translateY('+botConeSandY+')';}
+
 
   // Update current log time
   if(T.segStart&&T.currentChap&&T.currentTask){
@@ -5570,6 +5665,16 @@ function focusOnModeEnd(){
   // Play notification sound — fires exactly when timer hits 0
   playFocusSound(endedMode);
 
+  // Completion bloom fires immediately, on the hourglass that just
+  // actually finished draining/filling — previously the mode (and a
+  // full re-render) switched instantly in the same tick, so the fully
+  // drained/filled frame was never visible and this bloom had nothing
+  // real to land on. Now it plays over the true finished state.
+  const endingOuter=document.getElementById('focusClockOuter');
+  if(endingOuter){
+    endingOuter.classList.add('just-completed');
+  }
+
   if(T.mode==='session'){
     // Commit the study segment — stop logging during break
     commitFocusSegment();
@@ -5583,46 +5688,92 @@ function focusOnModeEnd(){
     // Snapshot today's session target — so if user later changes target,
     // this day's wasted calc still uses the target that was set when they studied.
     localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
+  }
 
-    if(T.cycleSessions>=focusSettings.sessionsPerCycle){
-      // Long break
-      T.mode='long';
-      T.cycleSessions=0;
-      T.secondsLeft=focusSettings.longBreakMins*60;
-      T.totalSeconds=focusSettings.longBreakMins*60;
-      toast('🎉 Long Break! '+focusSettings.longBreakMins+'m');
+  // Give the finished glass a moment to actually be seen (matching the
+  // sand's own ~1.1s transition) before switching to the next mode's
+  // fresh state. This delay is the real fix — everything below used to
+  // run in the same instant as the code above, which is exactly why the
+  // sand never appeared to finish: the next mode's empty/full-reversed
+  // state overwrote it before a single frame of "done" was ever painted.
+  setTimeout(()=>{
+    // Step 1 — let the just-finished glass settle away instead of being
+    // yanked out mid-frame: a brief, quiet fade+sink on the outgoing
+    // card. Short and gentle, not a lingering fade — this is a beat
+    // between two states, not its own moment.
+    const swapOuter=document.getElementById('focusClockOuter');
+    const doSwap=()=>{
+      if(endedMode==='session'){
+        if(T.cycleSessions>=focusSettings.sessionsPerCycle){
+          // Long break
+          T.mode='long';
+          T.cycleSessions=0;
+          T.secondsLeft=focusSettings.longBreakMins*60;
+          T.totalSeconds=focusSettings.longBreakMins*60;
+          toast('🎉 Long Break! '+focusSettings.longBreakMins+'m');
+        } else {
+          // Short break
+          T.mode='short';
+          T.secondsLeft=focusSettings.shortBreakMins*60;
+          T.totalSeconds=focusSettings.shortBreakMins*60;
+          toast('Session done! Short break '+focusSettings.shortBreakMins+'m');
+        }
+        // Auto-continue break timer (no focus logging during break)
+        focusStartInterval();
+      } else {
+        // Break ended — start new session, resume logging NOW
+        T.mode='session';
+        T.secondsLeft=focusSettings.sessionMins*60;
+        T.totalSeconds=focusSettings.sessionMins*60;
+        // Only resume logging if a chapter+task is selected
+        if(T.currentChap&&T.currentTask) T.segStart=Date.now();
+        toast('Break over! Starting session ▶');
+        focusStartInterval();
+      }
+      renderFocus();
+      // Step 2 — the freshly rendered card is a brand-new DOM node (the
+      // old one is gone), so it has no transition history to animate
+      // from. Pin it to the same "just faded out" look first, force a
+      // reflow so the browser registers that as the real starting
+      // frame, then release it toward normal — that's what turns the
+      // swap into one continuous ease instead of a hard cut.
+      const newOuter=document.getElementById('focusClockOuter');
+      if(newOuter){
+        newOuter.style.transition='none';
+        newOuter.style.opacity='0';
+        newOuter.style.transform='scale(.965) translateY(4px)';
+        void newOuter.offsetHeight; // force reflow — commits the "from" frame
+        newOuter.style.transition='opacity .42s cubic-bezier(.25,.7,.4,1), transform .46s cubic-bezier(.16,1,.3,1)';
+        requestAnimationFrame(()=>{
+          newOuter.style.opacity='1';
+          newOuter.style.transform='scale(1) translateY(0)';
+        });
+        setTimeout(()=>{
+          // Clean up inline styles once settled — leaves no residue
+          // that could fight the stylesheet on later renders.
+          newOuter.style.transition='';
+          newOuter.style.opacity='';
+          newOuter.style.transform='';
+        }, 480);
+        // One-shot completion bloom continues on the NEW render too, so
+        // the brightening breath reads as one continuous gesture
+        // spanning the mode switch rather than cutting off right as it
+        // changes.
+        newOuter.classList.add('just-completed');
+        setTimeout(()=>{ newOuter.classList.remove('just-completed'); }, 400);
+      }
+      // If analytics tab is open, re-render it so the heatmap and charts update instantly
+      if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
+    };
+    if(swapOuter){
+      swapOuter.style.transition='opacity .22s cubic-bezier(.4,0,1,1), transform .24s cubic-bezier(.4,0,1,1)';
+      swapOuter.style.opacity='0';
+      swapOuter.style.transform='scale(.965) translateY(-3px)';
+      setTimeout(doSwap,220);
     } else {
-      // Short break
-      T.mode='short';
-      T.secondsLeft=focusSettings.shortBreakMins*60;
-      T.totalSeconds=focusSettings.shortBreakMins*60;
-      toast('Session done! Short break '+focusSettings.shortBreakMins+'m');
+      doSwap();
     }
-    // Auto-continue break timer (no focus logging during break)
-    focusStartInterval();
-  } else {
-    // Break ended — start new session, resume logging NOW
-    T.mode='session';
-    T.secondsLeft=focusSettings.sessionMins*60;
-    T.totalSeconds=focusSettings.sessionMins*60;
-    // Only resume logging if a chapter+task is selected
-    if(T.currentChap&&T.currentTask) T.segStart=Date.now();
-    toast('Break over! Starting session ▶');
-    focusStartInterval();
-  }
-  renderFocus();
-  // One-shot completion bloom — the CSS for this (.just-completed) already
-  // existed but was never actually triggered anywhere, so it never fired.
-  // Fires exactly once per mode transition (session→break or break→session),
-  // then removes itself — never a looping effect, just a brief acknowledgment
-  // that something just finished.
-  const completedOuter=document.getElementById('focusClockOuter');
-  if(completedOuter){
-    completedOuter.classList.add('just-completed');
-    setTimeout(()=>{ completedOuter.classList.remove('just-completed'); }, 1350);
-  }
-  // If analytics tab is open, re-render it so the heatmap and charts update instantly
-  if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
+  }, 1150);
 }
 
 function focusSkip(){
