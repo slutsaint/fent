@@ -4344,6 +4344,18 @@ function recoverFromCrash(){
 
   if(!snap || !snap.running) return;                          // was paused — nothing to recover
   if(snap.mode !== 'session') return;                         // only sessions earn credit
+  // Guard against the natural-completion transition window: focusOnModeEnd()
+  // commits the segment and credits +1.0 immediately when the countdown hits
+  // zero, but only flips mode from 'session' to a break ~1.15s later (inside
+  // a setTimeout, for the completion animation). If the tab was closed/hidden
+  // in that gap, saveCrashSnap() captures mode still as 'session' with an
+  // already-expired endAt and a nulled segStart — i.e. a session that was
+  // ALREADY completed and ALREADY credited. Without this check, elapsed gets
+  // computed as the full session (since endAt < savedAt clamps remaining to
+  // 0), and recovery grants a second, phantom +1.0 credit with zero matching
+  // focus-log time. If endAt was already in the past when we saved the
+  // snapshot, the natural completion path already handled it — do nothing.
+  if(snap.endAt && snap.savedAt && snap.endAt <= snap.savedAt) return;
   const age = Date.now() - (snap.savedAt || 0);
   if(age > CRASH_MAX_AGE_MS) return;                          // too stale — user stopped deliberately
 
