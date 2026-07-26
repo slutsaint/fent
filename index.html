@@ -4237,24 +4237,19 @@ function getTodayTestCredit(){ try{return parseFloat(localStorage.getItem(todayT
 // Example: entered 122/150 → scaled to 244/300 (122 × 300/150 = 244).
 function logTestSession(durationSecs, testType, subjectScores, testName){
   const sessionMins = focusSettings.sessionMins || 90;
-  const rawCredit = durationSecs / (sessionMins*60);
+  const credit = durationSecs / (sessionMins*60);
 
-  // Sunday exception: tests are still logged and shown everywhere (heatmap,
-  // charts, dashboard, overview) but do NOT count toward session credit on
-  // Sunday. This is intentionally different from regular Pomodoro sessions on
-  // Sunday, which DO count as bonus credit — tests specifically are excluded.
-  const isSundayToday = new Date().getDay() === 0;
-  const credit = isSundayToday ? 0 : rawCredit;
+  // No Sunday exception: tests now credit session-equivalent time every day,
+  // including Sunday — same rule as regular Pomodoro sessions, which already
+  // count as Sunday bonus credit. Previously tests were zeroed out on Sunday;
+  // that carve-out has been removed so tests behave identically every day.
+  const todaySessKey='fent_sessions_'+localDateKey();
+  const curSess=parseFloat(localStorage.getItem(todaySessKey)||'0');
+  localStorage.setItem(todaySessKey, curSess+credit);
+  localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
 
-  if(!isSundayToday){
-    const todaySessKey='fent_sessions_'+localDateKey();
-    const curSess=parseFloat(localStorage.getItem(todaySessKey)||'0');
-    localStorage.setItem(todaySessKey, curSess+credit);
-    localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
-
-    const curTestCredit=getTodayTestCredit();
-    try{ localStorage.setItem(todayTestCreditKey(), curTestCredit+credit); }catch{}
-  }
+  const curTestCredit=getTodayTestCredit();
+  try{ localStorage.setItem(todayTestCreditKey(), curTestCredit+credit); }catch{}
 
   // Sum only the subjects actually entered (not skipped)
   let sumScore=0, sumMax=0;
@@ -4626,7 +4621,7 @@ function testLogSubmit(){
 
   const result=logTestSession(testLogTimer.elapsedSecs, testLogType, subjectScores, testName);
   const fmtV=v=>{const r=Math.round(v*100)/100;return r===Math.floor(r)?String(Math.floor(r)):(r<0.1?r.toFixed(2):r.toFixed(1));};
-  const creditMsg=result.credit>0?fmtV(result.credit)+' session'+(result.credit!==1?'s':'')+' credited':'no session credit (Sunday)';
+  const creditMsg=result.credit>0?fmtV(result.credit)+' session'+(result.credit!==1?'s':'')+' credited':'no session credit';
   toast('✓ Test logged — '+result.normalizedTotal+'/'+result.targetTotal+' · '+creditMsg);
 
   testLogTimer={running:false,startedAt:null,elapsedSecs:0,intervalId:null};
@@ -5221,7 +5216,6 @@ function renderFocus(){
 
     // ── Score entry — redesigned as a clean card-grid, appears where the
     // Log Test / log session buttons normally sit.
-    const isSundayNow=new Date().getDay()===0;
     const eh=Math.floor(T.elapsedSecs/3600), em=Math.floor((T.elapsedSecs%3600)/60), es=T.elapsedSecs%60;
     const elapsedStr=(eh>0?String(eh).padStart(2,'0')+':':'')+String(em).padStart(2,'0')+':'+String(es).padStart(2,'0');
 
@@ -5263,10 +5257,6 @@ function renderFocus(){
     h+='</div>';
 
     h+='<div id="testLivePreview" class="test-score-live-preview test-score-stagger-4">enter at least one subject</div>';
-
-    if(isSundayNow){
-      h+='<div class="test-score-sunday-note">Sunday — logged &amp; shown everywhere, no session credit</div>';
-    }
 
     h+='<div class="test-score-btn-row test-score-stagger-5">';
     h+='<button class="test-score-discard-btn" onclick="testLogCancel()">Discard</button>';
