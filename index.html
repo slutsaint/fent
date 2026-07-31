@@ -1869,7 +1869,7 @@ function renderAnalytics(){
   const daysLeft=Math.max(0,Math.round((finalDeadline-today)/(1000*60*60*24)));
   const finalDeadlineLbl=fmtDate(finalDeadline); // e.g. "14 Oct"
   const chapsLeft=totalChaps-totalDone;
-  const backlog=allSubjs.filter(({s,ch})=>parseDate(ch.e)<today&&!isDone(s,ch.n));
+  const backlog=allSubjs.filter(({s,ch})=>parseDate(ch.e)<today&&!isAny(s,ch.n));
   const mBack=backlog.filter(({s})=>s==='math').length;
   const cBack=backlog.filter(({s})=>s==='chem').length;
   const pBack=backlog.filter(({s})=>s==='phys').length;
