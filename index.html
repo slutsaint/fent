@@ -2001,6 +2001,20 @@ function renderAnalytics(){
   const typeColorHex={theory:'#c2a359',module:'#6b9e83',pyq:'#908bb0',revision:'#c46464'};
   const typeGlows={theory:'rgba(194,163,89,0.55)',module:'rgba(107,158,131,0.55)',pyq:'rgba(144,139,176,0.55)',revision:'rgba(196,100,100,0.55)'};
   const typeGlowsSoft={theory:'rgba(194,163,89,0.15)',module:'rgba(107,158,131,0.15)',pyq:'rgba(144,139,176,0.15)',revision:'rgba(196,100,100,0.15)'};
+
+  /* "Mains Ready" — derived readiness metric: JEE Mains only tests Theory
+     depth + PYQ pattern-familiarity, so Module and Revision are deliberately
+     excluded from this number (they still count fully everywhere else —
+     Chapter Progress, overall %, syllabus tracker — this is purely an
+     additional lens, not a replacement metric). Color is a gold→violet
+     gradient blending Theory's and PYQ's own colors from the bars above, so
+     it visually reads as "these two, combined" rather than an unrelated hue. */
+  const mainsReadyDone=taskTotals.theory+taskTotals.pyq;
+  const mainsReadyMax=taskMax*2;
+  const mainsReadyPct=mainsReadyMax>0?Math.round(mainsReadyDone/mainsReadyMax*100):0;
+  const mrDelay=(Object.keys(taskTotals).length*0.11+0.08).toFixed(2);
+  const mrBarDelay=(parseFloat(mrDelay)+0.14).toFixed(2);
+
   html+=`<div class="ana-section">
   <div class="ana-sect-title">Completion by Type</div>
   <div style="display:flex;flex-direction:column;gap:16px;margin-top:20px;">
@@ -2026,6 +2040,20 @@ function renderAnalytics(){
       <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${hex};font-weight:300;width:28px;text-align:right;opacity:0.8;">${pct}%</span>
     </div>`;
   }).join('')}
+  </div>
+  <div style="margin-top:22px;padding-top:20px;border-top:1px solid var(--b1);opacity:0;animation:cbtRowIn .55s cubic-bezier(.16,1,.3,1) ${mrDelay}s forwards;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--t2);">Mains Ready</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:300;letter-spacing:-.03em;background:linear-gradient(90deg,#c2a359,#908bb0);-webkit-background-clip:text;background-clip:text;color:transparent;">${mainsReadyPct}<span style="font-size:10px;opacity:.55;-webkit-text-fill-color:var(--t3);">%</span></span>
+    </div>
+    <div style="height:4px;background:rgba(255,255,255,0.04);border-radius:99px;position:relative;overflow:visible;">
+      <div class="cbt-halo" data-w="${mainsReadyPct}" style="position:absolute;top:50%;transform:translateY(-50%);left:0;height:10px;width:0%;border-radius:99px;background:linear-gradient(90deg,rgba(194,163,89,0.5),rgba(144,139,176,0.5));filter:blur(7px);transition:width 1.4s cubic-bezier(.16,1,.3,1) ${mrBarDelay}s;pointer-events:none;"></div>
+      <div class="cbt-bar" data-w="${mainsReadyPct}" data-delay="${mrBarDelay}" style="position:absolute;inset:0;width:0%;border-radius:99px;background:linear-gradient(90deg,#c2a359 0%,#a89398 50%,#908bb0 100%);overflow:hidden;transition:width 1.4s cubic-bezier(.16,1,.3,1) ${mrBarDelay}s;">
+        <div style="position:absolute;top:0;left:-70%;height:100%;width:45%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent);animation:cbtShimmer 1.6s ease-in-out ${(parseFloat(mrBarDelay)+0.6).toFixed(2)}s 1 forwards;"></div>
+      </div>
+      <div class="cbt-tip" data-w="${mainsReadyPct}" data-delay="${mrBarDelay}" style="position:absolute;top:50%;width:6px;height:6px;border-radius:50%;background:#a89398;box-shadow:0 0 10px rgba(168,147,152,0.5),0 0 20px rgba(168,147,152,0.15);transform:translate(-50%,-50%);left:0%;transition:left 1.4s cubic-bezier(.16,1,.3,1) ${mrBarDelay}s;opacity:${mainsReadyPct>2?1:0};pointer-events:none;"></div>
+    </div>
+    <div style="margin-top:8px;font-size:9px;color:var(--t3);letter-spacing:.04em;">${mainsReadyDone}/${mainsReadyMax} tasks · Theory + PYQ only</div>
   </div>
 </div>`;
 
