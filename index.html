@@ -954,52 +954,54 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .focus-doneby-rem{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.01em;transition:color .4s;}
 .focus-doneby-prefix{font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-right:4px;opacity:.7;}
 
-/* ── Log Test — score entry card. Premium, compact, smooth. ── */
-.test-score-card{width:100%;max-width:400px;box-sizing:border-box;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:14px;margin:20px auto 14px;animation:fadeUp .4s var(--ease) both;}
-.test-score-stagger-1{animation:fadeUp .35s var(--ease) .04s both;}
-.test-score-stagger-2{animation:fadeUp .35s var(--ease) .08s both;}
-.test-score-stagger-3{animation:fadeUp .35s var(--ease) .12s both;}
-.test-score-stagger-4{animation:fadeUp .35s var(--ease) .17s both;}
-.test-score-stagger-5{animation:fadeUp .35s var(--ease) .21s both;}
-.test-score-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;}
-.test-score-elapsed-chip{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);letter-spacing:.02em;}
-.test-log-type-seg{display:flex;background:var(--bg);border:1px solid var(--b1);border-radius:20px;padding:2px;}
-.test-log-type-opt{background:transparent;border:none;color:var(--t3);border-radius:20px;padding:4px 11px;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.03em;cursor:pointer;transition:all .22s;}
-.test-log-type-opt.active{background:rgba(196,100,100,0.18);color:#fff;box-shadow:0 0 8px rgba(196,100,100,0.2);}
+/* ── Log Test — score entry card. Neutral minimal OLED, no red UI chrome. ── */
+.test-score-card{width:100%;max-width:400px;box-sizing:border-box;background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:16px 18px;margin:20px auto 14px;animation:fadeUp .3s var(--ease) both;box-shadow:0 8px 24px -8px rgba(0,0,0,0.5);position:relative;overflow:hidden;}
+.test-score-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.09),transparent);}
+.test-score-stagger-1{animation:fadeUp .3s var(--ease) .04s both;}
+.test-score-stagger-2{animation:fadeUp .3s var(--ease) .08s both;}
+.test-score-stagger-3{animation:fadeUp .3s var(--ease) .12s both;}
+.test-score-stagger-4{animation:fadeUp .3s var(--ease) .17s both;}
+.test-score-stagger-5{animation:fadeUp .3s var(--ease) .2s both;}
+.test-score-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.test-score-elapsed-chip{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.04em;padding:3px 8px;background:var(--bg);border:1px solid var(--b1);border-radius:5px;}
+/* Mains / Advanced — underline toggle, no colour wash */
+.test-log-type-seg{display:flex;gap:0;border-bottom:1px solid var(--b1);margin-right:-2px;}
+.test-log-type-opt{background:transparent;border:none;color:var(--t3);padding:4px 11px;font-size:9.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:color .2s;border-bottom:1.5px solid transparent;margin-bottom:-1px;}
+.test-log-type-opt.active{color:var(--t1);border-bottom-color:var(--t1);}
 .test-log-type-opt:hover:not(.active){color:var(--t2);}
-.test-score-name-input{background:transparent;border:none;border-bottom:1px solid var(--b1);padding:4px 1px;font-size:12px;color:var(--t1);outline:none;font-family:inherit;width:100%;margin-bottom:7px;transition:border-color .25s;box-sizing:border-box;}
-.test-score-name-input:focus{border-color:rgba(196,100,100,0.4);}
-.test-score-name-input::placeholder{color:var(--t3);opacity:.55;}
-/* Subject grid — three compact cards, each with a quiet subject-colored
-   underline for identity + a soft glow on the dot, without a full colour wash */
-.test-score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px;}
-.test-score-subj-card{background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:6px 4px;transition:border-color .25s,box-shadow .25s;}
-.test-score-subj-card:focus-within{border-color:var(--b2);box-shadow:0 0 0 2px rgba(255,255,255,0.03);}
-.test-score-subj-card.invalid{border-color:rgba(196,100,100,0.5);animation:testShake .3s cubic-bezier(.36,.07,.19,.97);}
+.test-score-name-input{background:transparent;border:none;border-bottom:1px solid var(--b1);padding:6px 0;font-size:12px;color:var(--t1);outline:none;font-family:inherit;width:100%;margin-top:6px;margin-bottom:10px;transition:border-color .2s;box-sizing:border-box;}
+.test-score-name-input:focus{border-color:rgba(255,255,255,0.22);}
+.test-score-name-input::placeholder{color:var(--t3);opacity:.4;}
+/* Subject grid — compact subject cards, subject-colored underline for ID */
+.test-score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;}
+.test-score-subj-card{background:var(--bg);border:1px solid var(--b1);border-radius:10px;padding:10px 5px;transition:border-color .2s;}
+.test-score-subj-card:focus-within{border-color:var(--b2);}
+.test-score-subj-card.invalid{border-color:rgba(196,100,100,0.45);animation:testShake .28s cubic-bezier(.36,.07,.19,.97);}
 @keyframes testShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-2px);}75%{transform:translateX(2px);}}
-.test-score-subj-top{display:flex;align-items:center;gap:5px;margin-bottom:5px;justify-content:center;}
+.test-score-subj-top{display:flex;align-items:center;gap:5px;margin-bottom:7px;justify-content:center;}
 .test-score-subj-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
-.test-score-subj-short{font-size:9px;color:var(--t3);letter-spacing:.09em;font-family:'JetBrains Mono',monospace;}
+.test-score-subj-short{font-size:9px;color:var(--t3);letter-spacing:.08em;font-family:'JetBrains Mono',monospace;}
 .test-score-subj-inputs{display:flex;align-items:center;justify-content:center;gap:3px;}
-.test-score-input{width:26px;min-width:0;background:transparent;border:none;padding:2px 0;font-size:13px;color:var(--t1);outline:none;font-family:'JetBrains Mono',monospace;font-weight:300;text-align:center;transition:color .2s;
-  -moz-appearance:textfield;}
+.test-score-input{width:28px;min-width:0;background:transparent;border:none;padding:2px 0;font-size:15px;color:var(--t1);outline:none;font-family:'JetBrains Mono',monospace;font-weight:300;text-align:center;transition:color .2s;-moz-appearance:textfield;}
 .test-score-input::-webkit-outer-spin-button,.test-score-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-.test-score-input::placeholder{color:var(--t3);opacity:.3;}
+.test-score-input::placeholder{color:var(--t3);opacity:.28;}
 .test-score-subj-card.invalid .test-score-input{color:var(--red);}
-.test-score-subj-slash{color:var(--t3);opacity:.35;font-size:11px;flex-shrink:0;}
-/* Live preview — instant feedback, warmer pop on a valid total */
-.test-score-live-preview{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t3);text-align:center;padding:4px 0;letter-spacing:.02em;transition:color .3s,transform .2s;min-height:14px;}
-.test-score-live-preview.valid{color:var(--red);font-weight:500;text-shadow:0 0 12px rgba(196,100,100,0.35);animation:previewPop .25s cubic-bezier(.34,1.56,.64,1);}
-@keyframes previewPop{0%{transform:scale(.95);}60%{transform:scale(1.03);}100%{transform:scale(1);}}
-.test-score-live-preview.error{color:rgba(196,100,100,0.7);}
-.test-score-sunday-note{font-size:9px;color:var(--c);opacity:.75;text-align:center;margin-top:2px;margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:.01em;}
-.test-score-btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:5px;}
-.test-score-discard-btn{background:transparent;border:none;color:var(--t3);padding:7px 9px;font-size:10.5px;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:color .2s;}
-.test-score-discard-btn:hover{color:var(--t2);}
-.test-score-save-btn{background:var(--red);border:1px solid var(--red);color:#fff;border-radius:20px;padding:7px 18px;font-size:10.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);box-shadow:0 0 12px rgba(196,100,100,0.15);}
-.test-score-save-btn:hover:not(:disabled){filter:brightness(1.1);transform:scale(1.03);box-shadow:0 0 18px rgba(196,100,100,0.3);}
-.test-score-save-btn:active:not(:disabled){transform:scale(0.97);}
-.test-score-save-btn:disabled{background:transparent;border-color:var(--b1);color:var(--t3);cursor:default;box-shadow:none;}
+.test-score-subj-slash{color:var(--t3);opacity:.3;font-size:12px;flex-shrink:0;}
+/* Live preview */
+.test-score-live-preview{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);text-align:center;padding:3px 0;letter-spacing:.03em;transition:color .25s;min-height:14px;}
+.test-score-live-preview.valid{color:var(--c);animation:previewPop .22s cubic-bezier(.34,1.56,.64,1);}
+@keyframes previewPop{0%{transform:scale(.96);}60%{transform:scale(1.02);}100%{transform:scale(1);}}
+.test-score-live-preview.error{color:rgba(196,100,100,0.6);}
+.test-score-sunday-note{font-size:9px;color:var(--c);opacity:.7;text-align:center;margin-top:2px;margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:.01em;}
+.test-score-btn-row{display:flex;gap:6px;justify-content:flex-end;margin-top:10px;align-items:center;}
+.test-score-discard-btn{background:transparent;border:none;color:var(--t3);padding:8px 12px;border-radius:7px;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;cursor:pointer;transition:color .2s,background .2s;}
+.test-score-discard-btn:hover{color:var(--t2);background:rgba(255,255,255,0.04);}
+.test-score-discard-btn:active{transform:scale(0.96);}
+/* Save — primary action: white fill, tracker-standard */
+.test-score-save-btn{background:var(--t1);color:var(--bg);border:none;border-radius:7px;padding:8px 18px;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:background .2s var(--ease),transform .15s var(--ease);}
+.test-score-save-btn:hover:not(:disabled){background:var(--t2);transform:scale(1.02);}
+.test-score-save-btn:active:not(:disabled){transform:scale(0.96);}
+.test-score-save-btn:disabled{background:var(--s3);color:var(--t3);cursor:default;}
 /* Test-mode main clock — minimal filling orb, calibrated up a touch: a
    breathing rim instead of a flat dim one, and richer water with a subtle
    depth layer + shimmer line — still no blur filters, still restrained. */
@@ -1022,10 +1024,78 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 @keyframes testTimePop{from{opacity:0;transform:scale(.9);}to{opacity:1;transform:scale(1);}}
 .test-orb-lbl{font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--red);animation:fadeUp .45s var(--ease) .3s both;}
 .test-orb-lbl.paused{color:var(--t3);}
-.test-stop-in{animation:fadeUp .4s var(--ease) .5s both;}
-.test-stop-pill{background:transparent;border:1.5px solid rgba(196,100,100,0.4);color:var(--red);border-radius:99px;padding:9px 26px;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;cursor:pointer;transition:all .22s cubic-bezier(.16,1,.3,1);}
-.test-stop-pill:hover{background:rgba(196,100,100,0.1);border-color:rgba(196,100,100,0.6);transform:scale(1.03);}
-.test-stop-pill:active{transform:scale(0.97);}
+.test-stop-in{animation:fadeUp .4s var(--ease) .45s both;}
+.test-stop-pill{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--b2);color:var(--t3);border-radius:8px;padding:9px 20px;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:border-color .2s var(--ease),color .2s var(--ease),background .2s var(--ease),transform .15s var(--ease);-webkit-tap-highlight-color:transparent;}
+.test-stop-pill:hover{border-color:rgba(255,255,255,0.2);color:var(--t2);background:rgba(255,255,255,0.03);}
+.test-stop-pill:active{transform:scale(0.95);}
+.test-stop-pill-ico{width:7px;height:7px;border-radius:1.5px;background:var(--t3);flex-shrink:0;transition:background .2s;}
+.test-stop-pill:hover .test-stop-pill-ico{background:var(--t2);}
+
+/* ── Log Test — setup flow: subjects → chapters → question count.
+   Neutral OLED minimal: no red UI chrome. Subject chips use their
+   own subject colours when active. Everything else is neutral white/grey.
+   Instant patch on chip/row tap — no full re-render. ── */
+.test-setup-card{width:100%;max-width:400px;box-sizing:border-box;background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:18px;margin:20px auto 14px;animation:fadeUp .28s var(--ease) both;box-shadow:0 8px 24px -8px rgba(0,0,0,0.5);position:relative;overflow:hidden;}
+.test-setup-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);}
+.test-setup-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+.test-setup-steps-lbl{font-size:9px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;}
+.test-setup-close{background:transparent;border:none;color:var(--t3);font-size:12px;cursor:pointer;padding:3px 5px;border-radius:5px;transition:color .2s,background .2s;line-height:1;}
+.test-setup-close:hover{color:var(--t2);background:rgba(255,255,255,0.05);}
+.test-setup-close:active{transform:scale(0.9);}
+/* Thin progress track — neutral silver */
+.test-setup-progress{width:100%;height:1.5px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:16px;overflow:hidden;}
+.test-setup-progress-fill{height:100%;background:linear-gradient(90deg,rgba(228,228,231,0.3),rgba(228,228,231,0.65));border-radius:2px;transition:width .4s var(--ease);}
+.test-setup-title{font-size:13px;color:var(--t1);font-weight:400;letter-spacing:-.01em;margin-bottom:3px;}
+.test-setup-subtitle{font-size:10px;color:var(--t3);margin-bottom:14px;font-family:'JetBrains Mono',monospace;letter-spacing:.01em;}
+.test-setup-ques-sub{font-size:10px;color:var(--t3);margin-top:-6px;margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+
+.test-setup-subj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px;}
+.test-setup-subj-chip{display:flex;flex-direction:column;align-items:center;gap:8px;background:rgba(255,255,255,0.01);border:1px solid var(--b1);border-radius:10px;padding:14px 6px;cursor:pointer;transition:border-color .2s var(--ease),background .2s var(--ease),transform .15s var(--ease);-webkit-tap-highlight-color:transparent;}
+.test-setup-subj-chip:hover{border-color:var(--b2);}
+.test-setup-subj-chip:active{transform:scale(0.95);}
+.test-setup-subj-chip.on{border-color:var(--sc);background:rgba(var(--scr),0.07);box-shadow:inset 0 0 0 1px rgba(var(--scr),0.1);}
+.test-setup-subj-chip-dot{width:6px;height:6px;border-radius:50%;background:var(--t3);transition:background .2s,box-shadow .2s,transform .22s cubic-bezier(.34,1.56,.64,1);}
+.test-setup-subj-chip.on .test-setup-subj-chip-dot{background:var(--sc);box-shadow:0 0 6px rgba(var(--scr),0.65);transform:scale(1.1);}
+.test-setup-subj-chip-lbl{font-size:10px;color:var(--t3);letter-spacing:.02em;transition:color .2s;}
+.test-setup-subj-chip.on .test-setup-subj-chip-lbl{color:var(--t1);}
+
+.test-setup-subj-tabs{display:flex;align-items:center;gap:5px;margin-bottom:12px;}
+.test-setup-subj-tab{font-size:9px;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,0.015);border:1px solid var(--b1);color:var(--t3);font-family:'JetBrains Mono',monospace;letter-spacing:.04em;transition:all .2s;}
+.test-setup-subj-tab.active{border-color:var(--sc);color:var(--t1);background:rgba(255,255,255,0.03);}
+.test-setup-subj-tab.done:not(.active){color:var(--sc);opacity:.7;}
+.test-setup-chap-count{margin-left:auto;font-size:9.5px;color:var(--t3);font-family:'JetBrains Mono',monospace;letter-spacing:.01em;}
+
+.test-setup-chap-list{max-height:216px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;margin-bottom:14px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.07) transparent;padding-right:2px;}
+.test-setup-chap-list::-webkit-scrollbar{width:3px;}
+.test-setup-chap-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.09);border-radius:99px;}
+.test-setup-chap-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;background:rgba(255,255,255,0.01);border:1px solid var(--b1);cursor:pointer;transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent;}
+.test-setup-chap-row:hover{border-color:var(--b2);}
+.test-setup-chap-row:active{background:rgba(255,255,255,0.03);}
+.test-setup-chap-row.on{border-color:rgba(255,255,255,0.11);background:rgba(255,255,255,0.03);}
+.test-setup-chap-check{width:14px;height:14px;border-radius:4px;border:1px solid var(--t3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--bg);transition:background .15s,border-color .15s,transform .18s cubic-bezier(.34,1.56,.64,1);}
+.test-setup-chap-row.on .test-setup-chap-check{background:var(--sc);border-color:var(--sc);transform:scale(1.06);}
+.test-setup-chap-name{font-size:11px;color:var(--t2);flex:1;transition:color .15s;}
+.test-setup-chap-row.on .test-setup-chap-name{color:var(--t1);}
+
+.test-setup-ques-wrap{position:relative;margin-bottom:8px;}
+/* Compact question input — good proportions, not oversized */
+.test-setup-ques-input{width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--b1);border-radius:10px;padding:11px 58px 11px 14px;font-size:17px;font-family:'JetBrains Mono',monospace;font-weight:300;color:var(--t1);text-align:left;outline:none;transition:border-color .2s;-moz-appearance:textfield;}
+.test-setup-ques-input::-webkit-outer-spin-button,.test-setup-ques-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.test-setup-ques-input:focus{border-color:var(--b2);}
+.test-setup-ques-input::placeholder{color:var(--t3);opacity:.32;}
+.test-setup-ques-unit{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;letter-spacing:.06em;pointer-events:none;text-transform:uppercase;}
+/* Preview text — neutral, not red */
+.test-setup-ques-preview{text-align:left;font-size:10px;color:var(--t2);font-family:'JetBrains Mono',monospace;min-height:14px;margin-bottom:14px;letter-spacing:.02em;}
+
+.test-setup-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.test-setup-back-btn{background:transparent;border:none;color:var(--t3);font-size:10px;font-family:'JetBrains Mono',monospace;cursor:pointer;padding:8px 6px;border-radius:6px;transition:color .2s,background .2s;letter-spacing:.04em;}
+.test-setup-back-btn:hover{color:var(--t2);background:rgba(255,255,255,0.03);}
+/* Continue / Start — white filled, tracker-standard primary action */
+.test-setup-continue-btn,.test-setup-start-btn{background:var(--t1);color:var(--bg);border:none;border-radius:7px;padding:9px 20px;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;font-weight:500;cursor:pointer;transition:background .2s var(--ease),transform .15s var(--ease);margin-left:auto;-webkit-tap-highlight-color:transparent;}
+.test-setup-continue-btn:hover:not(:disabled),.test-setup-start-btn:hover:not(:disabled){background:var(--t2);transform:scale(1.02);}
+.test-setup-continue-btn:active:not(:disabled),.test-setup-start-btn:active:not(:disabled){transform:scale(0.95);}
+.test-setup-continue-btn:disabled,.test-setup-start-btn:disabled{background:var(--s3);color:var(--t3);cursor:default;}
+/* ── End Log Test setup flow ── */
 .focus-stat-cell{flex:1;padding:14px 12px;text-align:center;border-right:1px solid var(--b1);}
 .focus-stat-cell:last-child{border-right:none;}
 .focus-stat-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;}
@@ -4181,10 +4251,24 @@ let focusTimer = {
 // duration, for logging a mock test you just took. Never reads or writes any
 // field on focusTimer above — the two are mutually exclusive at the UI level
 // only (you can't run both at once), never intertwined in state.
-let testLogTimer = { running:false, startedAt:null, elapsedSecs:0, intervalId:null };
-let testLogOpen=false;       // is the Log Test card expanded
-let testLogScoreStep=false;  // true once stopped, waiting for score entry
+// Test timer is now a COUNTDOWN (25 questions : 60 minutes), not a stopwatch.
+// totalSeconds/secondsLeft drive the hourglass exactly like focusTimer does;
+// subjects/chapterPlan/totalQuestions are fixed once the test starts (set by
+// testSetupStart) and are what gets credited to per-chapter analytics on save.
+let testLogTimer = { running:false, paused:false, startedAt:null, totalSeconds:0, secondsLeft:0, endAt:null, intervalId:null,
+  subjects:[], chapterPlan:{}, totalQuestions:0, actualElapsedSecs:null };
+let testLogOpen=false;       // is the setup card (subjects→chapters→questions) open
+let testLogScoreStep=false;  // true once the test has ended, waiting for score entry
 let testLogType='mains';     // 'mains' | 'adv' — selected during score entry
+
+// ── Log Test setup-flow state ──────────────────────────────────────────────
+let testSetupStep='subjects';    // 'subjects' | 'chapters' | 'questions'
+let testSetupSubjects=[];        // selected subject keys, in the order picked
+let testSetupChapSubjIdx=0;      // which selected subject's chapter list is showing
+let testSetupChapters={};        // {math:[n,...], chem:[...], phys:[...]}
+let testSetupQuesInput='';       // raw text of the question-count field
+const SECS_PER_QUESTION=(60*60)/25; // 144s per question — the 25q : 60min ratio
+// ── End Log Test setup-flow state ──────────────────────────────────────────
 
 // ── Local date helper — always returns YYYY-MM-DD in the device's local timezone.
 // Using ISO string (.toISOString) gives UTC date which can be the wrong calendar
@@ -4555,85 +4639,297 @@ let focusManualSearch='';   // search string for manual log chapter picker
 
 function testLogBegin(){
   if(focusTimer.running){ toast('Pause your current session first'); return; }
-  testLogStart();
+  testLogOpen=true;
+  testSetupStep='subjects';
+  testSetupSubjects=[];
+  testSetupChapSubjIdx=0;
+  testSetupChapters={};
+  testSetupQuesInput='';
+  renderTestLogSlot();
 }
 
-function testLogToggleOpen(){
-  if(focusTimer.running){ toast('Pause your current session first'); return; }
-  testLogOpen=!testLogOpen;
-  if(!testLogOpen) testLogCancel();
-  renderFocus();
+// Splits `total` into `parts` whole numbers as evenly as possible. The
+// remainder (total % parts) is handed out one-by-one to the first few parts
+// so every number differs by at most 1 and they always sum back to `total`.
+function splitWhole(total,parts){
+  if(parts<=0) return [];
+  const base=Math.floor(total/parts), rem=total%parts;
+  const out=[];
+  for(let i=0;i<parts;i++) out.push(base+(i<rem?1:0));
+  return out;
 }
 
-function testLogStart(){
+function testSetupCancel(){
+  testLogOpen=false;
+  testSetupStep='subjects';
+  testSetupSubjects=[];
+  testSetupChapSubjIdx=0;
+  testSetupChapters={};
+  testSetupQuesInput='';
+  renderTestLogSlot();
+}
+
+// Instant, zero-rebuild toggle — patches only the tapped chip's class + the
+// Continue button's disabled state directly. No renderFocus, no innerHTML
+// rewrite of anything: this is what makes tapping feel immediate instead of
+// glitchy/full-page-reload-y, since nothing else in the DOM is touched.
+function testSetupToggleSubject(k){
+  const i=testSetupSubjects.indexOf(k);
+  if(i>=0) testSetupSubjects.splice(i,1);
+  else testSetupSubjects.push(k);
+  const chip=document.querySelector('.test-setup-subj-chip[data-k="'+k+'"]');
+  if(chip) chip.classList.toggle('on', testSetupSubjects.indexOf(k)>=0);
+  const btn=document.getElementById('testSetupNavBtn');
+  if(btn) btn.disabled = testSetupSubjects.length===0;
+}
+
+function testSetupGoChapters(){
+  if(testSetupSubjects.length===0){ toast('Pick at least 1 subject'); return; }
+  testSetupChapSubjIdx=0;
+  testSetupStep='chapters';
+  renderTestLogSlot();
+}
+
+// Same instant-patch pattern as testSetupToggleSubject: only the tapped row,
+// its checkmark, the Next/Continue button, and the chapter-count chip in the
+// tab strip update — nothing else re-renders.
+function testSetupToggleChapter(subj,n){
+  const arr=testSetupChapters[subj]||(testSetupChapters[subj]=[]);
+  const i=arr.indexOf(n);
+  if(i>=0) arr.splice(i,1);
+  else arr.push(n);
+  const on=arr.indexOf(n)>=0;
+  const row=document.querySelector('.test-setup-chap-row[data-n="'+n+'"]');
+  if(row){
+    row.classList.toggle('on', on);
+    const check=row.querySelector('.test-setup-chap-check');
+    if(check) check.textContent = on?'✓':'';
+  }
+  const btn=document.getElementById('testSetupNavBtn');
+  if(btn) btn.disabled = arr.length===0;
+  const countEl=document.getElementById('testSetupChapCount');
+  if(countEl) countEl.textContent = arr.length+' selected';
+  const tabs=document.querySelectorAll('.test-setup-subj-tab');
+  if(tabs[testSetupChapSubjIdx]) tabs[testSetupChapSubjIdx].classList.toggle('done', arr.length>0);
+}
+
+function testSetupChapNext(){
+  const subj=testSetupSubjects[testSetupChapSubjIdx];
+  if(!(testSetupChapters[subj]&&testSetupChapters[subj].length)){
+    toast('Pick at least 1 chapter');
+    return;
+  }
+  if(testSetupChapSubjIdx<testSetupSubjects.length-1){
+    testSetupChapSubjIdx++;
+    renderTestLogSlot();
+  } else {
+    testSetupStep='questions';
+    renderTestLogSlot();
+    setTimeout(()=>{const inp=document.getElementById('testQuesCountInp'); if(inp) inp.focus();},30);
+  }
+}
+
+function testSetupChapBack(){
+  if(testSetupChapSubjIdx>0){ testSetupChapSubjIdx--; renderTestLogSlot(); }
+  else { testSetupStep='subjects'; renderTestLogSlot(); }
+}
+
+function testSetupQuesBack(){
+  testSetupStep='chapters';
+  testSetupChapSubjIdx=testSetupSubjects.length-1;
+  renderTestLogSlot();
+}
+
+// Wired to oninput on the question-count field — patches the preview + Start
+// button directly (same pattern as testLogLiveUpdate below) so typing feels
+// instant without a full re-render on every keystroke.
+function testSetupQuesInputChange(v){
+  testSetupQuesInput=v;
+  const n=parseInt(v,10);
+  const valid=v!==''&&!isNaN(n)&&n>0;
+  const el=document.getElementById('testQuesPreview');
+  if(el){
+    if(!valid){ el.textContent=''; }
+    else{
+      const totalSecs=Math.round(n*SECS_PER_QUESTION);
+      const m=Math.floor(totalSecs/60), s=totalSecs%60;
+      el.textContent=m+'m'+(s>0?' '+s+'s':'')+' on the clock';
+    }
+  }
+  const btn=document.getElementById('testSetupStartBtn');
+  if(btn) btn.disabled=!valid;
+}
+
+function testSetupStart(){
   if(focusTimer.running){ toast('Pause your current session first'); return; }
+  const n=parseInt(testSetupQuesInput,10);
+  if(!n||n<=0){ toast('Enter how many questions'); return; }
+
+  // Fixed up front: how many questions each chosen subject — then each
+  // chosen chapter within it — is credited. Decided now so it never depends
+  // on how the test actually goes, same as every other "planned" value here.
+  const subjQues={};
+  const subjSplit=splitWhole(n, testSetupSubjects.length);
+  testSetupSubjects.forEach((s,i)=>{ subjQues[s]=subjSplit[i]; });
+
+  const chapterPlan={};
+  testSetupSubjects.forEach(s=>{
+    const chapNs=testSetupChapters[s]||[];
+    const perChap=splitWhole(subjQues[s], chapNs.length);
+    const src=s==='math'?MATH:s==='chem'?CHEM:PHYS;
+    chapterPlan[s]=chapNs.map((cn,i)=>{
+      const ch=src.find(c=>c.n===cn);
+      return {n:cn, name:ch?ch.name:'', ques:perChap[i]};
+    });
+  });
+
+  const totalSecs=Math.round(n*SECS_PER_QUESTION);
   const T=testLogTimer;
   T.running=true;
   T.startedAt=Date.now();
-  T.elapsedSecs=0;
+  T.totalSeconds=totalSecs;
+  T.secondsLeft=totalSecs;
+  T.endAt=Date.now()+totalSecs*1000;
+  T.subjects=testSetupSubjects.slice();
+  T.chapterPlan=chapterPlan;
+  T.totalQuestions=n;
+  T.actualElapsedSecs=null;
   clearInterval(T.intervalId);
-  T.intervalId=setInterval(testLogTick, 500);
+  T.intervalId=setInterval(testTimerTick, 500);
+
+  testLogOpen=false;
   renderFocus();
 }
 
-function testLogTick(){
+function testTimerTick(){
   const T=testLogTimer;
-  if(!T.running) return;
-  T.elapsedSecs=Math.floor((Date.now()-T.startedAt)/1000);
-  const el=document.getElementById('focusTimeBig');
-  if(el){
-    const h=Math.floor(T.elapsedSecs/3600), m=Math.floor((T.elapsedSecs%3600)/60), s=T.elapsedSecs%60;
-    el.textContent=(h>0?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  if(!T.running || T.paused) return;
+  const remaining=Math.ceil((T.endAt-Date.now())/1000);
+  if(remaining<=0){
+    T.secondsLeft=0;
+    updateTestClockFast();
+    clearCrashSnap();
+    testLogFinish(false);
+  } else {
+    T.secondsLeft=remaining;
+    updateTestClockFast();
   }
 }
 
+// Fast DOM patch for the countdown hourglass — mirrors updateFocusClockFast's
+// approach exactly (same geometry constants, same hg* element ids, since the
+// two hourglasses are never in the DOM at the same time) so the sand stays
+// perfectly smooth without a full re-render every tick.
+function updateTestClockFast(){
+  const T=testLogTimer;
+  const mins=Math.floor(T.secondsLeft/60), secs=T.secondsLeft%60;
+  const timeEl=document.getElementById('focusTimeBig');
+  if(timeEl){
+    const newText=String(mins).padStart(2,'0')+':'+String(secs).padStart(2,'0');
+    if(timeEl.textContent!==newText) timeEl.textContent=newText;
+  }
+  const progress=T.totalSeconds>0?T.secondsLeft/T.totalSeconds:0;
+  const fillX=Math.max(0,Math.min(1,progress));
+  const HG={topRimY:14,neckY:90,bottomRimY:166};
+  const travel=(HG.neckY-HG.topRimY)+4;
+  const coneTravel=(HG.bottomRimY-HG.neckY)+14;
+  const {uTop,uBot}=hgSandU(fillX);
+  const topSandY=(uTop*travel).toFixed(1)+'px';
+  const botSandY=(uBot*travel).toFixed(1)+'px';
+  const botConeSandY=(uBot*coneTravel).toFixed(1)+'px';
+  const topFill=document.getElementById('hgTopFill'), topGlow=document.getElementById('hgTopGlow');
+  const botFill=document.getElementById('hgBotFill'), botGlow=document.getElementById('hgBotGlow');
+  const topSurface=document.getElementById('hgTopSurface'), botSurface=document.getElementById('hgBotSurface');
+  const botConeWrap=document.getElementById('hgBotConeWrap');
+  if(topFill) topFill.style.transform='translateY('+topSandY+')';
+  if(topGlow) topGlow.style.transform='translateY('+topSandY+')';
+  if(topSurface) topSurface.style.transform='translateY('+topSandY+')';
+  if(botFill) botFill.style.transform='translateY('+botSandY+')';
+  if(botGlow) botGlow.style.transform='translateY('+botSandY+')';
+  if(botSurface) botSurface.style.transform='translateY('+botSandY+')';
+  if(botConeWrap) botConeWrap.style.transform='translateY('+botConeSandY+')';
+}
+
+// "Turn the timer off" — ends the test early with whatever time has actually
+// elapsed. Counts as ended exactly like the timer running out on its own.
 function testLogStop(){
+  testLogFinish(true);
+}
+
+// Pause / resume the test countdown — same mental model as focusToggle.
+// TL.running stays true throughout; only the interval and TL.paused change.
+function testLogToggle(){
+  const T=testLogTimer;
+  if(!T.running) return;
+  if(T.paused){
+    T.endAt=Date.now()+T.secondsLeft*1000;
+    T.paused=false;
+    clearInterval(T.intervalId);
+    T.intervalId=setInterval(testTimerTick,500);
+  } else {
+    T.secondsLeft=Math.max(0,Math.ceil((T.endAt-Date.now())/1000));
+    clearInterval(T.intervalId);
+    T.intervalId=null;
+    T.paused=true;
+  }
+  renderFocus();
+}
+
+// Skip = end test now and proceed to score entry (⟫ button).
+function testLogSkip(){
+  testLogFinish(true);
+}
+
+function testLogFinish(manual){
   const T=testLogTimer;
   clearInterval(T.intervalId);
   T.intervalId=null;
   T.running=false;
-  T.elapsedSecs=Math.floor((Date.now()-T.startedAt)/1000);
-  if(T.elapsedSecs<10){
-    toast('Too short to log — discarded');
-    testLogCancel();
-    return;
-  }
+  T.paused=false;
+  T.actualElapsedSecs = manual
+    ? Math.max(0,Math.min(T.totalSeconds, Math.round((Date.now()-T.startedAt)/1000)))
+    : T.totalSeconds;
+  clearCrashSnap();
   testLogScoreStep=true;
   renderFocus();
-  setTimeout(()=>{const inp=document.getElementById('testScoreInp');if(inp)inp.focus();},30);
 }
 
 function testLogCancel(){
+  // Discard from the score-entry step — nothing gets written anywhere.
   const T=testLogTimer;
   clearInterval(T.intervalId);
-  T.intervalId=null;
-  T.running=false;
-  T.startedAt=null;
-  T.elapsedSecs=0;
+  testLogTimer={running:false,paused:false,startedAt:null,totalSeconds:0,secondsLeft:0,endAt:null,intervalId:null,
+    subjects:[],chapterPlan:{},totalQuestions:0,actualElapsedSecs:null};
   testLogOpen=false;
   testLogScoreStep=false;
+  testSetupStep='subjects';
+  testSetupSubjects=[];
+  testSetupChapSubjIdx=0;
+  testSetupChapters={};
+  testSetupQuesInput='';
   renderFocus();
 }
 
 function testLogSetType(type){
   testLogType=type;
-  renderFocus();
+  renderTestLogSlot();
 }
 
 function testLogSubmit(){
   const nameInp=document.getElementById('testNameInp');
   const testName=nameInp&&nameInp.value.trim()?nameInp.value.trim():'';
 
+  const T=testLogTimer;
   const subjectScores={};
   let anyEntered=false;
   let validationError='';
-  ['phys','chem','math'].forEach(k=>{
+  T.subjects.forEach(k=>{
     if(validationError) return;
     const sInp=document.getElementById('testScore_'+k);
     const mInp=document.getElementById('testMax_'+k);
     const sRaw=sInp?sInp.value.trim():'';
     const mRaw=mInp?mInp.value.trim():'';
-    if(sRaw===''&&mRaw==='') return; // fully skipped — fine
+    if(sRaw===''&&mRaw==='') return; // skipped
     const s=parseFloat(sRaw), m=parseFloat(mRaw);
     const subjLabel={phys:'Physics',chem:'Chemistry',math:'Maths'}[k];
     if(isNaN(s)||isNaN(m)){ validationError=subjLabel+': fill both score and max, or leave both blank to skip'; return; }
@@ -4647,25 +4943,44 @@ function testLogSubmit(){
   if(validationError){ toast(validationError); return; }
   if(!anyEntered){ toast('Enter at least one subject\'s score'); return; }
 
-  const result=logTestSession(testLogTimer.elapsedSecs, testLogType, subjectScores, testName);
+  // Credit every planned chapter with its share of questions — additive,
+  // reusing the exact same per-chapter question log the rest of the tracker's
+  // analytics already reads, so no other code path needs to change.
+  T.subjects.forEach(s=>{
+    (T.chapterPlan[s]||[]).forEach(c=>{
+      if(c.ques>0) addQuesToChapter(c.ques, {subj:s, n:c.n, name:c.name});
+    });
+  });
+  addTodayQues(T.totalQuestions);
+
+  const durationSecs=T.actualElapsedSecs!=null?T.actualElapsedSecs:T.totalSeconds;
+  const result=logTestSession(durationSecs, testLogType, subjectScores, testName);
   const fmtV=v=>{const r=Math.round(v*100)/100;return r===Math.floor(r)?String(Math.floor(r)):(r<0.1?r.toFixed(2):r.toFixed(1));};
   const creditMsg=result.credit>0?fmtV(result.credit)+' session'+(result.credit!==1?'s':'')+' credited':'no session credit';
   toast('✓ Test logged — '+result.normalizedTotal+'/'+result.targetTotal+' · '+creditMsg);
 
-  testLogTimer={running:false,startedAt:null,elapsedSecs:0,intervalId:null};
+  testLogTimer={running:false,startedAt:null,totalSeconds:0,secondsLeft:0,endAt:null,intervalId:null,
+    subjects:[],chapterPlan:{},totalQuestions:0,actualElapsedSecs:null};
   testLogOpen=false;
   testLogScoreStep=false;
   testLogType='mains';
+  testSetupStep='subjects';
+  testSetupSubjects=[];
+  testSetupChapSubjIdx=0;
+  testSetupChapters={};
+  testSetupQuesInput='';
   renderFocus();
   if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
 }
 
 // Live validation + live normalized-total preview — wired to oninput on every
 // score/max field so the person sees instant feedback instead of only finding
-// out something's wrong after tapping Save.
+// out something's wrong after tapping Save. Only iterates the subjects that
+// were actually picked in setup (the score card only renders those).
 function testLogLiveUpdate(){
+  const T=testLogTimer;
   let sumScore=0, sumMax=0, hasInvalid=false, anyEntered=false;
-  ['phys','chem','math'].forEach(k=>{
+  T.subjects.forEach(k=>{
     const sInp=document.getElementById('testScore_'+k);
     const mInp=document.getElementById('testMax_'+k);
     const rowEl=document.getElementById('testRow_'+k);
@@ -4699,7 +5014,7 @@ function testLogLiveUpdate(){
     if(saveBtn) saveBtn.disabled=false;
   }
 }
-// ── End Log Test stopwatch controls ──────────────────────────────────────────
+// ── End Log Test setup flow + countdown timer controls ──────────────────────
 
 function focusToggleManualLog(){
   focusManualLogOpen=!focusManualLogOpen;
@@ -4850,6 +5165,189 @@ function hgSandU(fillX){
 }
 // ── End hourglass sand-level physics ─────────────────────────────────────────
 
+// ── Hoisted: Log Test setup/score builders (top-level so lightweight
+// patch functions like renderTestLogSlot can call them without a full
+// renderFocus rebuild) ──
+  // Log Test card — string concatenation throughout (nested backtick template
+  // literals inside a template literal caused a real parse error earlier in
+  // this file's history — this pattern avoids that entirely).
+  function buildTestLogHTML(){
+    const T=testLogTimer;
+
+    // Idle — the entry point now lives next to "log session" in the log header.
+    // Nothing to render here at all when not testing.
+    if(!T.running && !testLogScoreStep) return '';
+
+    if(T.running){
+      // Running — the live timer lives in the main clock above; nothing else
+      // needed here. The Stop button is in the main controls row.
+      return '';
+    }
+
+    // ── Score entry — redesigned as a clean card-grid, appears where the
+    // Log Test / log session buttons normally sit. Only shows the subjects
+    // that were actually picked during setup — a subject never tested here
+    // gets no card and no phantom "skipped" entry.
+    const es=T.actualElapsedSecs!=null?T.actualElapsedSecs:T.totalSeconds;
+    const eh=Math.floor(es/3600), em=Math.floor((es%3600)/60), esec=es%60;
+    const elapsedStr=(eh>0?String(eh).padStart(2,'0')+':':'')+String(em).padStart(2,'0')+':'+String(esec).padStart(2,'0');
+
+    let h='<div class="test-score-card">';
+
+    // Header: elapsed chip + type segmented toggle
+    h+='<div class="test-score-head test-score-stagger-1">';
+    h+='<span class="test-score-elapsed-chip">'+elapsedStr+' · '+T.totalQuestions+' questions</span>';
+    h+='<div class="test-log-type-seg">';
+    h+='<button class="test-log-type-opt'+(testLogType==='mains'?' active':'')+'" onclick="testLogSetType(\'mains\')">Mains</button>';
+    h+='<button class="test-log-type-opt'+(testLogType==='adv'?' active':'')+'" onclick="testLogSetType(\'adv\')">Advanced</button>';
+    h+='</div>';
+    h+='</div>';
+
+    h+='<input id="testNameInp" class="test-score-name-input test-score-stagger-2" type="text" placeholder="Test name — optional" autocomplete="off"/>';
+
+    // Subject grid — one compact card per subject actually picked in setup,
+    // identified by a small dot + muted label, no heavy colour wash.
+    const subjMetaAll={
+      phys:{label:'Physics',short:'PHY',col:'#908bb0',rgb:'144,139,176'},
+      chem:{label:'Chemistry',short:'CHM',col:'#6b9e83',rgb:'107,158,131'},
+      math:{label:'Maths',short:'MTH',col:'#c2a359',rgb:'194,163,89'}
+    };
+    h+='<div class="test-score-grid test-score-stagger-3" style="grid-template-columns:repeat('+T.subjects.length+',1fr);">';
+    T.subjects.forEach(function(k,si){
+      const s=subjMetaAll[k];
+      h+='<div class="test-score-subj-card" id="testRow_'+k+'" style="animation:fadeUp .35s var(--ease) '+(0.13+si*0.04)+'s both;border-bottom:2px solid '+s.col+'40;">';
+      h+='<div class="test-score-subj-top">';
+      h+='<div class="test-score-subj-dot" style="background:'+s.col+';box-shadow:0 0 4px rgba('+s.rgb+',0.7);"></div>';
+      h+='<span class="test-score-subj-short">'+s.short+'</span>';
+      h+='</div>';
+      h+='<div class="test-score-subj-inputs">';
+      h+='<input id="testScore_'+k+'" class="test-score-input" type="number" placeholder="0" step="any" inputmode="decimal" oninput="testLogLiveUpdate()"/>';
+      h+='<span class="test-score-subj-slash">/</span>';
+      h+='<input id="testMax_'+k+'" class="test-score-input" type="number" placeholder="0" step="any" inputmode="decimal" oninput="testLogLiveUpdate()"/>';
+      h+='</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+
+    h+='<div id="testLivePreview" class="test-score-live-preview test-score-stagger-4">enter at least one subject</div>';
+
+    h+='<div class="test-score-btn-row test-score-stagger-5">';
+    h+='<button class="test-score-discard-btn" onclick="testLogCancel()">Discard</button>';
+    h+='<button class="test-score-save-btn" id="testSaveBtn" onclick="testLogSubmit()" disabled>Save Test</button>';
+    h+='</div>';
+
+    h+='</div>';
+    return h;
+  }
+
+  // ── Setup card: subjects → chapters (per subject) → question count.
+  // Renders only while testLogOpen is true (before the countdown starts).
+  function buildTestSetupHTML(){
+    if(!testLogOpen) return '';
+    const subjMeta=[
+      {k:'phys',label:'Physics',short:'PHY',col:'#908bb0',rgb:'144,139,176'},
+      {k:'chem',label:'Chemistry',short:'CHM',col:'#6b9e83',rgb:'107,158,131'},
+      {k:'math',label:'Maths',short:'MTH',col:'#c2a359',rgb:'194,163,89'}
+    ];
+
+    let h='<div class="test-setup-card" id="testSetupCard">';
+    const stepNum=testSetupStep==='subjects'?1:testSetupStep==='chapters'?2:3;
+    const stepLbl=testSetupStep==='subjects'?'Subjects':testSetupStep==='chapters'?'Chapters':'Questions';
+    h+='<div class="test-setup-head">';
+    h+='<span class="test-setup-steps-lbl">'+stepNum+' / 3 · '+stepLbl+'</span>';
+    h+='<button class="test-setup-close" onclick="testSetupCancel()">✕</button>';
+    h+='</div>';
+    h+='<div class="test-setup-progress"><div class="test-setup-progress-fill" style="width:'+(stepNum/3*100)+'%;"></div></div>';
+
+    if(testSetupStep==='subjects'){
+      h+='<div class="test-setup-title">Which subjects are you testing?</div>';
+      h+='<div class="test-setup-subtitle">pick 1–3 to build your setup</div>';
+      h+='<div class="test-setup-subj-grid">';
+      subjMeta.forEach(function(s){
+        const on=testSetupSubjects.indexOf(s.k)>=0;
+        h+='<button class="test-setup-subj-chip'+(on?' on':'')+'" data-k="'+s.k+'" style="--sc:'+s.col+';--scr:'+s.rgb+';" onclick="testSetupToggleSubject(\''+s.k+'\')">';
+        h+='<span class="test-setup-subj-chip-dot"></span>';
+        h+='<span class="test-setup-subj-chip-lbl">'+s.label+'</span>';
+        h+='</button>';
+      });
+      h+='</div>';
+      h+='<div class="test-setup-nav">';
+      h+='<span></span>';
+      h+='<button class="test-setup-continue-btn" id="testSetupNavBtn" onclick="testSetupGoChapters()" '+(testSetupSubjects.length?'':'disabled')+'>Continue</button>';
+      h+='</div>';
+
+    } else if(testSetupStep==='chapters'){
+      const subj=testSetupSubjects[testSetupChapSubjIdx];
+      const meta=subjMeta.find(function(s){return s.k===subj;});
+      const src=subj==='math'?MATH:subj==='chem'?CHEM:PHYS;
+      const selected=testSetupChapters[subj]||[];
+
+      h+='<div class="test-setup-subj-tabs">';
+      testSetupSubjects.forEach(function(s,i){
+        const m=subjMeta.find(function(x){return x.k===s;});
+        const done=(testSetupChapters[s]||[]).length>0;
+        const activeTab=i===testSetupChapSubjIdx;
+        h+='<span class="test-setup-subj-tab'+(activeTab?' active':'')+(done?' done':'')+'" style="--sc:'+m.col+';">'+m.short+'</span>';
+      });
+      h+='<span class="test-setup-chap-count" id="testSetupChapCount">'+selected.length+' selected</span>';
+      h+='</div>';
+
+      h+='<div class="test-setup-title">'+meta.label+'</div>';
+      h+='<div class="test-setup-subtitle">tap every chapter this test covers</div>';
+      h+='<div class="test-setup-chap-list">';
+      h+=src.map(function(c){
+        const on=selected.indexOf(c.n)>=0;
+        return '<div class="test-setup-chap-row'+(on?' on':'')+'" data-n="'+c.n+'" style="--sc:'+meta.col+';" onclick="testSetupToggleChapter(\''+subj+'\','+c.n+')">'
+          +'<span class="test-setup-chap-check">'+(on?'✓':'')+'</span>'
+          +'<span class="test-setup-chap-name">'+c.name+'</span>'
+          +'</div>';
+      }).join('');
+      h+='</div>';
+      h+='<div class="test-setup-nav">';
+      h+='<button class="test-setup-back-btn" onclick="testSetupChapBack()">Back</button>';
+      h+='<button class="test-setup-continue-btn" id="testSetupNavBtn" onclick="testSetupChapNext()" '+(selected.length?'':'disabled')+'>'+(testSetupChapSubjIdx<testSetupSubjects.length-1?'Next Subject':'Continue')+'</button>';
+      h+='</div>';
+
+    } else {
+      const totalChaps=testSetupSubjects.reduce(function(a,s){return a+(testSetupChapters[s]||[]).length;},0);
+      const nPre=parseInt(testSetupQuesInput,10);
+      const validPre=testSetupQuesInput!==''&&!isNaN(nPre)&&nPre>0;
+      let previewText='';
+      if(validPre){
+        const totalSecsPre=Math.round(nPre*SECS_PER_QUESTION);
+        const mPre=Math.floor(totalSecsPre/60), sPre=totalSecsPre%60;
+        previewText=mPre+'m'+(sPre>0?' '+sPre+'s':'')+' on the clock';
+      }
+      h+='<div class="test-setup-title">How many questions total?</div>';
+      h+='<div class="test-setup-ques-sub">'+testSetupSubjects.length+' subject'+(testSetupSubjects.length>1?'s':'')+' · '+totalChaps+' chapter'+(totalChaps>1?'s':'')+' selected</div>';
+      h+='<div class="test-setup-ques-wrap">';
+      h+='<input id="testQuesCountInp" class="test-setup-ques-input" type="number" min="1" max="500" placeholder="e.g. 75" inputmode="numeric" value="'+testSetupQuesInput+'" oninput="testSetupQuesInputChange(this.value)" onkeydown="if(event.key===\'Enter\'){testSetupStart();}"/>';
+      h+='<span class="test-setup-ques-unit">questions</span>';
+      h+='</div>';
+      h+='<div id="testQuesPreview" class="test-setup-ques-preview">'+previewText+'</div>';
+      h+='<div class="test-setup-nav">';
+      h+='<button class="test-setup-back-btn" onclick="testSetupQuesBack()">Back</button>';
+      h+='<button class="test-setup-start-btn" id="testSetupStartBtn" onclick="testSetupStart()" '+(validPre?'':'disabled')+'>Start Test</button>';
+      h+='</div>';
+    }
+
+    h+='</div>';
+    return h;
+  }
+
+// Re-renders ONLY the Log Test setup/score region (#testLogSlot) instead of
+// the entire focus tab. Used for step transitions in the setup wizard
+// (subjects→chapters→questions, back, cancel) so the clock, stats strip,
+// "finish by" countdown, and today's log are never touched — this is what
+// eliminates the full-page "reload" flash the old renderFocus()-everywhere
+// pattern caused on every setup interaction. Falls back to a full render if
+// the slot isn't mounted yet (e.g. very first open).
+function renderTestLogSlot(){
+  const slot=document.getElementById('testLogSlot');
+  if(!slot){ renderFocus(); return; }
+  slot.innerHTML=buildTestSetupHTML()+buildTestLogHTML();
+}
+
 function renderFocus(){
   const el=document.getElementById('focusContent');
   if(!el) return;
@@ -4916,56 +5414,119 @@ function renderFocus(){
   let clockFaceHTML, controlsHTML;
 
   if(inTestMode){
-    const teh=Math.floor(TL.elapsedSecs/3600), tem=Math.floor((TL.elapsedSecs%3600)/60), tes=TL.elapsedSecs%60;
-    const testTimeStr=(teh>0?String(teh).padStart(2,'0')+':':'')+String(tem).padStart(2,'0')+':'+String(tes).padStart(2,'0');
-    // Minimal filling orb — water darkened/reddened and given more visible
-    // life: bigger wave amplitude, the front layer now sways independently
-    // of the back layer (different timing = parallax rather than everything
-    // moving as one block), and the crest line shimmers instead of sitting
-    // static. Still plain fills/opacity throughout, no blur filters.
-    const D=R*2;
-    const secsIntoMinute=TL.elapsedSecs%60;
-    const waveW=D*2;
-    function mkWave(amp){
-      const q=waveW/4;
-      return `M0,0 C${(q*0.5).toFixed(1)},${-amp} ${(q*0.5).toFixed(1)},${-amp} ${q.toFixed(1)},0 `+
-        `C${(q*1.5).toFixed(1)},${amp} ${(q*1.5).toFixed(1)},${amp} ${(q*2).toFixed(1)},0 `+
-        `C${(q*2.5).toFixed(1)},${-amp} ${(q*2.5).toFixed(1)},${-amp} ${(q*3).toFixed(1)},0 `+
-        `C${(q*3.5).toFixed(1)},${amp} ${(q*3.5).toFixed(1)},${amp} ${(q*4).toFixed(1)},0 `+
-        `L${waveW.toFixed(1)},${(D*1.3).toFixed(1)} L0,${(D*1.3).toFixed(1)} Z`;
+    // ── Test hourglass — same curved bulbs, same area-conserved sand physics,
+    // same hg* element ids (only one hourglass is ever in DOM at once).
+    // Unified for all three states: actively running, paused, and score-entry.
+    // pausedClsT controls grain/stream/surface animation-play-state via CSS.
+    // runningClsT controls the :not(.running) CSS rules for glass opacity, etc.
+    const HGt={topRimY:14,neckY:90,bottomRimY:166,leftX:14,rightX:106,neckL:56,neckR:64};
+    function bulbPathT(inset){
+      const t=HGt.topRimY+inset, b=HGt.bottomRimY-inset, L=HGt.leftX+inset, R2=HGt.rightX-inset;
+      const nL=HGt.neckL+inset*0.5, nR=HGt.neckR-inset*0.5, midY=HGt.neckY;
+      const c1=t+(midY-t)*0.44, c2=t+(midY-t)*0.80;
+      const c3=midY+(b-midY)*0.20, c4=midY+(b-midY)*0.56;
+      const bulge=R2-14;
+      return `M${L},${t} L${R2},${t} C${R2},${c1.toFixed(1)} ${bulge.toFixed(1)},${c2.toFixed(1)} ${nR.toFixed(1)},${midY} C${bulge.toFixed(1)},${c3.toFixed(1)} ${R2},${c4.toFixed(1)} ${R2},${b} L${L},${b} C${L},${c4.toFixed(1)} ${(L+14).toFixed(1)},${c3.toFixed(1)} ${nL.toFixed(1)},${midY} C${(L+14).toFixed(1)},${c2.toFixed(1)} ${L},${c1.toFixed(1)} ${L},${t} Z`;
     }
-    const wx=(110-waveW/2).toFixed(1), wy=(110+R).toFixed(1);
+    function bulbClipT(which,inset){
+      const t=HGt.topRimY+inset, b=HGt.bottomRimY-inset, L=HGt.leftX+inset, R2=HGt.rightX-inset;
+      const nL=HGt.neckL+inset*0.5, nR=HGt.neckR-inset*0.5, midY=HGt.neckY;
+      const c1=t+(midY-t)*0.44, c2=t+(midY-t)*0.80;
+      const c3=midY+(b-midY)*0.20, c4=midY+(b-midY)*0.56;
+      const bulge=R2-14;
+      if(which==='top') return `M${L},${t} L${R2},${t} C${R2},${c1.toFixed(1)} ${bulge.toFixed(1)},${c2.toFixed(1)} ${nR.toFixed(1)},${midY-2} L${nL.toFixed(1)},${midY-2} C${(L+14).toFixed(1)},${c2.toFixed(1)} ${L},${c1.toFixed(1)} ${L},${t} Z`;
+      return `M${nL.toFixed(1)},${midY+2} L${nR.toFixed(1)},${midY+2} C${bulge.toFixed(1)},${c3.toFixed(1)} ${R2},${c4.toFixed(1)} ${R2},${b} L${L},${b} C${L},${c4.toFixed(1)} ${(L+14).toFixed(1)},${c3.toFixed(1)} ${nL.toFixed(1)},${midY+2} Z`;
+    }
+    const travelT=(HGt.neckY-HGt.topRimY)+4;
+    const coneTravelT=(HGt.bottomRimY-HGt.neckY)+14;
+    const progressT=TL.totalSeconds>0?TL.secondsLeft/TL.totalSeconds:0;
+    const fillXT=Math.max(0,Math.min(1,progressT));
+    const {uTop:uTopT,uBot:uBotT}=hgSandU(fillXT);
+    const topSandYT=(uTopT*travelT).toFixed(1);
+    const botSandYT=(uBotT*travelT).toFixed(1);
+    const botConeSandYT=(uBotT*coneTravelT).toFixed(1);
+    const topClipPathT=bulbClipT('top',4);
+    const botClipPathT=bulbClipT('bot',4);
+    const coneYT=HGt.neckY-4;
+    const teh=Math.floor(TL.secondsLeft/3600), tem=Math.floor((TL.secondsLeft%3600)/60), tes=TL.secondsLeft%60;
+    const testTimeStr=(teh>0?String(teh).padStart(2,'0')+':':'')+String(tem).padStart(2,'0')+':'+String(tes).padStart(2,'0');
+    const subjShort={math:'MTH',chem:'CHM',phys:'PHY'};
+    const subTitle=TL.subjects.map(s=>subjShort[s]).join(' + ')+' · '+TL.totalQuestions+'Q';
+    const accentT='#4a1520', accent2T='#c06878';
+    // Frozen = paused mid-test OR at score-entry step. Both show the same
+    // still hourglass; only the controls beneath differ.
+    const frozen = TL.paused || testLogScoreStep;
+    const pausedClsT = frozen ? ' paused' : '';
+    const runningClsT = frozen ? '' : ' running';
     clockFaceHTML=`
-  <div class="focus-clock-outer test-orb${TL.running?' orb-live':''}" id="focusClockOuter">
-    <svg class="test-orb-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <clipPath id="testOrbClip"><circle cx="110" cy="110" r="${(R-1.5).toFixed(1)}"/></clipPath>
-        <linearGradient id="testOrbWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stop-color="#c85a4a" stop-opacity="0.75"/>
-          <stop offset="100%" stop-color="#7a2424" stop-opacity="0.72"/>
-        </linearGradient>
-      </defs>
-      <circle cx="110" cy="110" r="${R}" fill="none" stroke="rgba(196,100,100,0.4)" stroke-width="1.8" class="test-orb-rim${TL.running?'':' paused'}"/>
-      <g clip-path="url(#testOrbClip)">
-        <g class="test-orb-fill${TL.running?'':' paused'}" style="animation-delay:-${secsIntoMinute}s;">
-          <g class="test-orb-wave-back${TL.running?'':' paused'}">
-            <path d="${mkWave(4.4)}" fill="rgba(140,35,35,0.28)" transform="translate(${wx},${wy})"/>
-          </g>
-          <g class="test-orb-wave-front${TL.running?'':' paused'}">
-            <path d="${mkWave(2.8)}" fill="url(#testOrbWaveGrad)" transform="translate(${wx},${wy})"/>
-            <path d="${mkWave(2.8)}" fill="none" stroke="rgba(230,150,135,0.5)" stroke-width="1.1" class="test-orb-crest${TL.running?'':' paused'}" transform="translate(${wx},${wy})"/>
-          </g>
+  <div class="focus-clock-outer focus-field${runningClsT} test-mode-field" id="focusClockOuter" style="--accent:${accentT};--accent2:${accent2T};--accent-border:${accentT}2e;">
+    <div class="ff-core">
+      <div class="focus-mode-lbl" style="color:var(--t3);letter-spacing:.14em;font-size:9px;text-transform:uppercase;">Test</div>
+      <div class="hg-halo${pausedClsT}"></div>
+      <svg class="hg-figure${pausedClsT}" width="112" height="168" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="hgGlassGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+            <stop offset="50%" stop-color="#ffffff" stop-opacity="0.22"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.12"/>
+          </linearGradient>
+          <linearGradient id="hgSheenGrad" x1="10%" y1="0%" x2="55%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.10"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </linearGradient>
+          <radialGradient id="hgSweepGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="hgTopClip"><path d="${topClipPathT}"/></clipPath>
+          <clipPath id="hgBotClip"><path d="${botClipPathT}"/></clipPath>
+        </defs>
+        <g clip-path="url(#hgTopClip)">
+          <rect class="hg-sand-glow" id="hgTopGlow" x="${HGt.leftX}" y="${HGt.topRimY-6}" width="${HGt.rightX-HGt.leftX}" height="${HGt.neckY-HGt.topRimY+10}" style="transform:translateY(${topSandYT}px);"/>
+          <rect class="hg-sand-fill" id="hgTopFill" x="${HGt.leftX}" y="${HGt.topRimY-6}" width="${HGt.rightX-HGt.leftX}" height="${HGt.neckY-HGt.topRimY+10}" opacity="0.9" style="transform:translateY(${topSandYT}px);"/>
+          <rect class="hg-surface${pausedClsT}" id="hgTopSurface" x="${HGt.leftX}" y="${HGt.topRimY-6.5}" width="${HGt.rightX-HGt.leftX}" height="1.6" style="transform:translateY(${topSandYT}px);"/>
+          <ellipse class="hg-sweep" cx="${HGt.leftX+18}" cy="${HGt.topRimY+22}" rx="16" ry="26"/>
         </g>
-      </g>
-    </svg>
-    <div class="focus-clock-face">
-      <div class="focus-time-big test-orb-time${TL.running?'':' paused'}" id="focusTimeBig">${testTimeStr}</div>
-      <div class="focus-mode-lbl test-orb-lbl${TL.running?'':' paused'}">${TL.running?'Test':'Stopped'}</div>
+        <g clip-path="url(#hgBotClip)">
+          <rect class="hg-sand-glow" id="hgBotGlow" x="${HGt.leftX}" y="${HGt.neckY-6}" width="${HGt.rightX-HGt.leftX}" height="${HGt.bottomRimY-HGt.neckY+10}" style="transform:translateY(${botSandYT}px);"/>
+          <rect class="hg-sand-fill" id="hgBotFill" x="${HGt.leftX}" y="${HGt.neckY-6}" width="${HGt.rightX-HGt.leftX}" height="${HGt.bottomRimY-HGt.neckY+10}" opacity="0.9" style="transform:translateY(${botSandYT}px);"/>
+          <g id="hgBotConeWrap" style="transform:translateY(${botConeSandYT}px);">
+            <polygon class="hg-sand-fill hg-cone-inner${pausedClsT}" points="50,${coneYT} 70,${coneYT} 60,${coneYT-9}" opacity="0.9"/>
+          </g>
+          <rect class="hg-surface${pausedClsT}" id="hgBotSurface" x="${HGt.leftX}" y="${HGt.neckY-6.5}" width="${HGt.rightX-HGt.leftX}" height="1.6" style="transform:translateY(${botSandYT}px);"/>
+          <ellipse class="hg-sweep" cx="${HGt.rightX-18}" cy="${HGt.bottomRimY-24}" rx="16" ry="26" style="animation-delay:-4s;"/>
+        </g>
+        <path class="hg-glass" d="${bulbPathT(0)}"/>
+        <path class="hg-sheen" d="${bulbClipT('top',6)}"/>
+        <path class="hg-sheen" d="${bulbClipT('bot',6)}"/>
+        <line class="hg-stream${pausedClsT}" x1="60" y1="${HGt.neckY-6}" x2="60" y2="${HGt.neckY+8}" stroke-dasharray="2 2"/>
+        <ellipse class="hg-neck-glow${pausedClsT}" cx="60" cy="${HGt.neckY}" rx="5" ry="3"/>
+        <circle class="hg-grain${pausedClsT}" cx="60" cy="${HGt.neckY-3}" r="1.3" style="animation-delay:0s;"/>
+        <circle class="hg-grain${pausedClsT}" cx="59" cy="${HGt.neckY-3}" r="1" style="animation-delay:.3s;"/>
+        <circle class="hg-grain${pausedClsT}" cx="61" cy="${HGt.neckY-3}" r="1" style="animation-delay:.6s;"/>
+        <circle class="hg-grain${pausedClsT}" cx="60" cy="${HGt.neckY-3}" r="0.8" style="animation-delay:.9s;"/>
+        <line class="hg-glass" x1="${HGt.leftX-4}" y1="${HGt.topRimY}" x2="${HGt.rightX+4}" y2="${HGt.topRimY}"/>
+        <line class="hg-glass" x1="${HGt.leftX-4}" y1="${HGt.bottomRimY}" x2="${HGt.rightX+4}" y2="${HGt.bottomRimY}"/>
+      </svg>
+      <div class="focus-time-big" id="focusTimeBig">${testTimeStr}</div>
+      <div class="focus-session-lbl">${subTitle}</div>
     </div>
   </div>`;
-    controlsHTML=TL.running
-      ? `<div class="focus-controls test-stop-in"><button class="test-stop-pill" onclick="testLogStop()">Stop Test</button></div>`
-      : '';
+    // Controls: universal ⟫ ▶/⏸ ↺ while the timer is alive (running or paused).
+    // ⟫ = end test → score entry. ▶/⏸ = pause/resume. ↺ = discard/cancel.
+    // No controls at score-entry step — score card is the main UI then.
+    if(testLogScoreStep){
+      controlsHTML='';
+    } else {
+      const activelyRunning=!TL.paused;
+      controlsHTML=`<div class="focus-controls">
+    <button class="focus-btn-sm" onclick="testLogSkip()" title="End test">⟫</button>
+    <button class="focus-btn-main${activelyRunning?' running':''}" onclick="testLogToggle()" id="focusMainBtn">
+      ${activelyRunning?'⏸':'▶'}
+    </button>
+    <button class="focus-btn-sm" onclick="testLogCancel()" title="Discard test">↺</button>
+  </div>`;
+    }
   } else {
     // ============================================================
     // FOCUS TIMER — "Hourglass" rebuild (curved glass pass).
@@ -5162,9 +5723,9 @@ function renderFocus(){
     h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:'+(focusManualLogOpen?'12px':'6px')+';transition:margin .2s;">';
     h+='<span style="font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;font-family:\'JetBrains Mono\',monospace;">Today\'s Focus Log</span>';
     h+='<div style="display:flex;align-items:center;gap:6px;">';
-    h+='<button onclick="testLogBegin()" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:5px 10px;cursor:pointer;transition:all .2s;">';
-    h+='<svg viewBox="0 0 12 12" width="9" height="9" fill="none"><circle cx="6" cy="6" r="4" stroke="rgba(196,100,100,0.7)" stroke-width="1.6"/></svg>';
-    h+='<span style="font-size:9px;color:var(--t3);font-family:\'JetBrains Mono\',monospace;letter-spacing:.02em;">log test</span></button>';
+    h+='<button onclick="testLogBegin()" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.03);border:1px solid var(--b1);border-radius:6px;padding:5px 10px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor=\'rgba(255,255,255,0.14)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.06)\'">';
+    h+='<svg viewBox="0 0 10 10" width="8" height="8" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.2" stroke="rgba(196,100,100,0.75)" stroke-width="1.4"/></svg>';
+    h+='<span style="font-size:9px;color:var(--t3);font-family:\'JetBrains Mono\',monospace;letter-spacing:.04em;text-transform:uppercase;">log test</span></button>';
     h+='<button onclick="focusToggleManualLog()" style="display:flex;align-items:center;gap:5px;background:'+(focusManualLogOpen?'rgba(107,158,131,0.12)':'rgba(255,255,255,0.04)')+';border:1px solid '+(focusManualLogOpen?'rgba(107,158,131,0.28)':'rgba(255,255,255,0.08)')+';border-radius:6px;padding:5px 10px;cursor:pointer;transition:all .2s;">';
     h+='<svg viewBox="0 0 12 12" width="9" height="9" fill="none"><path d="M6 1v10M1 6h10" stroke="'+(focusManualLogOpen?'#6b9e83':'rgba(255,255,255,0.4)')+'" stroke-width="1.8" stroke-linecap="round"/></svg>';
     h+='<span style="font-size:9px;color:'+(focusManualLogOpen?'var(--c)':'var(--t3)')+';font-family:\'JetBrains Mono\',monospace;letter-spacing:.02em;">log session</span></button>';
@@ -5226,75 +5787,8 @@ function renderFocus(){
     }
     return h;
   }
-  // Log Test card — string concatenation throughout (nested backtick template
-  // literals inside a template literal caused a real parse error earlier in
-  // this file's history — this pattern avoids that entirely).
-  function buildTestLogHTML(){
-    const T=testLogTimer;
 
-    // Idle — the entry point now lives next to "log session" in the log header.
-    // Nothing to render here at all when not testing.
-    if(!T.running && !testLogScoreStep) return '';
-
-    if(T.running){
-      // Running — the live timer lives in the main clock above; nothing else
-      // needed here. The Stop button is in the main controls row.
-      return '';
-    }
-
-    // ── Score entry — redesigned as a clean card-grid, appears where the
-    // Log Test / log session buttons normally sit.
-    const eh=Math.floor(T.elapsedSecs/3600), em=Math.floor((T.elapsedSecs%3600)/60), es=T.elapsedSecs%60;
-    const elapsedStr=(eh>0?String(eh).padStart(2,'0')+':':'')+String(em).padStart(2,'0')+':'+String(es).padStart(2,'0');
-
-    let h='<div class="test-score-card">';
-
-    // Header: elapsed chip + type segmented toggle
-    h+='<div class="test-score-head test-score-stagger-1">';
-    h+='<span class="test-score-elapsed-chip">'+elapsedStr+' studied</span>';
-    h+='<div class="test-log-type-seg">';
-    h+='<button class="test-log-type-opt'+(testLogType==='mains'?' active':'')+'" onclick="testLogSetType(\'mains\')">Mains</button>';
-    h+='<button class="test-log-type-opt'+(testLogType==='adv'?' active':'')+'" onclick="testLogSetType(\'adv\')">Advanced</button>';
-    h+='</div>';
-    h+='</div>';
-
-    h+='<input id="testNameInp" class="test-score-name-input test-score-stagger-2" type="text" placeholder="Test name — optional" autocomplete="off"/>';
-
-    // Subject grid — three compact cards, subject identified by a small dot
-    // + muted label only (same restrained language as the active-log tag
-    // elsewhere on this page), no heavy colour wash
-    const subjMeta=[
-      {k:'phys',label:'Physics',short:'PHY',col:'#908bb0',rgb:'144,139,176'},
-      {k:'chem',label:'Chemistry',short:'CHM',col:'#6b9e83',rgb:'107,158,131'},
-      {k:'math',label:'Maths',short:'MTH',col:'#c2a359',rgb:'194,163,89'}
-    ];
-    h+='<div class="test-score-grid test-score-stagger-3">';
-    subjMeta.forEach(function(s,si){
-      h+='<div class="test-score-subj-card" id="testRow_'+s.k+'" style="animation:fadeUp .35s var(--ease) '+(0.13+si*0.04)+'s both;border-bottom:2px solid '+s.col+'40;">';
-      h+='<div class="test-score-subj-top">';
-      h+='<div class="test-score-subj-dot" style="background:'+s.col+';box-shadow:0 0 4px rgba('+s.rgb+',0.7);"></div>';
-      h+='<span class="test-score-subj-short">'+s.short+'</span>';
-      h+='</div>';
-      h+='<div class="test-score-subj-inputs">';
-      h+='<input id="testScore_'+s.k+'" class="test-score-input" type="number" placeholder="0" step="any" inputmode="decimal" oninput="testLogLiveUpdate()"/>';
-      h+='<span class="test-score-subj-slash">/</span>';
-      h+='<input id="testMax_'+s.k+'" class="test-score-input" type="number" placeholder="0" step="any" inputmode="decimal" oninput="testLogLiveUpdate()"/>';
-      h+='</div>';
-      h+='</div>';
-    });
-    h+='</div>';
-
-    h+='<div id="testLivePreview" class="test-score-live-preview test-score-stagger-4">enter at least one subject</div>';
-
-    h+='<div class="test-score-btn-row test-score-stagger-5">';
-    h+='<button class="test-score-discard-btn" onclick="testLogCancel()">Discard</button>';
-    h+='<button class="test-score-save-btn" id="testSaveBtn" onclick="testLogSubmit()" disabled>Save Test</button>';
-    h+='</div>';
-
-    h+='</div>';
-    return h;
-  }
-  const testLogHTML=buildTestLogHTML();
+  const testLogHTML=buildTestSetupHTML()+buildTestLogHTML();
 
   const manualLogHTML=buildManualLogHTML();
 
@@ -5416,7 +5910,7 @@ function renderFocus(){
 
   <!-- Log Test — sits in the same "current primary action" zone as chapter
        selection below, since when a score is pending that IS the current task -->
-  ${testLogHTML}
+  <div id="testLogSlot">${testLogHTML}</div>
 
   <!-- Log Section -->
   <div class="focus-log-section">
@@ -5544,7 +6038,7 @@ function commitFocusSegment(){
 
 function focusToggle(){
   const T=focusTimer;
-  if(!T.running && (testLogTimer.running || testLogScoreStep)){
+  if(!T.running && (testLogTimer.running || testLogScoreStep || testLogOpen)){
     toast('Finish logging your test first');
     return;
   }
@@ -5607,12 +6101,13 @@ function updateFocusClockFast(){
   // Fast DOM update without full re-render
   const T=focusTimer;
 
-  // CRITICAL: while a test is being logged, #focusTimeBig and the meter
-  // belong to the test-mode stopwatch (testLogTick owns them independently via
-  // its own 500ms interval). This function must never touch them in that state
-  // — the 30s background done-by-tick was previously calling this unconditionally
-  // and stomping the live stopwatch with stale/paused Pomodoro countdown data
-  // every 30 seconds, causing a visible flicker/jump. Guard fixes it completely.
+  // CRITICAL: while a test is being logged, #focusTimeBig and the hourglass
+  // belong to the test countdown (updateTestClockFast owns them independently
+  // via its own 500ms interval). This function must never touch them in that
+  // state — the 30s background done-by-tick was previously calling this
+  // unconditionally and stomping the live test clock with stale/paused
+  // Pomodoro countdown data every 30 seconds, causing a visible flicker/jump.
+  // Guard fixes it completely.
   if(testLogTimer.running || testLogScoreStep) return;
 
   const mins=Math.floor(T.secondsLeft/60);
