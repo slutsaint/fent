@@ -5366,7 +5366,7 @@ function renderFocus(){
   // Arc SVG
   const R=97,CX=110,CY=110,SW=3;
   const CIRC=(2*Math.PI*R).toFixed(2);
-  const progress=T.secondsLeft/T.totalSeconds;
+  const progress=T.totalSeconds>0?T.secondsLeft/T.totalSeconds:0;
   const dashOffset=(progress*2*Math.PI*R).toFixed(2);
   const arcStroke={session:'#6b9e83',short:'#908bb0',long:'#c2a359'}[T.mode];
 
@@ -6124,7 +6124,7 @@ function updateFocusClockFast(){
   // constants as the render function, so travel distance always matches
   // the glass exactly regardless of which path last drew it.
   const S=focusSettings;
-  const progress=T.secondsLeft/T.totalSeconds;
+  const progress=T.totalSeconds>0?T.secondsLeft/T.totalSeconds:0;
   const fillX=Math.max(0,Math.min(1,progress));
   const HG={topRimY:14,neckY:90,bottomRimY:166};
   const travel=(HG.neckY-HG.topRimY)+4;
@@ -6725,8 +6725,8 @@ function renderOverviewSummary(){
             <div id="calfs_shortBreakMins" style="font-family:\'JetBrains Mono\',monospace;font-size:28px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;margin-bottom:4px;">15</div>
             <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;margin-bottom:14px;">min</div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('shortBreakMins',-5,5,30)">−</button>
-              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('shortBreakMins',5,5,30)">+</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('shortBreakMins',-5,0,30)">−</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('shortBreakMins',5,0,30)">+</button>
             </div>
           </div>
           <div class="cal-slider-card">
@@ -6734,8 +6734,8 @@ function renderOverviewSummary(){
             <div id="calfs_longBreakMins" style="font-family:\'JetBrains Mono\',monospace;font-size:28px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;margin-bottom:4px;">60</div>
             <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;margin-bottom:14px;">min</div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('longBreakMins',-10,10,120)">−</button>
-              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('longBreakMins',10,10,120)">+</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('longBreakMins',-10,0,120)">−</button>
+              <button class="focus-wheel-btn" style="width:28px;height:28px;" onclick="calFocusAdj('longBreakMins',10,0,120)">+</button>
             </div>
           </div>
           <div class="cal-slider-card">
