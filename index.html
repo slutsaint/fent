@@ -1643,6 +1643,86 @@ function getParsedFocusLogByDate(dateStr){
 }
 // ── End focus log parse cache ────────────────────────────────────────────────
 
+// ── Wasted sessions — computed across ALL history, single source of truth ──
+// Shared by the Hero Card's "wasted" stat and the Analytics "sess wasted"
+// stat (buildSessLineChart) so both show the exact same number instead of
+// two different metrics with the same label. For every workday (non-Sunday)
+// from the user's first-ever logged effort up to today:
+//   dayTarget  = the target that was set THAT day (fent_daytarget_*), falling
+//                back to the CURRENT target for days before the snapshot was
+//                added, and always using the live target for today itself.
+//   wasted    += max(0, dayTarget - done)   [missed portion]
+//   overTarget+= max(0, done - dayTarget)   [bonus above target]
+// Over-target weekday sessions and Sunday sessions both reduce wasted (you
+// earned extra that day / did bonus rest-day work).
+// Final: wastedSessions = max(0, totalWasted - overTarget - sundaySessions)
+function computeWastedSessionsAllTime(target, today){
+  let firstEffortDate = null;
+  try {
+    const candidates = [];
+    Object.keys(ST).forEach(k => {
+      if(k.startsWith('ts_') && typeof ST[k] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ST[k])) {
+        candidates.push(new Date(ST[k]+'T00:00:00'));
+      }
+    });
+    getKeysWithPrefix('fent_sessions_').forEach(k=>{
+      const n=parseFloat(localStorage.getItem(k)||'0');
+      if(n>0){const d=new Date(k.replace('fent_sessions_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
+    });
+    getKeysWithPrefix('fent_focuslog_').forEach(k=>{
+      try{const arr=getParsedFocusLogByFullKey(k);if(arr.length>0){const d=new Date(k.replace('fent_focuslog_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}}catch{}
+    });
+    getKeysWithPrefix('fent_ques_').forEach(k=>{
+      const n=parseInt(localStorage.getItem(k)||'0');
+      if(n>0){const d=new Date(k.replace('fent_ques_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
+    });
+    if(candidates.length>0){
+      firstEffortDate=new Date(Math.min(...candidates.map(d=>d.getTime())));
+      firstEffortDate.setHours(0,0,0,0);
+    }
+  }catch(e){}
+
+  let wastedSessions = 0;
+  if(firstEffortDate){
+    const yesterday = new Date(today); yesterday.setDate(today.getDate()-1); yesterday.setHours(0,0,0,0);
+    const cursor = new Date(firstEffortDate);
+    let overTargetSessions = 0;
+    let sundaySessions = 0;
+
+    // Past days (up to yesterday) — use per-day target snapshots
+    while(cursor <= yesterday){
+      const k = localDateKey(cursor);
+      const isSun = cursor.getDay() === 0;
+      const done = parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
+      if(isSun){
+        sundaySessions += done;
+      } else {
+        const dayTarget = parseFloat(localStorage.getItem('fent_daytarget_'+k)||String(target));
+        wastedSessions  += Math.max(0, dayTarget - done);
+        overTargetSessions += Math.max(0, done - dayTarget);
+      }
+      cursor.setDate(cursor.getDate()+1);
+    }
+
+    // TODAY — always use current target (day-level: latest change wins)
+    if(today >= firstEffortDate){
+      const todayK = localDateKey(today);
+      const isTodaySun = today.getDay() === 0;
+      const todayDone = parseFloat(localStorage.getItem('fent_sessions_'+todayK)||'0');
+      if(isTodaySun){
+        sundaySessions += todayDone;
+      } else {
+        wastedSessions  += Math.max(0, target - todayDone);
+        overTargetSessions += Math.max(0, todayDone - target);
+      }
+    }
+
+    wastedSessions = Math.max(0, wastedSessions - overTargetSessions - sundaySessions);
+  }
+  return {wastedSessions, firstEffortDate};
+}
+// ── End wasted sessions ──────────────────────────────────────────────────────
+
 function gs(s,n){const k=s+'_'+n;if(!ST[k])ST[k]={theory:false,module:false,pyq:false,revision:false};return ST[k]}
 function isDone(s,n){const t=gs(s,n);return t.theory&&t.module&&t.pyq&&t.revision}
 function tc(s,n){const t=gs(s,n);return[t.theory,t.module,t.pyq,t.revision].filter(Boolean).length}
@@ -2136,8 +2216,13 @@ function renderAnalytics(){
   const heroFocusDisplay=heroFmtTime(heroFocusSecs);
   const heroBestMains=mainsDone.length>0?Math.max(...mainsDone.map(t=>t.normalizedTotal)):null;
   const chapsTouched=allChapsList2.filter(({s,ch})=>tc(s,ch.n)>0).length;
-  let wastedSess=0;
-  try{getKeysWithPrefix('fent_focuslog_').forEach(k=>{let a=[];try{a=JSON.parse(localStorage.getItem(k)||'[]');}catch{}a.forEach(e=>{if(e.durationSecs&&e.durationSecs<900)wastedSess++;});});}catch{}
+  // "wasted" = same all-time "sess wasted" figure shown in Analytics
+  // (computeWastedSessionsAllTime), NOT a count of sub-15-min focus-log
+  // entries — those are two different things that used to share this label
+  // by mistake.
+  const heroTarget = (typeof focusSettings!=='undefined' && focusSettings.dailyTarget) || 4;
+  const wastedSess = computeWastedSessionsAllTime(heroTarget, today).wastedSessions;
+  const fmtWastedSess=v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
   const avgQuesPerSess=heroSessions>0?Math.round(heroQues/heroSessions):0;
   const jeeDaysLeftHero=Math.max(0,Math.round((JEE_DATE-today)/864e5));
   const avgQuesPerDay=heroStudyDays>0?Math.round(heroQues/heroStudyDays):0;
@@ -2151,10 +2236,10 @@ function renderAnalytics(){
 </style>
 <div class="ana-section" style="padding:24px 26px 22px;animation-delay:.02s;overflow:hidden;position:relative;">
 
-  <!-- teal left-corner ambient bleed — JEE colour -->
-  <div style="position:absolute;top:-50px;left:-30px;width:220px;height:180px;border-radius:50%;background:radial-gradient(ellipse,rgba(46,196,188,.06) 0%,transparent 68%);pointer-events:none;"></div>
-  <!-- top hairline fades from teal -->
-  <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,rgba(46,196,188,.4) 0%,rgba(46,196,188,.1) 40%,transparent 75%);"></div>
+  <!-- plum left-corner ambient bleed — JEE colour -->
+  <div style="position:absolute;top:-50px;left:-30px;width:220px;height:180px;border-radius:50%;background:radial-gradient(ellipse,rgba(119,217,211,.06) 0%,transparent 68%);pointer-events:none;"></div>
+  <!-- top hairline fades from plum -->
+  <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,rgba(119,217,211,.4) 0%,rgba(119,217,211,.1) 40%,transparent 75%);"></div>
 
   <!-- ── STATUS ── -->
   <div style="display:flex;align-items:center;gap:7px;margin-bottom:24px;animation:fadeUp .3s var(--ease) .02s both;">
@@ -2162,19 +2247,20 @@ function renderAnalytics(){
     <span style="font-size:10.5px;color:${trackColor};letter-spacing:-.01em;">${trackStatus}</span>
     <span style="color:rgba(255,255,255,.16);padding:0 2px;">·</span>
     <span style="font-size:9px;color:rgba(255,255,255,.52);">${trackDesc}</span>
-    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(46,196,188,.78);">${jeeDaysLeftHero}<span style="font-size:8px;color:rgba(255,255,255,.35);letter-spacing:.04em;"> d → jee</span></span>
+    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(119,217,211,.78);">${jeeDaysLeftHero}<span style="font-size:8px;color:rgba(255,255,255,.35);letter-spacing:.04em;"> d → jee</span></span>
   </div>
 
   <!-- ── COUNTDOWN: asymmetric JEE 55% | Syllabus | Overall ── -->
   <div style="display:flex;align-items:flex-start;gap:0;margin-bottom:22px;">
 
-    <!-- JEE — teal, dominant at 52px -->
+    <!-- JEE — lightened teal (#77d9d3), a brighter step up from the original
+         #2ec4bc — user's requested "clearly lighter, not pastel" pick. -->
     <div style="flex:0 0 55%;padding-right:26px;border-right:1px solid var(--b1);animation:heroNumIn .65s cubic-bezier(.16,1,.3,1) .04s both;">
       <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:11px;">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:200;letter-spacing:-.07em;line-height:1;color:#2ec4bc;">${jeeDaysLeftHero}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:200;color:rgba(46,196,188,.42);">d</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:200;letter-spacing:-.07em;line-height:1;color:#77d9d3;">${jeeDaysLeftHero}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:200;color:rgba(119,217,211,.42);">d</span>
       </div>
-      <div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgba(46,196,188,.6);margin-bottom:5px;">to jee 2027</div>
+      <div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgba(119,217,211,.6);margin-bottom:5px;">to jee 2027</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.58);">21 january 2027</div>
     </div>
 
@@ -2230,7 +2316,7 @@ function renderAnalytics(){
     const VIOLET='rgba(144,139,176,.95)';
     const LL_VIOLET='rgba(144,139,176,.55)';
     const W     ='var(--t1)';
-    const SL    ='rgba(255,255,255,.46)';
+    const SL    ='rgba(255,255,255,.62)';
     const LL_G  ='rgba(107,158,131,.55)';
     const LL_R  ='rgba(196,100,100,.5)';
     const LL_GOLD='rgba(194,163,89,.5)';
@@ -2238,35 +2324,40 @@ function renderAnalytics(){
     const LL_W  ='rgba(255,255,255,.4)';
     const dash=`<span style="color:rgba(255,255,255,.3);">—</span>`;
     const mA=mainsStats.totalMarks!=null
-      ?`${Math.round(mainsStats.totalMarks)}<span style="font-size:7.5px;color:rgba(255,255,255,.36);font-weight:300;">/${mainsStats.targetTotal||300}</span>`
+      ?`${Math.round(mainsStats.totalMarks)}<span style="font-size:9px;color:rgba(255,255,255,.4);font-weight:300;">/${mainsStats.targetTotal||300}</span>`
       :dash;
-    // Wasted sessions — same green/gold/red severity ladder as the other
-    // "wasted" stat elsewhere in Analytics (see wastedCol), not a flat orange.
-    const wastedVc=wastedSess===0?GREEN:wastedSess<=5?GOLD:RED;
-    const wastedLc=wastedSess===0?LL_G:wastedSess<=5?LL_GOLD:LL_R;
+    // Wasted sessions — same green/gold/red severity ladder as the
+    // Analytics "sess wasted" stat (see wastedCol there): 0 = green,
+    // up to 2× target = gold, beyond that = red. Same metric, same scale,
+    // now that this is the real all-time deficit figure, not a small count.
+    const wastedVc=wastedSess===0?GREEN:wastedSess<=heroTarget*2?GOLD:RED;
+    const wastedLc=wastedSess===0?LL_G:wastedSess<=heroTarget*2?LL_GOLD:LL_R;
     const rows=[
       [
         {v:heroFocusDisplay,          sub:avgFocusPerDay!=='—'?avgFocusPerDay+' / d':'', l:'focus time', vc:GREEN,  lc:LL_G},
         {v:heroQues.toLocaleString(), sub:avgQuesPerDay>0?avgQuesPerDay+' / d':'',        l:'questions',  vc:VIOLET, lc:LL_VIOLET},
         {v:String(heroSessions),      sub:avgQuesPerSess>0?avgQuesPerSess+' q / s':'',    l:'sessions',   vc:GREEN,  lc:LL_G},
-        {v:String(wastedSess),        sub:'under 15 min',                                 l:'wasted',     vc:wastedVc, lc:wastedLc},
+        {v:fmtWastedSess(wastedSess), sub:'',                                             l:'wasted',     vc:wastedVc, lc:wastedLc},
       ],
       [
         {v:`${chapsTouched}/${totalChaps}`,sub:`${totalDone} fully done`,                l:'ch. touched',vc:W,      lc:LL_W},
         {v:String(heroTests),         sub:'',                                             l:'tests',      vc:W,      lc:LL_W},
         {v:mA,sub:heroBestMains!=null?Math.round(heroBestMains)+' best':'',              l:'mains avg',  vc:RED,    lc:LL_R},
-        {v:`${mainsReadyPct}<span style="font-size:9px;opacity:.6;">%</span>`,sub:`${mainsReadyDone}/${mainsReadyMax} tasks`, l:'mains ready',vc:MAINS_READY_BLUE, lc:LL_MRB},
+        {v:`${mainsReadyPct}<span style="font-size:10.5px;opacity:.65;">%</span>`,sub:`${mainsReadyDone}/${mainsReadyMax} tasks`, l:'mains ready',vc:MAINS_READY_BLUE, lc:LL_MRB},
       ],
     ];
-    return `<div style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--b1);">
+    // Cleaner premium layout: bigger, more legible value + sub-label type,
+    // generous breathing room, and no per-cell vertical hairlines cluttering
+    // the grid — just the one horizontal divider that separates the two rows.
+    // Same 8 stats, same values, purely a typography/spacing pass.
+    return `<div style="display:grid;grid-template-columns:repeat(4,1fr);row-gap:18px;border-top:1px solid var(--b1);">
       ${rows.map((row,ri)=>row.map(({v,sub,l,vc,lc},ci)=>{
-        const rb=ci<3?'border-right:1px solid var(--b1);':'';
-        const tb=ri===1?'border-top:1px solid var(--b1);padding-top:14px;':'padding-bottom:14px;';
+        const tb=ri===1?'border-top:1px solid var(--b1);padding-top:18px;':'padding-top:16px;';
         const d=(ci*0.028+ri*0.09+0.23).toFixed(3);
-        return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;${rb}${tb}animation:fadeUp .26s var(--ease) ${d}s both;">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:300;letter-spacing:-.02em;line-height:1;color:${vc};">${v}</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:7.5px;color:${SL};min-height:10px;line-height:1.3;">${sub}</div>
-          <div style="font-size:7px;text-transform:uppercase;letter-spacing:.15em;color:${lc};">${l}</div>
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 6px;${tb}animation:fadeUp .26s var(--ease) ${d}s both;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:300;letter-spacing:-.02em;line-height:1;color:${vc};">${v}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:400;color:${SL};min-height:11px;line-height:1.3;">${sub}</div>
+          <div style="font-size:7.5px;text-transform:uppercase;letter-spacing:.14em;color:${lc};">${l}</div>
         </div>`;
       }).join('')).join('')}
     </div>`;
@@ -2982,17 +3073,17 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
   const oldestOverdue=backlog.length>0?Math.max(...backlog.map(({ch})=>Math.max(0,Math.round((today.getTime()-parseDate(ch.e).getTime())/864e5)))):0;
 
   /* Days Left / Days till JEE get their own signature colors. JEE_COLOR is
-     the SAME teal used for the JEE countdown in the Hero Card (#2ec4bc) —
-     since both numbers represent the exact same "days until JEE" figure.
-     DAYS_LEFT_COLOR is likewise now the SAME sky blue used for the "syllabus"
+     the SAME lightened teal used for the JEE countdown in the Hero Card
+     (#77d9d3) — since both numbers represent the exact same "days until
+     JEE" figure. A brighter, clearly-lighter step up from the original
+     #2ec4bc, not pastel.
+     DAYS_LEFT_COLOR is likewise the SAME sky blue used for the "syllabus"
      stat in the Hero Card (#6ab8e8) — both are the exact same `daysLeft`
-     value shown twice, so they now share one identity color instead of the
-     card inventing its own (previously a dusty rose-magenta, #b8698f, which
-     read as an unrelated pink next to the Hero Card's blue for the same
-     number). Urgency for "till JEE" is still conveyed by glow INTENSITY
-     (brighter as the date nears), not by swapping hue. */
+     value shown twice, so they share one identity color instead of the
+     card inventing its own. Urgency for "till JEE" is still conveyed by
+     glow INTENSITY (brighter as the date nears), not by swapping hue. */
   const DAYS_LEFT_COLOR='#6ab8e8';
-  const JEE_COLOR='#2ec4bc';
+  const JEE_COLOR='#77d9d3';
   const jeeGlowAlpha=daysToJEE<=30?'b3':daysToJEE<=90?'80':'45';
   const jeeGlowColor=`${JEE_COLOR}${jeeGlowAlpha}`;
   const daysLeftGlowColor=`${DAYS_LEFT_COLOR}66`;
@@ -3104,82 +3195,14 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   const pastWork=workDays.filter(d=>d.d<=today);
   const metDays=pastWork.filter(d=>d.sess>=d.dayTarget).length;
 
-  // Find the very first day the user logged ANY effort
-  let firstEffortDate = null;
-  try {
-    const candidates = [];
-    Object.keys(ST).forEach(k => {
-      if(k.startsWith('ts_') && typeof ST[k] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ST[k])) {
-        candidates.push(new Date(ST[k]+'T00:00:00'));
-      }
-    });
-    getKeysWithPrefix('fent_sessions_').forEach(k=>{
-      const n=parseFloat(localStorage.getItem(k)||'0');
-      if(n>0){const d=new Date(k.replace('fent_sessions_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
-    });
-    getKeysWithPrefix('fent_focuslog_').forEach(k=>{
-      try{const arr=getParsedFocusLogByFullKey(k);if(arr.length>0){const d=new Date(k.replace('fent_focuslog_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}}catch{}
-    });
-    getKeysWithPrefix('fent_ques_').forEach(k=>{
-      const n=parseInt(localStorage.getItem(k)||'0');
-      if(n>0){const d=new Date(k.replace('fent_ques_','')+'T00:00:00');if(!isNaN(d))candidates.push(d);}
-    });
-    if(candidates.length>0){
-      firstEffortDate=new Date(Math.min(...candidates.map(d=>d.getTime())));
-      firstEffortDate.setHours(0,0,0,0);
-    }
-  }catch(e){}
+  // Find the very first day the user logged ANY effort, and all-time wasted
+  // sessions — both come from the shared helper (single source of truth,
+  // same number the Hero Card's "wasted" stat now shows too).
+  const {wastedSessions, firstEffortDate} = computeWastedSessionsAllTime(target, today);
 
   const totalSess30=days.reduce((a,d)=>a+d.sess,0);
   const totalQues30=days.reduce((a,d)=>a+d.ques,0);
   const hasQuesData=totalQues30>0;
-
-  // ── Wasted sessions — computed across ALL history ──────────────────────────
-  // For every workday (non-Sunday) from firstEffortDate up to yesterday:
-  //   dayTarget  = the target that was set THAT day (fent_daytarget_*), falling
-  //                back to today's target for days before the snapshot was added.
-  //   wasted    += max(0, dayTarget - done)  [missed portion]
-  //   overTarget+= max(0, done - dayTarget)  [bonus above target]
-  // Over-target weekday sessions reduce wasted (you earned extra that day).
-  // Sunday sessions also reduce wasted (bonus rest-day work).
-  // Final: wastedSessions = max(0, totalWasted - overTarget - sundaySessions)
-  let wastedSessions = 0;
-  if(firstEffortDate){
-    const yesterday = new Date(today); yesterday.setDate(today.getDate()-1); yesterday.setHours(0,0,0,0);
-    const cursor = new Date(firstEffortDate);
-    let overTargetSessions = 0;
-    let sundaySessions = 0;
-
-    // Past days (up to yesterday) — use per-day target snapshots
-    while(cursor <= yesterday){
-      const k = localDateKey(cursor);
-      const isSun = cursor.getDay() === 0;
-      const done = parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
-      if(isSun){
-        sundaySessions += done;
-      } else {
-        const dayTarget = parseFloat(localStorage.getItem('fent_daytarget_'+k)||String(target));
-        wastedSessions  += Math.max(0, dayTarget - done);
-        overTargetSessions += Math.max(0, done - dayTarget);
-      }
-      cursor.setDate(cursor.getDate()+1);
-    }
-
-    // TODAY — always use current target (day-level: latest change wins)
-    if(today >= firstEffortDate){
-      const todayK = localDateKey(today);
-      const isTodaySun = today.getDay() === 0;
-      const todayDone = parseFloat(localStorage.getItem('fent_sessions_'+todayK)||'0');
-      if(isTodaySun){
-        sundaySessions += todayDone;
-      } else {
-        wastedSessions  += Math.max(0, target - todayDone);
-        overTargetSessions += Math.max(0, todayDone - target);
-      }
-    }
-
-    wastedSessions = Math.max(0, wastedSessions - overTargetSessions - sundaySessions);
-  }
 
   // ── Questions behind + days to cover ──
   // Expected ques = every workday from firstEffortDate to today × qTarget
