@@ -2575,18 +2575,24 @@ function buildHeatmap(weeks,today){
 }
 
 /* ── Task-completion rate → ETA projection ───────────────────────────────
-   Rate = tasks of a given type-set completed in the last 7 calendar days
-   (today back 6 days, inclusive) ÷ number of NON-SUNDAY days in that same
-   window. Sundays are excluded from the denominator — same convention used
-   everywhere else in this file (activeWorkdays, wastedSessions, etc.) —
-   so a rest day never dilutes the pace number.
+   Rate = tasks of a given type-set completed in the last WINDOW_DAYS
+   calendar days (today back WINDOW_DAYS-1, inclusive) ÷ number of
+   NON-SUNDAY days in that same window. Sundays are excluded from the
+   denominator — same convention used everywhere else in this file
+   (activeWorkdays, wastedSessions, etc.) — so a rest day never dilutes the
+   pace number.
+   WINDOW_DAYS=14 rather than 7: a single revision-heavy week (which ticks
+   no fresh Theory/PYQ boxes at all) would otherwise crater the rate and
+   throw the ETA off by months. Two weeks smooths that out while still
+   reflecting genuinely current pace, not ancient history.
    Per-task completion dates come from the ts_{subj}_{n}_{type} timestamps
    that tick() already writes into ST the moment a checkbox is ticked, so
    this needs no new storage — it just reads what's already there. */
+const RATE_WINDOW_DAYS=14;
 function taskRateLast7(types, today){
   const windowDates=new Set();
   let activeDays=0;
-  for(let i=0;i<7;i++){
+  for(let i=0;i<RATE_WINDOW_DAYS;i++){
     const d=new Date(today); d.setDate(today.getDate()-i);
     windowDates.add(localDateKey(d));
     if(d.getDay()!==0) activeDays++;
@@ -2601,7 +2607,7 @@ function taskRateLast7(types, today){
     const dateStr=ST[k];
     if(typeof dateStr==='string' && windowDates.has(dateStr)) done++;
   });
-  return activeDays>0 ? done/activeDays : 0;
+  return {rate: activeDays>0 ? done/activeDays : 0, done, activeDays};
 }
 
 /* Project forward from `today`, counting only non-Sunday days, until
@@ -2622,9 +2628,10 @@ function projectWorkingDaysForward(today, workingDaysNeeded){
 function fmtDateFull(d){ return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear(); }
 
 /* Small ETA card — shared markup for the Full Syllabus / Mains Syllabus
-   projections. `remain`===0 → "Complete". No tasks logged in the last 7
-   active days → rate is 0 and we show "—" rather than a fake/infinite date. */
-function buildEtaCard(label, color, remain, rate, eta, daysAway){
+   projections. `remain`===0 → "Complete". No tasks logged in the rate
+   window → rate is 0 and we show "—" rather than a fake/infinite date. */
+function buildEtaCard(label, color, remain, rateInfo, eta, daysAway){
+  const rate=rateInfo.rate;
   const rateR=Math.round(rate*10)/10;
   const rateStr=rateR===Math.floor(rateR)?String(Math.floor(rateR)):rateR.toFixed(1);
   let body;
@@ -2633,7 +2640,7 @@ function buildEtaCard(label, color, remain, rate, eta, daysAway){
       <div style="font-size:9px;color:var(--t3);margin-top:3px;">all tasks done</div>`;
   } else if(!eta){
     body=`<div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:300;color:var(--t3);letter-spacing:-.02em;">—</div>
-      <div style="font-size:9px;color:var(--t3);margin-top:3px;">no pace yet — 0 done in last 7d</div>`;
+      <div style="font-size:9px;color:var(--t3);margin-top:3px;">no pace yet — 0 done in last ${RATE_WINDOW_DAYS}d</div>`;
   } else {
     body=`<div style="font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:300;color:var(--t1);letter-spacing:-.03em;">${fmtDateFull(eta)}</div>
       <div style="font-size:9.5px;color:${color};margin-top:3px;font-family:'JetBrains Mono',monospace;">in ${daysAway} day${daysAway!==1?'s':''}</div>`;
@@ -2647,7 +2654,7 @@ function buildEtaCard(label, color, remain, rate, eta, daysAway){
     ${body}
     <div style="margin-top:11px;padding-top:9px;border-top:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center;">
       <span style="font-size:9px;color:var(--t3);">${remain} left</span>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${remain===0?'var(--c)':'var(--t3)'};">${rateStr}/day</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${remain===0?'var(--c)':'var(--t3)'};" title="${rateInfo.done} done in last ${RATE_WINDOW_DAYS}d ÷ ${rateInfo.activeDays} active days">${rateStr}/day</span>
     </div>
   </div>`;
 }
@@ -2695,20 +2702,20 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
   const fullDone=taskTotals.theory+taskTotals.module+taskTotals.pyq;
   const fullMax=taskMax*3;
   const fullRemain=Math.max(0,fullMax-fullDone);
-  const fullRate=taskRateLast7(['theory','module','pyq'],today);
-  const fullETA=fullRemain===0?null:(fullRate>0?projectWorkingDaysForward(today,Math.ceil(fullRemain/fullRate)):null);
+  const fullRateInfo=taskRateLast7(['theory','module','pyq'],today);
+  const fullETA=fullRemain===0?null:(fullRateInfo.rate>0?projectWorkingDaysForward(today,Math.ceil(fullRemain/fullRateInfo.rate)):null);
   const fullDaysAway=fullETA?Math.round((fullETA-today)/864e5):null;
 
   const mainsRemain=Math.max(0,mainsReadyMax-mainsReadyDone);
-  const mainsRate=taskRateLast7(['theory','pyq'],today);
-  const mainsETA=mainsRemain===0?null:(mainsRate>0?projectWorkingDaysForward(today,Math.ceil(mainsRemain/mainsRate)):null);
+  const mainsRateInfo=taskRateLast7(['theory','pyq'],today);
+  const mainsETA=mainsRemain===0?null:(mainsRateInfo.rate>0?projectWorkingDaysForward(today,Math.ceil(mainsRemain/mainsRateInfo.rate)):null);
   const mainsDaysAway=mainsETA?Math.round((mainsETA-today)/864e5):null;
 
   html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
-    ${buildEtaCard('Full Syllabus ETA','var(--m)',fullRemain,fullRate,fullETA,fullDaysAway)}
-    ${buildEtaCard('Mains Syllabus ETA','#5c6fa0',mainsRemain,mainsRate,mainsETA,mainsDaysAway)}
+    ${buildEtaCard('Full Syllabus ETA','var(--m)',fullRemain,fullRateInfo,fullETA,fullDaysAway)}
+    ${buildEtaCard('Mains Syllabus ETA','#5c6fa0',mainsRemain,mainsRateInfo,mainsETA,mainsDaysAway)}
   </div>
-  <div style="font-size:8.5px;color:var(--t3);opacity:.55;margin-top:8px;text-align:center;letter-spacing:.02em;">Projected from your last 7 active days · Sundays excluded from pace &amp; date</div>`;
+  <div style="font-size:8.5px;color:var(--t3);opacity:.55;margin-top:8px;text-align:center;letter-spacing:.02em;">Projected from your last ${RATE_WINDOW_DAYS} active days · Sundays excluded from pace &amp; date</div>`;
 
   if(backlog.length>0){
     html+=`<div style="margin-top:22px">
