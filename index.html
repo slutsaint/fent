@@ -2096,17 +2096,188 @@ function renderAnalytics(){
   /* ══ Build HTML ══ */
   let html='';
 
-  /* 1 ── Chapter Progress (3 Individual Subject Rings) */
-  // overallPct = tasks ticked ÷ total tasks — consistent with dashboard Syllabus block and header mPct
+  /* ── Shared precomputes (used by both the Hero Card below and Chapter
+     Progress rings further down — computed once here, not duplicated) ── */
   const allChapsList2=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
   const totalTasksDoneAna=allChapsList2.reduce((a,{s,ch})=>a+tc(s,ch.n),0);
   const totalTasksAllAna=totalChaps*4;
   const overallPct=Math.round(totalTasksDoneAna/totalTasksAllAna*100)||0;
-  // Ring data — task-based to match overallPct and header mPct
-  // mTasksDone = tasks ticked across all Math chapters (max = MATH.length × 4)
   const mTasksDone=MATH.reduce((a,ch)=>a+tc('math',ch.n),0);
   const cTasksDone=CHEM.reduce((a,ch)=>a+tc('chem',ch.n),0);
   const pTasksDone=PHYS.reduce((a,ch)=>a+tc('phys',ch.n),0);
+  // Mains Ready — Theory+PYQ only, Module+Revision excluded (see Completion by
+  // Type section and the Mains Syllabus ETA card, both of which use this same
+  // pair). Hoisted here so the Hero Card above them can also reference it.
+  const mainsReadyDone=taskTotals.theory+taskTotals.pyq;
+  const mainsReadyMax=taskMax*2;
+  const mainsReadyPct=mainsReadyMax>0?Math.round(mainsReadyDone/mainsReadyMax*100):0;
+
+  /* ── Hero Card precompute — transplanted from fent_analytics_v5.html at the
+     user's request. Adapted, not copy-pasted verbatim, in two ways:
+     1. `trackDot` dropped — it was being computed as an exact duplicate of
+        the already-existing `trackColor` (same On Track/Slightly Behind/
+        Danger Zone → color mapping), so the card below just uses trackColor.
+     2. JEE date now comes from the existing global JEE_DATE constant (used
+        by the Syllabus Tracker's own "days till JEE" stat) instead of a
+        second hardcoded `new Date('2027-01-21...')` — one source of truth,
+        so both places move together if the exam date is ever updated.
+     Also dropped: mainsReadyDoneH/mainsReadyMaxH/mainsReadyPctH and
+     heroDailyAvg — present in the source file but never actually referenced
+     anywhere in its Hero Card markup (dead leftovers from an earlier
+     iteration there), so they're omitted here rather than carried over. ── */
+  let heroFocusSecs=0;
+  try{getKeysWithPrefix('fent_focuslog_').forEach(k=>{let a=[];try{a=JSON.parse(localStorage.getItem(k)||'[]');}catch{}a.forEach(e=>{if(e.durationSecs)heroFocusSecs+=e.durationSecs;});});}catch{}
+  let heroQues=0;
+  try{getKeysWithPrefix('fent_ques_').forEach(k=>{heroQues+=parseInt(localStorage.getItem(k)||'0')||0;});}catch{}
+  let heroSessions=0,heroStudyDays=0;
+  try{getKeysWithPrefix('fent_sessions_').forEach(k=>{const v=parseFloat(localStorage.getItem(k)||'0')||0;heroSessions+=Math.round(v);if(v>0)heroStudyDays++;});}catch{}
+  const heroTests=mainsDone.length+advDone.length;
+  function heroFmtTime(s){if(!s)return '0h';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);if(h>=10)return h+'h';return h>0?(m>0?h+'h '+m+'m':h+'h'):m+'m';}
+  const heroFocusDisplay=heroFmtTime(heroFocusSecs);
+  const heroBestMains=mainsDone.length>0?Math.max(...mainsDone.map(t=>t.normalizedTotal)):null;
+  const chapsTouched=allChapsList2.filter(({s,ch})=>tc(s,ch.n)>0).length;
+  let wastedSess=0;
+  try{getKeysWithPrefix('fent_focuslog_').forEach(k=>{let a=[];try{a=JSON.parse(localStorage.getItem(k)||'[]');}catch{}a.forEach(e=>{if(e.durationSecs&&e.durationSecs<900)wastedSess++;});});}catch{}
+  const avgQuesPerSess=heroSessions>0?Math.round(heroQues/heroSessions):0;
+  const jeeDaysLeftHero=Math.max(0,Math.round((JEE_DATE-today)/864e5));
+  const avgQuesPerDay=heroStudyDays>0?Math.round(heroQues/heroStudyDays):0;
+  const avgFocusPerDay=heroStudyDays>0?heroFmtTime(Math.round(heroFocusSecs/heroStudyDays)):'—';
+
+  /* ── 0 — Hero Card ── */
+  html+=`<style>
+  @keyframes heroNumIn{from{opacity:0;transform:translateY(10px);filter:blur(5px);}to{opacity:1;transform:translateY(0);filter:blur(0);}}
+  @keyframes heroPulse{0%,100%{opacity:.38;transform:scale(1);}50%{opacity:.9;transform:scale(2);}}
+  @keyframes heroBarIn{from{width:0%}to{width:var(--tw)}}
+</style>
+<div class="ana-section" style="padding:24px 26px 22px;animation-delay:.02s;overflow:hidden;position:relative;">
+
+  <!-- teal left-corner ambient bleed — JEE colour -->
+  <div style="position:absolute;top:-50px;left:-30px;width:220px;height:180px;border-radius:50%;background:radial-gradient(ellipse,rgba(46,196,188,.06) 0%,transparent 68%);pointer-events:none;"></div>
+  <!-- top hairline fades from teal -->
+  <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,rgba(46,196,188,.4) 0%,rgba(46,196,188,.1) 40%,transparent 75%);"></div>
+
+  <!-- ── STATUS ── -->
+  <div style="display:flex;align-items:center;gap:7px;margin-bottom:24px;animation:fadeUp .3s var(--ease) .02s both;">
+    <div style="width:5px;height:5px;border-radius:50%;background:${trackColor};box-shadow:0 0 5px ${trackColor},0 0 12px ${trackColor}28;flex-shrink:0;animation:heroPulse 3s ease-in-out 1s infinite;"></div>
+    <span style="font-size:10.5px;color:${trackColor};letter-spacing:-.01em;">${trackStatus}</span>
+    <span style="color:rgba(255,255,255,.16);padding:0 2px;">·</span>
+    <span style="font-size:9px;color:rgba(255,255,255,.52);">${trackDesc}</span>
+    <span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(46,196,188,.78);">${jeeDaysLeftHero}<span style="font-size:8px;color:rgba(255,255,255,.35);letter-spacing:.04em;"> d → jee</span></span>
+  </div>
+
+  <!-- ── COUNTDOWN: asymmetric JEE 55% | Syllabus | Overall ── -->
+  <div style="display:flex;align-items:flex-start;gap:0;margin-bottom:22px;">
+
+    <!-- JEE — teal, dominant at 52px -->
+    <div style="flex:0 0 55%;padding-right:26px;border-right:1px solid var(--b1);animation:heroNumIn .65s cubic-bezier(.16,1,.3,1) .04s both;">
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:11px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:52px;font-weight:200;letter-spacing:-.07em;line-height:1;color:#2ec4bc;">${jeeDaysLeftHero}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:200;color:rgba(46,196,188,.42);">d</span>
+      </div>
+      <div style="font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:rgba(46,196,188,.6);margin-bottom:5px;">to jee 2027</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.58);">21 january 2027</div>
+    </div>
+
+    <!-- Syllabus — sky blue, 32px -->
+    <div style="flex:0 0 22.5%;padding:0 20px;border-right:1px solid var(--b1);animation:heroNumIn .65s cubic-bezier(.16,1,.3,1) .11s both;">
+      <div style="display:flex;align-items:baseline;gap:3px;margin-bottom:10px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:200;letter-spacing:-.06em;line-height:1;color:#6ab8e8;">${daysLeft}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:200;color:rgba(106,184,232,.42);">d</span>
+      </div>
+      <div style="font-size:7.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(106,184,232,.6);margin-bottom:5px;">syllabus</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:rgba(255,255,255,.56);">${finalDeadlineLbl}</div>
+    </div>
+
+    <!-- Overall % — white, 32px -->
+    <div style="flex:0 0 22.5%;padding-left:20px;animation:heroNumIn .65s cubic-bezier(.16,1,.3,1) .18s both;">
+      <div style="display:flex;align-items:baseline;gap:3px;margin-bottom:10px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:200;letter-spacing:-.06em;line-height:1;color:var(--t1);">${overallPct}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:200;color:rgba(228,228,231,.4);">%</span>
+      </div>
+      <div style="font-size:7.5px;letter-spacing:.18em;text-transform:uppercase;color:rgba(228,228,231,.48);margin-bottom:5px;">complete</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:rgba(255,255,255,.56);">${totalDone}/${totalChaps} ch · ${chapsLeft} left</div>
+    </div>
+
+  </div>
+
+  <!-- ── PROGRESS BAR ── clean single-line style, no halo/tip, no shimmer
+       sweep — just a minimal width-fill reveal. -->
+  <div style="height:2.5px;background:rgba(255,255,255,0.05);border-radius:99px;position:relative;overflow:hidden;margin-bottom:22px;">
+    <div class="cbt-bar" data-w="${overallPct}" style="width:0%;height:100%;border-radius:99px;background:linear-gradient(90deg,rgba(228,228,231,.55) 0%,rgba(228,228,231,.88) 55%,#ffffff 100%);transition:width 1.6s cubic-bezier(.16,1,.3,1) .3s;"></div>
+  </div>
+
+  <!-- ── STATS 4 × 2 ── -->
+  ${(()=>{
+    /* Colors below are pulled from what's ALREADY mapped to each concept
+       elsewhere in the tracker, not invented fresh:
+       - focus time / sessions → var(--c) green (unchanged — already matched)
+       - wasted → tiered green/gold/red, same severity ladder as the OTHER
+         "wasted sessions" stat further down in Analytics (wastedCol there)
+       - mains avg → var(--red), matching .tls-badge.mains in Test Log
+       - mains ready → rgba(138,160,216,..), matching the Mains Ready bar's
+         own tip-glow color and the Mains ETA card's #5c6fa0 family
+       - tests / questions / ch. touched stay neutral white — they're
+         aggregate counts with no single type to map to, same treatment
+         already given to "questions" and "ch. touched" */
+    const GREEN ='rgba(107,158,131,.92)';
+    const RED   ='rgba(196,100,100,.92)';
+    const GOLD  ='rgba(194,163,89,.92)';
+    const MAINS_READY_BLUE='rgba(138,160,216,.92)';
+    // Violet — same rgba(144,139,176) already mapped to "questions" everywhere
+    // else in the tracker (Questions/Day chart title/line/dots/target text,
+    // PYQ type color, ques-behind strip). This IS var(--p) (#908bb0), reused
+    // here, not a new color.
+    const VIOLET='rgba(144,139,176,.95)';
+    const LL_VIOLET='rgba(144,139,176,.55)';
+    const W     ='var(--t1)';
+    const SL    ='rgba(255,255,255,.46)';
+    const LL_G  ='rgba(107,158,131,.55)';
+    const LL_R  ='rgba(196,100,100,.5)';
+    const LL_GOLD='rgba(194,163,89,.5)';
+    const LL_MRB='rgba(138,160,216,.5)';
+    const LL_W  ='rgba(255,255,255,.4)';
+    const dash=`<span style="color:rgba(255,255,255,.3);">—</span>`;
+    const mA=mainsStats.totalMarks!=null
+      ?`${Math.round(mainsStats.totalMarks)}<span style="font-size:7.5px;color:rgba(255,255,255,.36);font-weight:300;">/${mainsStats.targetTotal||300}</span>`
+      :dash;
+    // Wasted sessions — same green/gold/red severity ladder as the other
+    // "wasted" stat elsewhere in Analytics (see wastedCol), not a flat orange.
+    const wastedVc=wastedSess===0?GREEN:wastedSess<=5?GOLD:RED;
+    const wastedLc=wastedSess===0?LL_G:wastedSess<=5?LL_GOLD:LL_R;
+    const rows=[
+      [
+        {v:heroFocusDisplay,          sub:avgFocusPerDay!=='—'?avgFocusPerDay+' / d':'', l:'focus time', vc:GREEN,  lc:LL_G},
+        {v:heroQues.toLocaleString(), sub:avgQuesPerDay>0?avgQuesPerDay+' / d':'',        l:'questions',  vc:VIOLET, lc:LL_VIOLET},
+        {v:String(heroSessions),      sub:avgQuesPerSess>0?avgQuesPerSess+' q / s':'',    l:'sessions',   vc:GREEN,  lc:LL_G},
+        {v:String(wastedSess),        sub:'under 15 min',                                 l:'wasted',     vc:wastedVc, lc:wastedLc},
+      ],
+      [
+        {v:`${chapsTouched}/${totalChaps}`,sub:`${totalDone} fully done`,                l:'ch. touched',vc:W,      lc:LL_W},
+        {v:String(heroTests),         sub:'',                                             l:'tests',      vc:W,      lc:LL_W},
+        {v:mA,sub:heroBestMains!=null?Math.round(heroBestMains)+' best':'',              l:'mains avg',  vc:RED,    lc:LL_R},
+        {v:`${mainsReadyPct}<span style="font-size:9px;opacity:.6;">%</span>`,sub:`${mainsReadyDone}/${mainsReadyMax} tasks`, l:'mains ready',vc:MAINS_READY_BLUE, lc:LL_MRB},
+      ],
+    ];
+    return `<div style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--b1);">
+      ${rows.map((row,ri)=>row.map(({v,sub,l,vc,lc},ci)=>{
+        const rb=ci<3?'border-right:1px solid var(--b1);':'';
+        const tb=ri===1?'border-top:1px solid var(--b1);padding-top:14px;':'padding-bottom:14px;';
+        const d=(ci*0.028+ri*0.09+0.23).toFixed(3);
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;${rb}${tb}animation:fadeUp .26s var(--ease) ${d}s both;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:300;letter-spacing:-.02em;line-height:1;color:${vc};">${v}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:7.5px;color:${SL};min-height:10px;line-height:1.3;">${sub}</div>
+          <div style="font-size:7px;text-transform:uppercase;letter-spacing:.15em;color:${lc};">${l}</div>
+        </div>`;
+      }).join('')).join('')}
+    </div>`;
+  })()}
+
+</div>`;
+
+  /* 1 ── Chapter Progress (3 Individual Subject Rings) */
+  // overallPct = tasks ticked ÷ total tasks — consistent with dashboard Syllabus block and header mPct
+  // Ring data — task-based to match overallPct and header mPct
+  // mTasksDone = tasks ticked across all Math chapters (max = MATH.length × 4)
   const subjData=[
     {l:'Mathematics',d:mTasksDone,t:MATH.length*4,color:'#c2a359',colorRgb:'194,163,89'},
     {l:'Chemistry',  d:cTasksDone,t:CHEM.length*4,color:'#6b9e83',colorRgb:'107,158,131'},
@@ -2195,9 +2366,6 @@ function renderAnalytics(){
      additional lens, not a replacement metric). Color is a gold→violet
      gradient blending Theory's and PYQ's own colors from the bars above, so
      it visually reads as "these two, combined" rather than an unrelated hue. */
-  const mainsReadyDone=taskTotals.theory+taskTotals.pyq;
-  const mainsReadyMax=taskMax*2;
-  const mainsReadyPct=mainsReadyMax>0?Math.round(mainsReadyDone/mainsReadyMax*100):0;
   const mrDelay=(Object.keys(taskTotals).length*0.11+0.08).toFixed(2);
   const mrBarDelay=(parseFloat(mrDelay)+0.14).toFixed(2);
 
@@ -2813,17 +2981,18 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
   const daysToJEE=Math.round((JEE_DATE-today)/864e5);
   const oldestOverdue=backlog.length>0?Math.max(...backlog.map(({ch})=>Math.max(0,Math.round((today.getTime()-parseDate(ch.e).getTime())/864e5)))):0;
 
-  /* Days Left / Days till JEE get their own signature colors — deliberately
-     picked to NOT overlap anything already meaningful in this section:
-     gold (--m, Slightly Behind + Full Syllabus ETA), green (--c, On Track),
-     purple (--p, Physics), red (--red, Danger Zone/overdue), or the ETA
-     cards' gold/slate-blue. A dusty ice-teal and a dusty rose-magenta sit in
-     their own hue territory, distinct from all of those, so these two
-     numbers read as their own thing rather than borrowing another stat's
-     meaning. Urgency for "till JEE" is conveyed by glow INTENSITY (brighter
-     as the date nears), not by swapping to a color used elsewhere. */
-  const DAYS_LEFT_COLOR='#4f9aa8';
-  const JEE_COLOR='#b8698f';
+  /* Days Left / Days till JEE get their own signature colors. JEE_COLOR is
+     the SAME teal used for the JEE countdown in the Hero Card (#2ec4bc) —
+     since both numbers represent the exact same "days until JEE" figure.
+     DAYS_LEFT_COLOR is likewise now the SAME sky blue used for the "syllabus"
+     stat in the Hero Card (#6ab8e8) — both are the exact same `daysLeft`
+     value shown twice, so they now share one identity color instead of the
+     card inventing its own (previously a dusty rose-magenta, #b8698f, which
+     read as an unrelated pink next to the Hero Card's blue for the same
+     number). Urgency for "till JEE" is still conveyed by glow INTENSITY
+     (brighter as the date nears), not by swapping hue. */
+  const DAYS_LEFT_COLOR='#6ab8e8';
+  const JEE_COLOR='#2ec4bc';
   const jeeGlowAlpha=daysToJEE<=30?'b3':daysToJEE<=90?'80':'45';
   const jeeGlowColor=`${JEE_COLOR}${jeeGlowAlpha}`;
   const daysLeftGlowColor=`${DAYS_LEFT_COLOR}66`;
