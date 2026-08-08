@@ -1042,6 +1042,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .tls-subj-bar{height:2px;background:var(--s3);border-radius:2px;overflow:hidden;margin-bottom:3px;}
 .tls-subj-fill{height:100%;border-radius:2px;transition:width .5s var(--ease) .1s;}
 .tls-subj-pct{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);}
+.tls-subj-pct-row{display:flex;align-items:center;justify-content:space-between;gap:4px;}
+.tls-subj-delta{font-size:7.5px;font-family:'JetBrains Mono',monospace;padding:1px 3px;border-radius:3px;flex-shrink:0;line-height:1.3;}
+.tls-subj-delta.up{color:var(--c);background:rgba(107,158,131,0.1);}
+.tls-subj-delta.dn{color:var(--red);background:rgba(196,100,100,0.08);}
+.tls-subj-delta.eq{color:var(--t3);}
 .tls-chaps{margin-top:8px;}
 .tls-chaps-lbl{font-size:8.5px;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
 .tls-chap-chips{display:flex;flex-wrap:wrap;gap:3px;}
@@ -4348,6 +4353,28 @@ function buildTestLogSection(){
     if(t.normalizedTotal!=null) prevByType[key]=t;
   });
 
+  // ── Per-subject % delta — same idea as the overall score delta above, but
+  // tracked separately for each (test type, subject) pair. Compares this
+  // test's subject % against the LAST time that same subject appeared in a
+  // same-type test (not necessarily the immediately-previous test overall,
+  // since not every test covers every subject) so a subject skipped in the
+  // last test still gets a meaningful comparison against its own history. ──
+  const prevSubjPctByType={mains:{},adv:{}};
+  const subjDeltaMap={}; // key: `${entryKey}_${subj}` → delta in percentage points
+  chronological.forEach(t=>{
+    const prevSubjPct=prevSubjPctByType[t.testType]||(prevSubjPctByType[t.testType]={});
+    const entryKey=t.startedAt||t.dateStr;
+    Object.keys(t.subjects||{}).forEach(k=>{
+      const sc=t.subjects[k];
+      if(!sc||!(sc.max>0)) return;
+      const pct=Math.round(sc.score/sc.max*100);
+      if(prevSubjPct[k]!=null){
+        subjDeltaMap[entryKey+'_'+k]=pct-prevSubjPct[k];
+      }
+      prevSubjPct[k]=pct;
+    });
+  });
+
   let listHTML='<div class="tls-list">';
   allEntries.forEach((t,i)=>{
     const isBestMains=t.testType==='mains'&&t.normalizedTotal===bestMainsScore&&bestMainsScore>0;
@@ -4371,16 +4398,24 @@ function buildTestLogSection(){
     let subjCardsHTML='';
     const enteredSubjs=Object.keys(t.subjects||{}).filter(k=>t.subjects[k]&&t.subjects[k].max>0);
     if(enteredSubjs.length>0){
+      const entryKey=t.startedAt||t.dateStr;
       subjCardsHTML='<div class="tls-subj-grid" style="grid-template-columns:repeat('+Math.min(enteredSubjs.length,3)+',1fr)">';
       enteredSubjs.forEach(k=>{
         const sc=t.subjects[k];
         const pct=sc.max>0?Math.round(sc.score/sc.max*100):0;
         const col=subjColors[k]||'var(--t2)';
+        const sDelta=subjDeltaMap[entryKey+'_'+k];
+        let sDeltaHTML='';
+        if(sDelta!=null){
+          if(sDelta>0) sDeltaHTML=`<span class="tls-subj-delta up">+${sDelta}</span>`;
+          else if(sDelta<0) sDeltaHTML=`<span class="tls-subj-delta dn">${sDelta}</span>`;
+          else sDeltaHTML=`<span class="tls-subj-delta eq">—</span>`;
+        }
         subjCardsHTML+=`<div class="tls-subj-card">
           <div class="tls-subj-lbl" style="color:${col};opacity:.8;">${subjFull[k]||k}</div>
           <div class="tls-subj-sc">${sc.score}<span style="font-size:10px;color:var(--t3)">/${sc.max}</span></div>
           <div class="tls-subj-bar"><div class="tls-subj-fill" style="background:${col};width:0%" data-w="${pct}"></div></div>
-          <div class="tls-subj-pct">${pct}%</div>
+          <div class="tls-subj-pct-row"><span class="tls-subj-pct">${pct}%</span>${sDeltaHTML}</div>
         </div>`;
       });
       subjCardsHTML+='</div>';
