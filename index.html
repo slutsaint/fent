@@ -385,17 +385,22 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .hm-leg-cell{width:13px;height:13px;border-radius:2px;flex-shrink:0;}
 
 /* ── Syllabus Tracker v2 ─────────────────────────────────────────────── */
-.track-hero{border-radius:12px;border:1px solid var(--b1);padding:15px 17px 0;margin-bottom:0;position:relative;overflow:hidden;background:var(--bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.03);}
-.track-hero-top{position:relative;z-index:1;padding-bottom:13px;}
-.track-badge{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;letter-spacing:-.005em;}
-.track-badge-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor;}
+.track-hero{border-radius:12px;border:1px solid var(--b1);padding:16px 18px 0;margin-bottom:0;position:relative;overflow:hidden;background:var(--bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.03);}
+.track-hero-top{position:relative;z-index:1;padding-bottom:15px;}
+.track-badge{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;letter-spacing:-.005em;}
+.track-badge-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;box-shadow:0 0 7px currentColor;}
 .track-badge-dot.pulse{animation:trackPulse 2.4s ease-in-out infinite;}
 @keyframes trackPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
-.track-desc{font-size:10.5px;color:var(--t3);line-height:1.5;max-width:460px;margin-top:4px;}
+.track-desc{font-size:10.5px;color:var(--t3);line-height:1.5;max-width:460px;margin-top:5px;}
+
+/* All four stats are the same size and sit in one symmetric row — the ones
+   that matter most (days left / till JEE) stand out through COLOR and a
+   soft text-glow only, never through being physically bigger than the rest. */
 .track-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--b1);position:relative;z-index:1;}
-.track-stat-item{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:12px 4px 13px;border-left:1px solid transparent;border-image:linear-gradient(to bottom,transparent,var(--b1) 25%,var(--b1) 75%,transparent) 1;}
+.track-stat-item{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:13px 4px 14px;border-left:1px solid transparent;border-image:linear-gradient(to bottom,transparent,var(--b1) 25%,var(--b1) 75%,transparent) 1;}
 .track-stat-item:first-child{border-left:none;border-image:none;}
-.track-stat-num{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:300;color:var(--t1);letter-spacing:-.03em;line-height:1;}
+.track-stat-num{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:300;color:var(--t1);letter-spacing:-.03em;line-height:1;}
+.track-stat-num.glow{font-weight:400;text-shadow:0 0 14px var(--gc);}
 .track-stat-lbl{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-top:4px;}
 .track-stat-sub{font-size:7.5px;color:var(--t3);opacity:.5;margin-top:3px;font-family:'JetBrains Mono',monospace;white-space:nowrap;}
 
@@ -451,7 +456,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   .track-stats-grid{grid-template-columns:repeat(2,1fr);}
   .track-stat-item:nth-child(3){border-left:none;}
   .track-stat-item:nth-child(1),.track-stat-item:nth-child(2){border-bottom:1px solid var(--b1);}
-  .track-stat-item:nth-child(3),.track-stat-item:nth-child(4){padding-top:12px;}
+  .track-stat-item:nth-child(3),.track-stat-item:nth-child(4){padding-top:13px;}
   .backlog-chip-row{grid-template-columns:1fr;}
 }
 
@@ -2803,6 +2808,21 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
   const daysToJEE=Math.round((JEE_DATE-today)/864e5);
   const oldestOverdue=backlog.length>0?Math.max(...backlog.map(({ch})=>Math.max(0,Math.round((today.getTime()-parseDate(ch.e).getTime())/864e5)))):0;
 
+  /* Days Left / Days till JEE get their own signature colors — deliberately
+     picked to NOT overlap anything already meaningful in this section:
+     gold (--m, Slightly Behind + Full Syllabus ETA), green (--c, On Track),
+     purple (--p, Physics), red (--red, Danger Zone/overdue), or the ETA
+     cards' gold/slate-blue. A dusty ice-teal and a dusty rose-magenta sit in
+     their own hue territory, distinct from all of those, so these two
+     numbers read as their own thing rather than borrowing another stat's
+     meaning. Urgency for "till JEE" is conveyed by glow INTENSITY (brighter
+     as the date nears), not by swapping to a color used elsewhere. */
+  const DAYS_LEFT_COLOR='#4f9aa8';
+  const JEE_COLOR='#b8698f';
+  const jeeGlowAlpha=daysToJEE<=30?'b3':daysToJEE<=90?'80':'45';
+  const jeeGlowColor=`${JEE_COLOR}${jeeGlowAlpha}`;
+  const daysLeftGlowColor=`${DAYS_LEFT_COLOR}66`;
+
   let html=`<div class="ana-section">
   <div class="ana-sect-title">Syllabus Tracker</div>
   <div class="track-hero">
@@ -2815,13 +2835,13 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
     </div>
     <div class="track-stats-grid">
       <div class="track-stat-item">
-        <div class="track-stat-num">${daysLeft}</div>
+        <div class="track-stat-num glow" style="color:${DAYS_LEFT_COLOR};--gc:${daysLeftGlowColor}">${daysLeft}</div>
         <div class="track-stat-lbl">days left</div>
         <div class="track-stat-sub">${finalDeadlineLbl?'until '+finalDeadlineLbl:'—'}</div>
       </div>
       <div class="track-stat-item">
-        <div class="track-stat-num" style="color:${daysToJEE<=30?'var(--red)':daysToJEE<=90?'var(--m)':'var(--t1)'}">${daysToJEE}</div>
-        <div class="track-stat-lbl">till JEE</div>
+        <div class="track-stat-num glow" style="color:${JEE_COLOR};--gc:${jeeGlowColor}">${daysToJEE}</div>
+        <div class="track-stat-lbl">days till JEE</div>
         <div class="track-stat-sub">21 Jan 2027</div>
       </div>
       <div class="track-stat-item">
