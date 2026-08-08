@@ -954,7 +954,58 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .focus-doneby-rem{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);letter-spacing:.01em;transition:color .4s;}
 .focus-doneby-prefix{font-size:9px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-right:4px;opacity:.7;}
 
-/* ── Log Test — score entry card. Neutral minimal OLED, no red UI chrome. ── */
+/* ── Analytics: Test Log section ──────────────────────────── */
+.tls-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px;}
+.tls-stat{background:var(--bg);border:1px solid var(--b1);border-radius:10px;padding:12px 8px;text-align:center;transition:border-color .2s;}
+.tls-stat:hover{border-color:var(--b2);}
+.tls-stat-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1.1;margin-bottom:4px;}
+.tls-stat-lbl{font-size:8.5px;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;}
+.tls-list{display:flex;flex-direction:column;gap:4px;}
+.tls-row{background:var(--bg);border:1px solid var(--b1);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .2s var(--ease);}
+.tls-row:hover{border-color:var(--b2);}
+.tls-row.open{border-color:var(--b2);}
+.tls-row-head{display:flex;align-items:center;gap:8px;padding:10px 12px;}
+.tls-date{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);flex-shrink:0;letter-spacing:.02em;min-width:44px;}
+.tls-badge{font-size:7.5px;letter-spacing:.07em;text-transform:uppercase;padding:2px 5px;border-radius:4px;flex-shrink:0;font-family:'JetBrains Mono',monospace;font-weight:500;}
+.tls-badge.mains{background:rgba(196,100,100,0.09);color:var(--red);border:1px solid rgba(196,100,100,0.18);}
+.tls-badge.adv{background:rgba(194,163,89,0.08);color:var(--m);border:1px solid rgba(194,163,89,0.16);}
+.tls-name{font-size:11px;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tls-score{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:300;flex-shrink:0;letter-spacing:-.01em;}
+.tls-delta{font-size:9px;flex-shrink:0;font-family:'JetBrains Mono',monospace;padding:1px 4px;border-radius:3px;}
+.tls-delta.up{color:var(--c);background:rgba(107,158,131,0.1);}
+.tls-delta.dn{color:var(--red);background:rgba(196,100,100,0.08);}
+.tls-delta.eq{color:var(--t3);}
+.tls-dur{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);flex-shrink:0;}
+.tls-chev{font-size:8px;color:var(--t3);flex-shrink:0;transition:transform .25s var(--ease);display:inline-block;}
+.tls-row.open .tls-chev{transform:rotate(90deg);}
+.tls-best{display:inline-flex;align-items:center;gap:2px;font-size:7.5px;color:var(--m);font-family:'JetBrains Mono',monospace;letter-spacing:.04em;background:rgba(194,163,89,0.08);padding:1px 5px;border-radius:3px;border:1px solid rgba(194,163,89,0.14);}
+.tls-detail{max-height:0;overflow:hidden;transition:max-height .32s cubic-bezier(.4,0,.2,1);}
+.tls-row.open .tls-detail{max-height:600px;}
+.tls-detail-in{padding:0 12px 12px;border-top:1px solid var(--b1);}
+.tls-subj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:11px 0 10px;}
+.tls-subj-card{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:9px 9px 8px;}
+.tls-subj-lbl{font-size:8px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;font-family:'JetBrains Mono',monospace;}
+.tls-subj-sc{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:300;color:var(--t1);letter-spacing:-.02em;line-height:1.1;margin-bottom:5px;}
+.tls-subj-bar{height:2px;background:var(--s3);border-radius:2px;overflow:hidden;margin-bottom:3px;}
+.tls-subj-fill{height:100%;border-radius:2px;transition:width .5s var(--ease) .1s;}
+.tls-subj-pct{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);}
+.tls-chaps{margin-top:8px;}
+.tls-chaps-lbl{font-size:8.5px;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
+.tls-chap-chips{display:flex;flex-wrap:wrap;gap:3px;}
+.tls-chap-chip{font-size:9px;padding:2px 7px;background:var(--s1);border:1px solid var(--b1);border-radius:4px;color:var(--t2);font-family:'JetBrains Mono',monospace;}
+.tls-chap-chip-dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:4px;vertical-align:middle;position:relative;top:-1px;}
+.tls-meta{display:flex;gap:16px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--b1);margin-top:8px;}
+.tls-meta-item{display:flex;flex-direction:column;gap:2px;}
+.tls-meta-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--t2);font-weight:300;}
+.tls-meta-lbl{font-size:8px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;}
+.tls-norm{display:flex;align-items:baseline;gap:5px;padding:8px 10px;background:var(--s1);border:1px solid var(--b1);border-radius:8px;margin-bottom:2px;}
+.tls-norm-val{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:300;color:var(--t1);letter-spacing:-.02em;}
+.tls-norm-of{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);}
+.tls-norm-lbl{font-size:9px;color:var(--t3);margin-left:auto;letter-spacing:.04em;}
+.tls-empty{text-align:center;padding:28px 14px;}
+.tls-empty-ico{font-size:20px;opacity:.12;margin-bottom:8px;}
+.tls-empty-txt{font-size:11px;color:var(--t3);}
+/* ── End Analytics Test Log ── */
 .test-score-card{width:100%;max-width:400px;box-sizing:border-box;background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:16px 18px;margin:20px auto 14px;animation:fadeUp .3s var(--ease) both;box-shadow:0 8px 24px -8px rgba(0,0,0,0.5);position:relative;overflow:hidden;}
 .test-score-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.09),transparent);}
 .test-score-stagger-1{animation:fadeUp .3s var(--ease) .04s both;}
@@ -2139,11 +2190,14 @@ function renderAnalytics(){
   html+=`${chartTestsMains.length>0?buildScoreChart(chartTestsMains,'Mains Score Trend'):`<div class="ana-section"><div class="ana-sect-title">Mains Score Trend</div><div class="ana-empty-msg">No Mains tests recorded yet.</div></div>`}
 ${chartTestsAdv.length>0?buildScoreChart(chartTestsAdv,'Advanced Score Trend'):`<div class="ana-section"><div class="ana-sect-title">Advanced Score Trend</div><div class="ana-empty-msg">No Advanced tests recorded yet.</div></div>`}`;
 
-  /* 5 ── Study heatmap */
+  /* 5 ── Test Log */
+  html+=buildTestLogSection();
+
+  /* 6 ── Study heatmap */
   html+=buildHeatmap(weeks,today);
 
   /* 6 ── Syllabus tracker + backlog */
-  html+=buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackStatus,trackColor,trackDesc,today,finalDeadlineLbl);
+  html+=buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackStatus,trackColor,trackDesc,today,finalDeadlineLbl,taskTotals,taskMax,mainsReadyDone,mainsReadyMax);
 
   /* ── Focus & Activity Sections (integrated from Stats) ── */
   html+=buildFocusActivitySections(today);
@@ -2520,8 +2574,86 @@ function buildHeatmap(weeks,today){
 </div>`;
 }
 
+/* ── Task-completion rate → ETA projection ───────────────────────────────
+   Rate = tasks of a given type-set completed in the last 7 calendar days
+   (today back 6 days, inclusive) ÷ number of NON-SUNDAY days in that same
+   window. Sundays are excluded from the denominator — same convention used
+   everywhere else in this file (activeWorkdays, wastedSessions, etc.) —
+   so a rest day never dilutes the pace number.
+   Per-task completion dates come from the ts_{subj}_{n}_{type} timestamps
+   that tick() already writes into ST the moment a checkbox is ticked, so
+   this needs no new storage — it just reads what's already there. */
+function taskRateLast7(types, today){
+  const windowDates=new Set();
+  let activeDays=0;
+  for(let i=0;i<7;i++){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    windowDates.add(localDateKey(d));
+    if(d.getDay()!==0) activeDays++;
+  }
+  let done=0;
+  Object.keys(ST).forEach(k=>{
+    if(!k.startsWith('ts_')) return;
+    const parts=k.split('_'); // ['ts', subj, n, type] — subj/type never contain '_'
+    if(parts.length!==4) return;
+    const type=parts[3];
+    if(!types.includes(type)) return;
+    const dateStr=ST[k];
+    if(typeof dateStr==='string' && windowDates.has(dateStr)) done++;
+  });
+  return activeDays>0 ? done/activeDays : 0;
+}
+
+/* Project forward from `today`, counting only non-Sunday days, until
+   `workingDaysNeeded` such days have elapsed — Sundays are stepped over but
+   still advance the calendar, so month/year rollovers land on the exact
+   real-world date rather than an approximation. */
+function projectWorkingDaysForward(today, workingDaysNeeded){
+  if(workingDaysNeeded<=0) return new Date(today);
+  const d=new Date(today);
+  let counted=0;
+  while(counted<workingDaysNeeded){
+    if(d.getDay()!==0) counted++;
+    if(counted<workingDaysNeeded) d.setDate(d.getDate()+1);
+  }
+  return d;
+}
+
+function fmtDateFull(d){ return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear(); }
+
+/* Small ETA card — shared markup for the Full Syllabus / Mains Syllabus
+   projections. `remain`===0 → "Complete". No tasks logged in the last 7
+   active days → rate is 0 and we show "—" rather than a fake/infinite date. */
+function buildEtaCard(label, color, remain, rate, eta, daysAway){
+  const rateR=Math.round(rate*10)/10;
+  const rateStr=rateR===Math.floor(rateR)?String(Math.floor(rateR)):rateR.toFixed(1);
+  let body;
+  if(remain===0){
+    body=`<div style="font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:300;color:var(--c);letter-spacing:-.03em;">Complete</div>
+      <div style="font-size:9px;color:var(--t3);margin-top:3px;">all tasks done</div>`;
+  } else if(!eta){
+    body=`<div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:300;color:var(--t3);letter-spacing:-.02em;">—</div>
+      <div style="font-size:9px;color:var(--t3);margin-top:3px;">no pace yet — 0 done in last 7d</div>`;
+  } else {
+    body=`<div style="font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:300;color:var(--t1);letter-spacing:-.03em;">${fmtDateFull(eta)}</div>
+      <div style="font-size:9.5px;color:${color};margin-top:3px;font-family:'JetBrains Mono',monospace;">in ${daysAway} day${daysAway!==1?'s':''}</div>`;
+  }
+  return `<div style="flex:1;min-width:150px;background:var(--bg);border:1px solid var(--b1);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .25s;" onmouseenter="this.style.borderColor='${color}33'" onmouseleave="this.style.borderColor='var(--b1)'">
+    <div style="position:absolute;top:-1px;left:12px;right:12px;height:1px;background:linear-gradient(90deg,transparent,${color}66,transparent);"></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;">
+      <div style="width:5px;height:5px;border-radius:50%;background:${color};box-shadow:0 0 6px ${color}aa;flex-shrink:0;"></div>
+      <span style="font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);">${label}</span>
+    </div>
+    ${body}
+    <div style="margin-top:11px;padding-top:9px;border-top:1px solid var(--b1);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:9px;color:var(--t3);">${remain} left</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${remain===0?'var(--c)':'var(--t3)'};">${rateStr}/day</span>
+    </div>
+  </div>`;
+}
+
 /* ─── Syllabus Tracker + Backlog ─── */
-function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackStatus,trackColor,trackDesc,today,finalDeadlineLbl){
+function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackStatus,trackColor,trackDesc,today,finalDeadlineLbl,taskTotals,taskMax,mainsReadyDone,mainsReadyMax){
   const subjRows=[
     {l:'Mathematics',count:mBack,total:MATH.length,c:'var(--m)'},
     {l:'Chemistry',count:cBack,total:CHEM.length,c:'var(--c)'},
@@ -2556,6 +2688,27 @@ function buildTrackerSection(backlog,mBack,cBack,pBack,daysLeft,chapsLeft,trackS
       </div>
     </div>
   </div>`;
+
+  /* ── Completion ETA — full syllabus (Theory+Module+PYQ, Revision excluded)
+     and Mains-only (Theory+PYQ, Module+Revision excluded — mirrors the
+     "Mains Ready" metric above so the two stay conceptually identical). ── */
+  const fullDone=taskTotals.theory+taskTotals.module+taskTotals.pyq;
+  const fullMax=taskMax*3;
+  const fullRemain=Math.max(0,fullMax-fullDone);
+  const fullRate=taskRateLast7(['theory','module','pyq'],today);
+  const fullETA=fullRemain===0?null:(fullRate>0?projectWorkingDaysForward(today,Math.ceil(fullRemain/fullRate)):null);
+  const fullDaysAway=fullETA?Math.round((fullETA-today)/864e5):null;
+
+  const mainsRemain=Math.max(0,mainsReadyMax-mainsReadyDone);
+  const mainsRate=taskRateLast7(['theory','pyq'],today);
+  const mainsETA=mainsRemain===0?null:(mainsRate>0?projectWorkingDaysForward(today,Math.ceil(mainsRemain/mainsRate)):null);
+  const mainsDaysAway=mainsETA?Math.round((mainsETA-today)/864e5):null;
+
+  html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+    ${buildEtaCard('Full Syllabus ETA','var(--m)',fullRemain,fullRate,fullETA,fullDaysAway)}
+    ${buildEtaCard('Mains Syllabus ETA','#5c6fa0',mainsRemain,mainsRate,mainsETA,mainsDaysAway)}
+  </div>
+  <div style="font-size:8.5px;color:var(--t3);opacity:.55;margin-top:8px;text-align:center;letter-spacing:.02em;">Projected from your last 7 active days · Sundays excluded from pace &amp; date</div>`;
 
   if(backlog.length>0){
     html+=`<div style="margin-top:22px">
@@ -3076,17 +3229,18 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   const onTargetPct=pastWork.length>0?Math.round(metDays/pastWork.length*100):0;
   const onTargetCol=onTargetPct>=80?'var(--c)':onTargetPct>=50?'var(--m)':'var(--t3)';
 
-  // Avg sessions/day and avg questions/day — this month, non-Sunday study days
-  // elapsed so far (same `pastWork` set already used for on-target%, i.e.
-  // "total days of the current month minus Sundays" up to today). Each day's
-  // `d.sess` value already IS the session count computed using whatever
-  // session-length setting was active at the moment each chunk of study time
-  // was logged that day (a completed Pomodoro cycle credits 1.0 at its own
-  // current length; manual/test logs credit duration ÷ length-at-log-time) —
-  // so summing d.sess across days and dividing by day-count already produces
-  // exactly "avg sessions/day, each day judged by the setting in force then."
-  const avgSessPerDayMonth = pastWork.length>0 ? pastWork.reduce((a,d)=>a+d.sess,0)/pastWork.length : 0;
-  const avgQuesPerDayMonth = pastWork.length>0 ? pastWork.reduce((a,d)=>a+d.ques,0)/pastWork.length : 0;
+  // Avg sessions/day and avg questions/day — this month, "active days" elapsed
+  // so far. Active day = any non-Sunday that has passed (counts even if 0 was
+  // logged — a miss on a weekday is still a real miss, not an excluded day),
+  // OR a Sunday that has passed AND has something logged on it (sess>0 or
+  // ques>0). A Sunday with nothing logged is a rest day and is excluded from
+  // the denominator entirely, same as it always was — the only change is that
+  // a Sunday you DID study on now counts instead of being dropped unconditionally.
+  // Deliberately a separate set from `pastWork` (which still excludes every
+  // Sunday) so on-target% and the "study days" pill elsewhere are untouched.
+  const activeDaysMonth = days.filter(d => d.d<=today && (!d.isSun || d.sess>0 || d.ques>0));
+  const avgSessPerDayMonth = activeDaysMonth.length>0 ? activeDaysMonth.reduce((a,d)=>a+d.sess,0)/activeDaysMonth.length : 0;
+  const avgQuesPerDayMonth = activeDaysMonth.length>0 ? activeDaysMonth.reduce((a,d)=>a+d.ques,0)/activeDaysMonth.length : 0;
   const avgSessCol = avgSessPerDayMonth>=target?'var(--c)':avgSessPerDayMonth>=target*0.5?'var(--m)':'var(--t3)';
   const avgQuesCol = avgQuesPerDayMonth>=qTarget?'var(--c)':avgQuesPerDayMonth>=qTarget*0.5?'var(--m)':'var(--t3)';
 
@@ -3953,6 +4107,213 @@ let cbtSubjFilter='all'; // 'all' | 'math' | 'chem' | 'phys'
 function cbtSetFilter(s){ cbtSubjFilter=s; cbtSelectedChap=null; if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();} }
 function cbtToggleChap(key){ cbtSelectedChap=(cbtSelectedChap===key)?null:key; if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();} }
 
+// ── Analytics: Test Log section ────────────────────────────────────────────
+// Reads all fent_testlog_* keys, builds a summary + expandable per-test rows.
+// Preserves backwards compat: older entries without .chapters show normally.
+let _tlsOpen={}; // {rowIdx: true/false} — open/close state
+
+function toggleTlsRow(idx){
+  _tlsOpen[idx]=!_tlsOpen[idx];
+  const row=document.getElementById('tlsRow'+idx);
+  if(!row) return;
+  row.classList.toggle('open',!!_tlsOpen[idx]);
+  // Animate bar fills on expand
+  if(_tlsOpen[idx]){
+    setTimeout(()=>{
+      row.querySelectorAll('.tls-subj-fill[data-w]').forEach(el=>{el.style.width=el.dataset.w+'%';});
+    },30);
+  }
+}
+
+function buildTestLogSection(){
+  // ── Gather all test entries across all dates ──────────────────────────────
+  const allEntries=[];
+  try{
+    getKeysWithPrefix('fent_testlog_').forEach(k=>{
+      const dateStr=k.replace('fent_testlog_','');
+      let arr=[];
+      try{ arr=JSON.parse(localStorage.getItem(k)||'[]'); }catch{}
+      arr.forEach(t=>{ if(t&&t.durationSecs>0) allEntries.push({...t,dateStr}); });
+    });
+  }catch{}
+  // Sort newest first
+  allEntries.sort((a,b)=>{
+    const da=new Date(a.dateStr), db=new Date(b.dateStr);
+    return db-da || (b.startedAt||0)-(a.startedAt||0);
+  });
+
+  const totalTests=allEntries.length;
+  const totalSecs=allEntries.reduce((s,t)=>s+(t.durationSecs||0),0);
+  const withScore=allEntries.filter(t=>t.normalizedTotal!=null);
+
+  // ── Find best per type ────────────────────────────────────────────────────
+  const bestMainsScore=Math.max(0,...allEntries.filter(t=>t.testType==='mains'&&t.normalizedTotal!=null).map(t=>t.normalizedTotal));
+  const bestAdvScore=Math.max(0,...allEntries.filter(t=>t.testType==='adv'&&t.normalizedTotal!=null).map(t=>t.normalizedTotal));
+
+  // ── Avg score display (show separately for mains and adv if both exist) ──
+  const mainsWithScore=allEntries.filter(t=>t.testType==='mains'&&t.normalizedTotal!=null);
+  const advWithScore=allEntries.filter(t=>t.testType==='adv'&&t.normalizedTotal!=null);
+  const mainsAvg=mainsWithScore.length?Math.round(mainsWithScore.reduce((s,t)=>s+t.normalizedTotal,0)/mainsWithScore.length):null;
+  const advAvg=advWithScore.length?Math.round(advWithScore.reduce((s,t)=>s+t.normalizedTotal,0)/advWithScore.length):null;
+
+  function fmtDur(s){
+    if(!s||s<=0) return '—';
+    const h=Math.floor(s/3600),m=Math.floor((s%3600)/60);
+    return h>0?`${h}h ${m}m`:`${m}m`;
+  }
+  function fmtDate(d){
+    const parts=d.split('-');
+    if(parts.length!==3) return d;
+    const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${parseInt(parts[2])} ${months[parseInt(parts[1])-1]}`;
+  }
+
+  const subjColors={math:'#c2a359',chem:'#6b9e83',phys:'#908bb0'};
+  const subjLabels={math:'Math',chem:'Chem',phys:'Phys'};
+  const subjFull={math:'Mathematics',chem:'Chemistry',phys:'Physics'};
+
+  // ── Stat cards ────────────────────────────────────────────────────────────
+  const avgScoreTxt=mainsAvg!=null&&advAvg!=null
+    ?`${mainsAvg}<span style="font-size:11px;color:var(--t3)"> / </span>${advAvg}`
+    :(mainsAvg!=null?String(mainsAvg):(advAvg!=null?String(advAvg):'—'));
+  const avgScoreSubLbl=mainsAvg!=null&&advAvg!=null?'M avg · A avg':(mainsAvg!=null?'mains avg':(advAvg!=null?'adv avg':'no scores yet'));
+
+  let statsHTML=`<div class="tls-stats">
+    <div class="tls-stat"><div class="tls-stat-val">${totalTests||'—'}</div><div class="tls-stat-lbl">Tests given</div></div>
+    <div class="tls-stat"><div class="tls-stat-val" style="font-size:${totalSecs>=3600?'17px':'20px'}">${fmtDur(totalSecs)}</div><div class="tls-stat-lbl">Total time</div></div>
+    <div class="tls-stat"><div class="tls-stat-val" style="font-size:16px;">${avgScoreTxt}</div><div class="tls-stat-lbl">${avgScoreSubLbl}</div></div>
+  </div>`;
+
+  if(totalTests===0){
+    return `<div class="ana-section" style="animation:fadeUp .4s var(--ease) both;">
+  <div class="ana-sect-title">Test Log</div>
+  ${statsHTML}
+  <div class="tls-empty">
+    <div class="tls-empty-ico">◌</div>
+    <div class="tls-empty-txt">No tests recorded yet — log a test in the Focus tab.</div>
+  </div></div>`;
+  }
+
+  // ── Per-test rows ─────────────────────────────────────────────────────────
+  // Pre-compute delta (vs previous same-type test) — iterate chronologically
+  const prevByType={mains:null,adv:null};
+  const chronological=[...allEntries].reverse();
+  const deltaMap={};
+  chronological.forEach(t=>{
+    const key=t.testType;
+    const prev=prevByType[key];
+    if(t.normalizedTotal!=null&&prev!=null&&prev.normalizedTotal!=null){
+      const d=t.normalizedTotal-prev.normalizedTotal;
+      deltaMap[t.startedAt||t.dateStr]=d;
+    }
+    if(t.normalizedTotal!=null) prevByType[key]=t;
+  });
+
+  let listHTML='<div class="tls-list">';
+  allEntries.forEach((t,i)=>{
+    const isBestMains=t.testType==='mains'&&t.normalizedTotal===bestMainsScore&&bestMainsScore>0;
+    const isBestAdv=t.testType==='adv'&&t.normalizedTotal===bestAdvScore&&bestAdvScore>0;
+    const isBest=isBestMains||isBestAdv;
+    const scoreColor=t.normalizedTotal!=null?(t.normalizedTotal>=(t.targetTotal*0.6)?'var(--c)':(t.normalizedTotal>=(t.targetTotal*0.4)?'var(--m)':'var(--red)')):'var(--t3)';
+    const scoreStr=t.normalizedTotal!=null?`<span style="color:${scoreColor}">${t.normalizedTotal}</span><span style="font-size:9px;color:var(--t3)">/${t.targetTotal}</span>`:'<span style="color:var(--t3);font-size:10px;">—</span>';
+    const delta=deltaMap[t.startedAt||t.dateStr];
+    let deltaHTML='';
+    if(delta!=null){
+      if(delta>0) deltaHTML=`<span class="tls-delta up">+${delta}</span>`;
+      else if(delta<0) deltaHTML=`<span class="tls-delta dn">${delta}</span>`;
+      else deltaHTML=`<span class="tls-delta eq">—</span>`;
+    }
+
+    // Subject dots row
+    const subjDots=Object.keys(t.subjects||{}).map(k=>`<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${subjColors[k]||'var(--t3)'};margin-right:2px;vertical-align:middle;position:relative;top:-1px;"></span>`).join('');
+
+    // ── Detail expand ─────────────────────────────────────────────────────
+    // Subject score cards
+    let subjCardsHTML='';
+    const enteredSubjs=Object.keys(t.subjects||{}).filter(k=>t.subjects[k]&&t.subjects[k].max>0);
+    if(enteredSubjs.length>0){
+      subjCardsHTML='<div class="tls-subj-grid" style="grid-template-columns:repeat('+Math.min(enteredSubjs.length,3)+',1fr)">';
+      enteredSubjs.forEach(k=>{
+        const sc=t.subjects[k];
+        const pct=sc.max>0?Math.round(sc.score/sc.max*100):0;
+        const col=subjColors[k]||'var(--t2)';
+        subjCardsHTML+=`<div class="tls-subj-card">
+          <div class="tls-subj-lbl" style="color:${col};opacity:.8;">${subjFull[k]||k}</div>
+          <div class="tls-subj-sc">${sc.score}<span style="font-size:10px;color:var(--t3)">/${sc.max}</span></div>
+          <div class="tls-subj-bar"><div class="tls-subj-fill" style="background:${col};width:0%" data-w="${pct}"></div></div>
+          <div class="tls-subj-pct">${pct}%</div>
+        </div>`;
+      });
+      subjCardsHTML+='</div>';
+    }
+
+    // Normalized score display
+    let normHTML='';
+    if(t.normalizedTotal!=null){
+      const nPct=Math.round(t.normalizedTotal/t.targetTotal*100);
+      normHTML=`<div class="tls-norm">
+        <div class="tls-norm-val" style="color:${scoreColor}">${t.normalizedTotal}</div>
+        <div class="tls-norm-of">/ ${t.targetTotal}</div>
+        <div class="tls-norm-lbl">Normalised · ${nPct}%</div>
+      </div>`;
+    }
+
+    // Chapter chips
+    let chapsHTML='';
+    const chaps=t.chapters||{};
+    const chapKeys=Object.keys(chaps).filter(k=>chaps[k]&&chaps[k].length>0);
+    if(chapKeys.length>0){
+      chapsHTML='<div class="tls-chaps"><div class="tls-chaps-lbl">Chapters tested</div><div class="tls-chap-chips">';
+      chapKeys.forEach(k=>{
+        const col=subjColors[k]||'var(--t3)';
+        (chaps[k]||[]).forEach(ch=>{
+          chapsHTML+=`<span class="tls-chap-chip"><span class="tls-chap-chip-dot" style="background:${col}"></span>${ch.name||('Ch '+ch.n)}</span>`;
+        });
+      });
+      chapsHTML+='</div></div>';
+    }
+
+    // Meta row
+    const rawPct=t.rawMax>0?Math.round(t.rawScore/t.rawMax*100):null;
+    const metaItems=[
+      {v:fmtDur(t.durationSecs),l:'Duration'},
+      {v:t.totalQuestions>0?t.totalQuestions+'Q':'—',l:'Questions'},
+      {v:rawPct!=null?`${t.rawScore}/${t.rawMax} (${rawPct}%)`:'—',l:'Raw score'},
+      {v:t.sessionCredit!=null?t.sessionCredit+'×':'—',l:'Session credit'},
+    ];
+    const metaHTML='<div class="tls-meta">'+metaItems.map(m=>`<div class="tls-meta-item"><div class="tls-meta-val">${m.v}</div><div class="tls-meta-lbl">${m.l}</div></div>`).join('')+'</div>';
+
+    listHTML+=`<div class="tls-row${_tlsOpen[i]?' open':''}" id="tlsRow${i}" onclick="toggleTlsRow(${i})">
+      <div class="tls-row-head">
+        <span class="tls-date">${fmtDate(t.dateStr)}</span>
+        <span class="tls-badge ${t.testType==='mains'?'mains':'adv'}">${t.testType==='mains'?'M':'A'}</span>
+        <span class="tls-name">${subjDots}${t.testName||'Test'}</span>
+        ${isBest?`<span class="tls-best">★ best</span>`:''}
+        ${deltaHTML}
+        <span class="tls-score">${scoreStr}</span>
+        <span class="tls-dur">${fmtDur(t.durationSecs)}</span>
+        <span class="tls-chev">›</span>
+      </div>
+      <div class="tls-detail">
+        <div class="tls-detail-in">
+          ${normHTML}
+          ${subjCardsHTML}
+          ${chapsHTML}
+          ${metaHTML}
+        </div>
+      </div>
+    </div>`;
+  });
+  listHTML+='</div>';
+
+  return `<div class="ana-section" style="animation:fadeUp .4s var(--ease) both;">
+  <div class="ana-sect-title">Test Log</div>
+  ${statsHTML}
+  ${listHTML}
+</div>`;
+}
+// ── End Analytics Test Log ──────────────────────────────────────────────────
+
 function buildChapterTimeBreakdown(){
   // ── Aggregate every focus log entry across all history, by chapter ──
   const chapMap={};
@@ -4347,7 +4708,7 @@ function getTodayTestCredit(){ try{return parseFloat(localStorage.getItem(todayT
 // max becomes the official total for that test type — 300 for Mains, 360 for
 // Advanced — and the entered score scales proportionally with it.
 // Example: entered 122/150 → scaled to 244/300 (122 × 300/150 = 244).
-function logTestSession(durationSecs, testType, subjectScores, testName){
+function logTestSession(durationSecs, testType, subjectScores, testName, chapterPlan, totalQuestions){
   const sessionMins = focusSettings.sessionMins || 90;
   const credit = durationSecs / (sessionMins*60);
 
@@ -4389,7 +4750,9 @@ function logTestSession(durationSecs, testType, subjectScores, testName){
     rawMax: sumMax,
     normalizedTotal,
     targetTotal,
-    sessionCredit: Math.round(credit*100)/100
+    sessionCredit: Math.round(credit*100)/100,
+    totalQuestions: totalQuestions||0,
+    chapters: chapterPlan||{}
   });
   saveTodayTestLog(log);
 
@@ -4954,7 +5317,7 @@ function testLogSubmit(){
   addTodayQues(T.totalQuestions);
 
   const durationSecs=T.actualElapsedSecs!=null?T.actualElapsedSecs:T.totalSeconds;
-  const result=logTestSession(durationSecs, testLogType, subjectScores, testName);
+  const result=logTestSession(durationSecs, testLogType, subjectScores, testName, T.chapterPlan, T.totalQuestions);
   const fmtV=v=>{const r=Math.round(v*100)/100;return r===Math.floor(r)?String(Math.floor(r)):(r<0.1?r.toFixed(2):r.toFixed(1));};
   const creditMsg=result.credit>0?fmtV(result.credit)+' session'+(result.credit!==1?'s':'')+' credited':'no session credit';
   toast('✓ Test logged — '+result.normalizedTotal+'/'+result.targetTotal+' · '+creditMsg);
