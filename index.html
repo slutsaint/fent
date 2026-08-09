@@ -449,6 +449,44 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .backlog-row-name{flex:1;font-size:11.5px;color:var(--t2);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .backlog-row-days{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:400;white-space:nowrap;flex-shrink:0;}
 
+/* Time Per Chapter — back to small simple filter pills (All/Math/Chem/Phys)
+   + one flat bar-chart list, like the very first version — but filtering is
+   now pure CSS instead of a JS re-render. Every chapter row carries a
+   data-subj attribute; the list wrapper carries a data-filter attribute
+   that JS just flips (one attribute write, nothing rebuilt). Rows that
+   don't match the active filter collapse to 0 height via CSS transition —
+   same trick as the accordions elsewhere, just applied per-row.
+
+   The active pill is shown via a single sliding indicator element that
+   glides between pill positions and recolors (iOS segmented-control style)
+   — instead of each pill flipping its own background independently, which
+   read as a flatter, less considered switch. */
+.tpc-pill-row{position:relative;display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:nowrap;}
+.tpc-pill-indicator{position:absolute;top:0;left:0;width:0;height:100%;border-radius:99px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);transition:left .32s cubic-bezier(.16,1,.3,1),width .32s cubic-bezier(.16,1,.3,1),background .22s ease,border-color .22s ease;pointer-events:none;z-index:0;}
+.tpc-pill{position:relative;z-index:1;background:transparent;border:1px solid transparent;border-radius:99px;padding:5px 11px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--t3);cursor:pointer;letter-spacing:.02em;transition:color .22s ease;-webkit-tap-highlight-color:transparent;white-space:nowrap;}
+.tpc-pill.active{color:var(--pcol);}
+
+.tpc-flat-list{background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:4px 12px;}
+/* Content-aware collapse (grid-template-rows fr-unit), not max-height.
+   max-height has to animate toward a guessed fixed number even though real
+   row content is much shorter, so the content visually clips almost
+   instantly while the animation keeps running underneath — a glitchy
+   vanish. grid-template-rows 0fr↔1fr instead measures the row's actual
+   content each frame, so it never clips abruptly — same as Backlog above.
+   Kept deliberately simple: grid-rows + opacity only, no transform layered
+   on top and no overshoot easing — an earlier version added a spring
+   bounce + scale/translate, but overshoot on a layout-triggering property
+   (grid-rows genuinely reflows every frame) plus a second competing
+   transform read as shaky rather than smooth. A single calm ease, slightly
+   slower on reveal, with only a very light per-row stagger (via --rd). */
+.tpc-frow{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows .42s cubic-bezier(.22,1,.36,1) var(--rd,0s),opacity .32s ease-out var(--rd,0s);}
+.tpc-frow-inner{overflow:hidden;min-height:0;}
+.tpc-flat-list[data-filter="math"] .tpc-frow:not([data-subj="math"]),
+.tpc-flat-list[data-filter="chem"] .tpc-frow:not([data-subj="chem"]),
+.tpc-flat-list[data-filter="phys"] .tpc-frow:not([data-subj="phys"]){grid-template-rows:0fr;opacity:0;pointer-events:none;transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1),opacity .18s ease-in;}
+.tpc-flat-list:not([data-filter="all"]) .tpc-top-line{display:none;}
+
+
 @media(max-width:540px){
   .ana-two-col{grid-template-columns:1fr;}
   .subj-prog-meta{width:90px;}
@@ -2552,6 +2590,9 @@ ${chartTestsAdv.length>0?buildScoreChart(chartTestsAdv,'Advanced Score Trend'):`
       el.querySelectorAll('.cbt-bar-fill[data-w]').forEach(b=>{
         b.style.width=b.dataset.w+'%';
       });
+      // Time Per Chapter subject-filter sliding pill indicator — snap into
+      // place under the active pill with no visible slide on first mount
+      cbtPositionPillIndicator(true);
     },80);
   });
 }
@@ -4436,12 +4477,66 @@ ${buildSessLineChart(last30, target, today, hmMonth, hmYear, chartMonthFirst, ch
    data model — fent_ques_* is daily-only — so this section never fabricates
    per-chapter question counts. Only chapters with either logged focus time
    OR at least one ticked task are shown, keeping the list relevant. */
-// State: which chapter is expanded for full detail (subj_n key), and which subject filter is active
+// State: which chapter's task breakdown is expanded (subj_n key)
 let cbtSelectedChap=null;
-let cbtSubjFilter='all'; // 'all' | 'math' | 'chem' | 'phys'
 
-function cbtSetFilter(s){ cbtSubjFilter=s; cbtSelectedChap=null; if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();} }
-function cbtToggleChap(key){ cbtSelectedChap=(cbtSelectedChap===key)?null:key; if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();} }
+// Sets the active subject filter with a single attribute write on the list
+// wrapper (data-filter="all"|"math"|"chem"|"phys") — every row is already
+// in the DOM, CSS attribute selectors handle showing/hiding which ones
+// match. No rebuild, no re-render, no JS height math. The clicked pill's
+// active state is likewise just a classList toggle, and the sliding
+// indicator glides to match it.
+function cbtSetFilter(s){
+  const list=document.getElementById('cbtFlatList');
+  if(list) list.dataset.filter=s;
+  document.querySelectorAll('#cbtSlot .tpc-pill').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.filter===s);
+  });
+  cbtPositionPillIndicator(false);
+}
+
+// Moves/resizes/recolors the sliding pill-filter indicator to match
+// whichever pill is currently .active. instant=true (used right after the
+// section first paints) skips the transition for that one frame so it
+// doesn't visibly slide in from a 0-width sliver on mount.
+function cbtPositionPillIndicator(instant){
+  const row=document.getElementById('cbtPillRow');
+  const ind=document.getElementById('cbtPillIndicator');
+  if(!row||!ind) return;
+  const active=row.querySelector('.tpc-pill.active');
+  if(!active) return;
+  if(instant) ind.style.transition='none';
+  ind.style.left=active.offsetLeft+'px';
+  ind.style.width=active.offsetWidth+'px';
+  ind.style.background=active.dataset.bg;
+  ind.style.borderColor=active.dataset.border;
+  if(instant){
+    void ind.offsetWidth; // force reflow so the 'none' transition commits before re-enabling
+    ind.style.transition='';
+  }
+}
+
+// Expands/collapses a chapter's task breakdown with ZERO HTML rebuild — pure
+// DOM style changes on the existing nodes, so the max-height/opacity/chevron
+// CSS transitions already defined per-row actually get to play smoothly.
+function cbtToggleChap(key){
+  const wasOpen = cbtSelectedChap===key;
+
+  // Close whichever OTHER row was previously open, if any
+  if(cbtSelectedChap && cbtSelectedChap!==key){
+    const prevDetail=document.getElementById('cbtDetail-'+cbtSelectedChap);
+    const prevChevron=document.getElementById('cbtChevron-'+cbtSelectedChap);
+    if(prevDetail){ prevDetail.style.maxHeight='0px'; prevDetail.style.opacity='0'; }
+    if(prevChevron){ prevChevron.style.transform='rotate(0deg)'; }
+  }
+
+  cbtSelectedChap = wasOpen ? null : key;
+
+  const detail=document.getElementById('cbtDetail-'+key);
+  const chevron=document.getElementById('cbtChevron-'+key);
+  if(detail){ detail.style.maxHeight = wasOpen ? '0px' : '200px'; detail.style.opacity = wasOpen ? '0' : '1'; }
+  if(chevron){ chevron.style.transform = `rotate(${wasOpen?0:180}deg)`; }
+}
 
 // ── Analytics: Test Log section ────────────────────────────────────────────
 // Reads all fent_testlog_* keys, builds a summary + expandable per-test rows.
@@ -4741,7 +4836,7 @@ function buildChapterTimeBreakdown(){
   }
 
   if(touched.length===0){
-    return `<div class="ana-section" style="animation:fadeUp .4s var(--ease) both;">
+    return `<div class="ana-section" id="cbtSlot" style="animation:fadeUp .4s var(--ease) both;">
   <span class="ana-sect-title">Time Per Chapter</span>
   <div style="background:radial-gradient(circle at 50% 0%,rgba(255,255,255,0.03),transparent 70%);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:32px 14px;text-align:center;">
     <div style="font-size:22px;opacity:.15;margin-bottom:8px;">◌</div>
@@ -4750,30 +4845,25 @@ function buildChapterTimeBreakdown(){
 </div>`;
   }
 
-  // ── Apply subject filter ──
   const allTouched=touched;
-  if(cbtSubjFilter!=='all') touched=touched.filter(c=>c.subj===cbtSubjFilter);
-  touched.sort((a,b)=>b.secs-a.secs);
 
   const totalSecsAll=allTouched.reduce((a,c)=>a+c.secs,0);
   const totalQuesAll=allTouched.reduce((a,c)=>a+c.ques,0);
   const maxChapSecs=Math.max(...allTouched.map(c=>c.secs),1);
 
-  // ── Subject totals (always computed on full set, not filtered) ──
+  // ── Subject totals (used by the filter pill counts) ──
   const bySubj={math:{secs:0,ques:0,count:0},chem:{secs:0,ques:0,count:0},phys:{secs:0,ques:0,count:0}};
   allTouched.forEach(c=>{ bySubj[c.subj].secs+=c.secs; bySubj[c.subj].ques+=c.ques; bySubj[c.subj].count++; });
 
   // ── Most-studied chapter (headline stat) ──
-  const topChap=allTouched.length?[...allTouched].sort((a,b)=>b.secs-a.secs)[0]:null;
+  const topChap=[...allTouched].sort((a,b)=>b.secs-a.secs)[0];
   // Average time per chapter
-  const avgSecsPerChap=allTouched.length>0?Math.round(totalSecsAll/allTouched.length):0;
+  const avgSecsPerChap=Math.round(totalSecsAll/allTouched.length);
   // Average questions per touched chapter (total chapter-tagged ques / chapters with any ques logged)
   const chapsWithQues=allTouched.filter(c=>c.ques>0).length;
   const avgQuesPerChap=chapsWithQues>0?Math.round(totalQuesAll/chapsWithQues):0;
 
-  const uid='cb'+Math.floor(Math.random()*99999);
-
-  // ── Hero stat row ──
+  // ── Hero stat row (always global — same regardless of which subject group is open) ──
   const heroStats=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
     <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:11px;text-align:center;animation:fadeUp .35s var(--ease) .03s both;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--t1);letter-spacing:-.03em;">${allTouched.length}</div>
@@ -4789,18 +4879,12 @@ function buildChapterTimeBreakdown(){
     </div>
   </div>`;
 
-  // ── Subject filter pills (clickable, act as a segmented control) ──
-  const filterPills=`<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
-    ${['all','math','chem','phys'].filter(s=>s==='all'||bySubj[s].count>0).map(s=>{
-      const active=cbtSubjFilter===s;
-      const label=s==='all'?'All':subjNames[s];
-      const col=s==='all'?'rgba(255,255,255,0.7)':subjColors[s];
-      return `<button onclick="cbtSetFilter('${s}')" style="background:${active?(s==='all'?'rgba(255,255,255,0.1)':col+'22'):'transparent'};border:1px solid ${active?(s==='all'?'rgba(255,255,255,0.25)':col+'55'):'rgba(255,255,255,0.08)'};border-radius:99px;padding:5px 11px;font-size:9.5px;color:${active?col:'var(--t3)'};font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .2s;letter-spacing:.02em;">${label}${s!=='all'?` <span style="opacity:.5;">${bySubj[s].count}</span>`:''}</button>`;
-    }).join('')}
-  </div>`;
+  const topChapLine=`<div style="font-size:8.5px;color:var(--t3);margin-bottom:12px;font-family:'JetBrains Mono',monospace;">most time on <span style="color:${subjColors[topChap.subj]};">${topChap.name}</span> · avg ${fmtTime(avgSecsPerChap)}/chapter</div>`;
 
-  // ── Horizontal bar chart — each chapter as a labeled bar, click to expand ──
-  const barChartRows=touched.map((c,i)=>{
+  // ── Builds the row markup for one chapter — click to expand its
+  // task-by-task breakdown. Tagged with data-subj so the CSS filter above
+  // can show/hide it without any rebuild. ──
+  function buildRow(c,i){
     const ck=c.subj+'_'+c.n;
     const pct=Math.max(2,Math.round(c.secs/maxChapSecs*100));
     const isOpen=cbtSelectedChap===ck;
@@ -4813,7 +4897,8 @@ function buildChapterTimeBreakdown(){
       </div>`
     ).join('');
 
-    return `<div style="border-bottom:1px solid rgba(255,255,255,0.04);animation:fadeUp .3s var(--ease) ${delay}s both;">
+    const staggerDelay=(Math.min(i,4)*0.01).toFixed(3);
+    return `<div class="tpc-frow" data-subj="${c.subj}" style="--rd:${staggerDelay}s;animation:fadeUp .3s var(--ease) ${delay}s both;"><div class="tpc-frow-inner"><div style="border-bottom:1px solid rgba(255,255,255,0.04);">
       <div onclick="cbtToggleChap('${ck}')" style="padding:9px 2px;cursor:pointer;user-select:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;">
           <div style="display:flex;align-items:center;gap:7px;min-width:0;flex:1;">
@@ -4823,36 +4908,54 @@ function buildChapterTimeBreakdown(){
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
             ${c.ques>0?`<span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--p);opacity:.8;">${c.ques}q</span>`:''}
             <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${col};">${fmtTime(c.secs)}</span>
-            <svg viewBox="0 0 10 6" width="8" height="5" style="transition:transform .3s cubic-bezier(.16,1,.3,1);transform:rotate(${isOpen?180:0}deg);flex-shrink:0;opacity:.4;"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+            <svg id="cbtChevron-${ck}" viewBox="0 0 10 6" width="8" height="5" style="transition:transform .35s cubic-bezier(.16,1,.3,1);transform:rotate(${isOpen?180:0}deg);flex-shrink:0;opacity:.4;"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
           </div>
         </div>
         <div style="width:100%;height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;">
           <div class="cbt-bar-fill" data-w="${pct}" style="width:0%;height:100%;background:linear-gradient(90deg,${col}99,${col});border-radius:3px;transition:width .9s cubic-bezier(.16,1,.3,1);"></div>
         </div>
       </div>
-      <div style="max-height:${isOpen?'200px':'0px'};opacity:${isOpen?'1':'0'};overflow:hidden;transition:max-height .4s cubic-bezier(.16,1,.3,1),opacity .3s ease;">
+      <div id="cbtDetail-${ck}" style="max-height:${isOpen?'200px':'0px'};opacity:${isOpen?'1':'0'};overflow:hidden;transition:max-height .4s cubic-bezier(.16,1,.3,1),opacity .35s ease;">
         <div style="padding:2px 2px 12px 15px;">
           ${taskBreakdown||`<div style="font-size:9px;color:var(--t3);opacity:.5;padding:4px 0;">No task-level time logged yet</div>`}
         </div>
       </div>
-    </div>`;
-  }).join('');
+    </div></div></div>`;
+  }
 
-  // ── Mini context line for top chapter (only when viewing 'all') ──
-  const topChapLine = (cbtSubjFilter==='all' && topChap) ? `<div style="font-size:8.5px;color:var(--t3);margin-bottom:10px;font-family:'JetBrains Mono',monospace;">most time on <span style="color:${subjColors[topChap.subj]};">${topChap.name}</span> · avg ${fmtTime(avgSecsPerChap)}/chapter</div>` : '';
+  // ── Small filter pills (All/Math/Chem/Phys) — the original simple style,
+  // now with a sliding indicator behind whichever is active instead of each
+  // pill flipping its own background independently. Filtering itself is
+  // still pure CSS (.tpc-flat-list[data-filter=...] rules above); clicking
+  // just writes one attribute + repositions the indicator, nothing rebuilds. ──
+  const pills=`<div class="tpc-pill-row" id="cbtPillRow">
+    <div class="tpc-pill-indicator" id="cbtPillIndicator"></div>
+    ${['all','math','chem','phys'].filter(s=>s==='all'||bySubj[s].count>0).map(s=>{
+      const label=s==='all'?'All':subjNames[s];
+      const col=s==='all'?'rgba(255,255,255,0.7)':subjColors[s];
+      const pbg=s==='all'?'rgba(255,255,255,0.1)':col+'22';
+      const pborder=s==='all'?'rgba(255,255,255,0.25)':col+'55';
+      return `<button class="tpc-pill${s==='all'?' active':''}" data-filter="${s}" data-bg="${pbg}" data-border="${pborder}" onclick="cbtSetFilter('${s}')" style="--pcol:${col};">${label}${s!=='all'?` <span style="opacity:.5;">${bySubj[s].count}</span>`:''}</button>`;
+    }).join('')}
+  </div>`;
 
-  return `<div class="ana-section" style="animation:fadeUp .4s var(--ease) both;">
+  // ── One flat list, sorted by time desc across all subjects, like the
+  // very first version of this section. ──
+  const flatSorted=[...allTouched].sort((a,b)=>b.secs-a.secs);
+  const rows=flatSorted.map((c,i)=>buildRow(c,i)).join('');
+
+  return `<div class="ana-section" id="cbtSlot" style="animation:fadeUp .4s var(--ease) both;">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
     <span class="ana-sect-title" style="margin-bottom:0;">Time Per Chapter</span>
     <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.16);">${allTouched.length} chapter${allTouched.length!==1?'s':''} · ${fmtTime(totalSecsAll)} total</span>
   </div>
 
   ${heroStats}
-  ${filterPills}
-  ${topChapLine}
+  ${pills}
 
-  <div style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:4px 12px;">
-    ${barChartRows}
+  <div class="tpc-flat-list" id="cbtFlatList" data-filter="all">
+    <div class="tpc-top-line">${topChapLine}</div>
+    ${rows}
   </div>
 
   <div style="font-size:8px;color:var(--t3);opacity:.4;margin-top:10px;text-align:center;font-family:'JetBrains Mono',monospace;">Tap a chapter to see its task breakdown · questions tracked per-chapter from now on</div>
