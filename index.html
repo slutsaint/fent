@@ -2230,7 +2230,7 @@ function gatherAnalyticsPDFData(){
     return localDateKey(dt);
   }
   let totalFocusSecs=0, totalSessions=0, totalQuestions=0, activeDays=0;
-  const monthly={}, weekly={}, daily={};
+  const monthly={}, weekly={}, daily={}, sessionLog={};
   const subjTime={math:0,chem:0,phys:0};
   const chapTime={};
   try{
@@ -2268,6 +2268,12 @@ function gatherAnalyticsPDFData(){
           chapTime[ck].secs+=e.durationSecs;
           if(e.task && chapTime[ck].byTask[e.task]!=null) chapTime[ck].byTask[e.task]+=e.durationSecs;
         }
+        // Full Session Log — every individual logged session, kept as-is
+        // (not aggregated), grouped by day.
+        (sessionLog[dateStr]=sessionLog[dateStr]||[]).push({
+          subj:e.subj||null, chapName:e.chapName||(e.chapN!=null?('Ch '+e.chapN):null),
+          task:e.task||null, durationSecs:e.durationSecs,
+        });
       });
     });
   }catch(e){}
@@ -2276,13 +2282,16 @@ function gatherAnalyticsPDFData(){
   // month view uses (avg sess/day, avg ques/day, on-target %): active days
   // = every non-Sunday that's passed, plus Sundays only if something was
   // actually logged; on-target = sess >= that day's own saved target
-  // snapshot. Computed independently per calendar month, not all-time. ──
+  // snapshot. Computed independently per calendar month, not all-time.
+  // Also builds `dailyBars` — one entry per day of the month — so the PDF
+  // can draw the same sessions/day + questions/day charts the app shows. ──
   const dailyTarget=(typeof focusSettings!=='undefined'&&focusSettings.dailyTarget)||4;
   const quesTarget=(typeof focusSettings!=='undefined'&&focusSettings.dailyQuesTarget)||70;
   Object.keys(monthly).forEach(mk=>{
     const [yr,mo]=mk.split('-').map(Number);
     const daysInMonth=new Date(yr,mo,0).getDate();
     let activeCount=0,sumSess=0,sumQues=0,workCount=0,metCount=0;
+    const dailyBars=[];
     for(let day=1; day<=daysInMonth; day++){
       const dt=new Date(yr,mo-1,day);
       if(dt>today) break;
@@ -2294,10 +2303,12 @@ function gatherAnalyticsPDFData(){
       const dayTarget=isToday?dailyTarget:(parseFloat(localStorage.getItem('fent_daytarget_'+k)||String(dailyTarget)));
       if(!isSun || sess>0 || ques>0){ activeCount++; sumSess+=sess; sumQues+=ques; }
       if(!isSun){ workCount++; if(sess>=dayTarget) metCount++; }
+      dailyBars.push({day, sess, ques, met:sess>=dayTarget, isSun});
     }
     monthly[mk].avgSess=activeCount>0?sumSess/activeCount:0;
     monthly[mk].avgQues=activeCount>0?sumQues/activeCount:0;
     monthly[mk].onTargetPct=workCount>0?Math.round(metCount/workCount*100):0;
+    monthly[mk].dailyBars=dailyBars;
   });
 
   // ── Attach a compact daily log to each week (every logged day, so every
@@ -2369,6 +2380,8 @@ function gatherAnalyticsPDFData(){
     topChapters:Object.values(chapTime).length?allChapters.filter(c=>c.secs>0).sort((a,b)=>b.secs-a.secs):[],
     allChapters,
     backlog,
+    sessionLog:Object.keys(sessionLog).sort().map(dateStr=>({dateStr, sessions:sessionLog[dateStr]})),
+    sessionLogCount:Object.values(sessionLog).reduce((a,arr)=>a+arr.length,0),
   };
 }
 
@@ -2387,12 +2400,17 @@ function buildAnalyticsPDFDoc(d){
   const subjColor={math:GOLD,chem:GREEN,phys:VIOLET};
   const subjLabel={math:'Mathematics',chem:'Chemistry',phys:'Physics'};
   const taskColor={theory:GOLD,module:GREEN,pyq:VIOLET,revision:RED};
-  const taskLabel={theory:'Theory',module:'Module',pyq:'PYQ',revision:'Revision'};
+  const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   function fmtTime(s){
     if(!s||s<=0) return '—';
     const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
     return h>0?`${h}h ${m}m`:`${m}m`;
+  }
+  function fmtTimeShort(s){
+    if(!s||s<=0) return '0m';
+    const m=Math.round(s/60);
+    return m>=60?`${Math.floor(m/60)}h${m%60?(m%60)+'m':''}`:`${m}m`;
   }
   function monthLabel(mk){ const [yr,mo]=mk.split('-'); return `${MONTHS[parseInt(mo)-1]} ${yr}`; }
   function weekLabel(wk){ const p=wk.split('-'); return `${parseInt(p[2])} ${MONTHS[parseInt(p[1])-1]}`; }
@@ -2412,13 +2430,6 @@ function buildAnalyticsPDFDoc(d){
     doc.setDrawColor(LINE); doc.setLineWidth(0.75);
     doc.line(M, y+6, W-M, y+6);
     y+=24;
-  }
-  function subHeading(txt, color){
-    ensureSpace(20);
-    doc.setFillColor(color); doc.circle(M+3, y-3, 3, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(INK);
-    doc.text(txt, M+13, y);
-    y+=15;
   }
   function statGrid(items, cols){
     const colW=(W-2*M)/cols;
@@ -2461,11 +2472,68 @@ function buildAnalyticsPDFDoc(d){
     doc.text(valueTxt, W-M, y, {align:'right'});
     y+=14.5;
   }
-  // Small filled/outline dot used for the T·M·P·R task flags in the
-  // per-chapter tables — filled = done, outline = not done.
+  // Small filled/outline dot used for the T·M·P·R task flags — filled = done.
   function taskDot(x, yy, color, done){
-    if(done){ doc.setFillColor(color); doc.circle(x, yy, 2.6, 'F'); }
-    else { doc.setDrawColor(FAINT); doc.setLineWidth(0.6); doc.circle(x, yy, 2.6, 'S'); }
+    if(done){ doc.setFillColor(color); doc.circle(x, yy, 2.4, 'F'); }
+    else { doc.setDrawColor(FAINT); doc.setLineWidth(0.5); doc.circle(x, yy, 2.4, 'S'); }
+  }
+
+  // One month's visual block — sessions/day bars + questions/day bars,
+  // exactly mirroring the app's own two mini-charts, plus the same
+  // avg-per-day / on-target stat line. This is the visual heart of the
+  // report now, not an afterthought.
+  function monthChart(mth){
+    const bars=mth.dailyBars||[];
+    if(bars.length===0) return;
+    const blockH=118;
+    ensureSpace(blockH);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(INK);
+    doc.text(monthLabel(mth.key), M, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.3); doc.setTextColor(MUTED);
+    const otc=mth.onTargetPct>=80?GREEN:mth.onTargetPct>=50?GOLD:FAINT;
+    doc.text(`avg ${Math.round((mth.avgSess||0)*10)/10} sess/d`, W-M-260, y);
+    doc.text(`avg ${Math.round((mth.avgQues||0)*10)/10} ques/d`, W-M-160, y);
+    doc.setTextColor(otc); doc.text(`${mth.onTargetPct||0}% on target`, W-M-60, y);
+    y+=4;
+    doc.setDrawColor(LINE); doc.setLineWidth(0.4); doc.line(M,y,W-M,y);
+    y+=10;
+
+    const bw=(W-2*M)/bars.length;
+    // Sessions/day bars
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(FAINT);
+    doc.text('SESSIONS / DAY', M, y); y+=8;
+    const sessH=32, sessBase=y+sessH;
+    const maxSess=Math.max(...bars.map(b=>b.sess),1);
+    doc.setDrawColor(LINE); doc.setLineWidth(0.3); doc.line(M,sessBase,W-M,sessBase);
+    bars.forEach((b,i)=>{
+      const bx=M+i*bw;
+      const col = b.sess<=0 ? TRACK : (b.isSun ? VIOLET : (b.met?GREEN:GOLD));
+      const bh = b.sess>0 ? Math.max(2,sessH*(b.sess/maxSess)) : 1;
+      doc.setFillColor(col);
+      doc.rect(bx+bw*0.18, sessBase-bh, Math.max(bw*0.64,0.8), bh, 'F');
+    });
+    y=sessBase+12;
+
+    // Questions/day bars
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(FAINT);
+    doc.text('QUESTIONS / DAY', M, y); y+=8;
+    const quesH=28, quesBase=y+quesH;
+    const maxQues=Math.max(...bars.map(b=>b.ques),1);
+    doc.setDrawColor(LINE); doc.setLineWidth(0.3); doc.line(M,quesBase,W-M,quesBase);
+    bars.forEach((b,i)=>{
+      const bx=M+i*bw;
+      const col = b.ques<=0 ? TRACK : VIOLET;
+      const bh = b.ques>0 ? Math.max(2,quesH*(b.ques/maxQues)) : 1;
+      doc.setFillColor(col);
+      doc.rect(bx+bw*0.18, quesBase-bh, Math.max(bw*0.64,0.8), bh, 'F');
+    });
+    // Day-of-month ticks: 1, 10, 20, last
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.6); doc.setTextColor(FAINT);
+    [1,10,20,bars.length].forEach(dn=>{
+      const b=bars[dn-1]; if(!b) return;
+      doc.text(String(dn), M+(dn-1)*bw, quesBase+9);
+    });
+    y=quesBase+16;
   }
 
   // ═══ COVER / HEADER ═══
@@ -2491,182 +2559,83 @@ function buildAnalyticsPDFDoc(d){
     ['Tests logged', d.testCount],
   ], 4);
 
-  // ═══ SYLLABUS COMPLETION ═══
-  sectionTitle('Syllabus Completion');
-  ['math','chem','phys'].forEach(k=>{
-    const st=d.subjStats[k], pct=st.total>0?st.done/st.total:0;
-    barRow(subjLabel[k], `${st.done}/${st.total} · ${Math.round(pct*100)}%`, pct, subjColor[k]);
-  });
-  y+=6;
-
-  // ═══ COMPLETION BY TASK TYPE — aggregate, then per-subject ═══
-  sectionTitle('Completion by Task Type');
-  [['theory','Theory',GOLD],['module','Module',GREEN],['pyq','PYQ',VIOLET],['revision','Revision',RED]].forEach(([key,label,color])=>{
-    const pct=d.taskMax>0?d.taskTotals[key]/d.taskMax:0;
-    barRow(label, `${d.taskTotals[key]}/${d.taskMax} · ${Math.round(pct*100)}%`, pct, color);
-  });
-  y+=4;
-  ensureSpace(60);
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(MUTED);
-  doc.text('BY SUBJECT', M, y); y+=12;
-  const tCols=['T','M','P','R']; const tKeys=['theory','module','pyq','revision'];
-  ['math','chem','phys'].forEach(k=>{
-    ensureSpace(14);
-    doc.setFillColor(subjColor[k]); doc.circle(M+2,y-3,2.2,'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(INK);
-    doc.text(subjLabel[k], M+10, y);
-    let x=M+130;
-    tKeys.forEach((tk,i)=>{
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(MUTED);
-      doc.text(`${tCols[i]} ${d.taskBySubj[k][tk]}/${d.taskBySubj[k].max}`, x, y);
-      x+=95;
-    });
-    y+=14;
-  });
-  y+=10;
-
-  // ═══ TIME BY SUBJECT (stacked bar + legend) ═══
-  sectionTitle('Time by Subject');
-  const totalSubjTime=d.subjTime.math+d.subjTime.chem+d.subjTime.phys;
-  if(totalSubjTime>0){
-    ensureSpace(50);
-    let bx=M;
-    ['math','chem','phys'].forEach(k=>{
-      const w=(W-2*M)*(d.subjTime[k]/totalSubjTime);
-      doc.setFillColor(subjColor[k]); doc.rect(bx,y,Math.max(w,0),13,'F');
-      bx+=w;
-    });
-    y+=24;
-    ['math','chem','phys'].forEach(k=>{
-      doc.setFillColor(subjColor[k]); doc.circle(M+3,y-3,2.6,'F');
-      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(INK);
-      doc.text(`${subjLabel[k]}  —  ${fmtTime(d.subjTime[k])}`, M+12, y);
-      y+=14;
-    });
-  } else {
-    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
-    doc.text('No chapter-level focus time logged yet.', M, y); y+=16;
-  }
-
-  // ═══ FULL CHAPTER-BY-CHAPTER LISTING — every one of the 69 chapters ═══
-  newPage();
-  sectionTitle('Full Chapter Listing', 'every chapter · dots = Theory · Module · PYQ · Revision (filled = done)');
-  const chapColW=[195,80,70,70]; // name, window, flags(unused,drawn manually), time+status combined
-  ['math','chem','phys'].forEach(subjKey=>{
-    const chaps=d.allChapters.filter(c=>c.subj===subjKey);
-    ensureSpace(34);
-    subHeading(`${subjLabel[subjKey]}  —  ${d.subjStats[subjKey].done}/${d.subjStats[subjKey].total} done`, subjColor[subjKey]);
-    tableHeader(['Chapter','Window','T · M · P · R','Time','Status'], [190,75,70,60,90]);
-    chaps.forEach(c=>{
-      ensureSpace(13.5);
-      const xName=M, xWindow=M+190, xFlags=M+265, xTime=M+335, xStatus=M+400;
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.8); doc.setTextColor(INK);
-      doc.text(c.name, xName, y, {maxWidth:185});
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(FAINT);
-      doc.text(`${c.start}–${c.end}`, xWindow, y);
-      ['theory','module','pyq','revision'].forEach((tk,i)=>{
-        taskDot(xFlags+i*13, y-2.5, taskColor[tk], c[tk]);
-      });
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.3); doc.setTextColor(MUTED);
-      doc.text(fmtTime(c.secs), xTime, y);
-      const statusColor = c.status==='Done'?GREEN : c.status.indexOf('Overdue')>=0?RED : c.status==='In progress'?GOLD : FAINT;
-      doc.setTextColor(statusColor);
-      doc.text(c.status, xStatus, y, {maxWidth:105});
-      y+=13.5;
-    });
-    y+=10;
-  });
-
-  // ═══ MONTHLY / WEEKLY ═══
-  newPage();
-  sectionTitle('Monthly Breakdown', 'avg/day + on-target % use the same active-day formula as the app');
+  // ═══ MONTHLY PROGRESS — the visual centrepiece: every month gets its
+  // own sessions/day + questions/day chart, same as the app's own view. ═══
+  sectionTitle('Monthly Progress', `${d.monthlyArr.length} month${d.monthlyArr.length!==1?'s':''} logged`);
   if(d.monthlyArr.length===0){
     doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
     doc.text('No monthly data yet.', M, y); y+=16;
   } else {
-    const colW=[62,66,50,58,62,62,52];
-    tableHeader(['Month','Focus Time','Sess','Ques','Avg S/D','Avg Q/D','On Tgt'], colW);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.6);
-    d.monthlyArr.forEach(mth=>{
-      ensureSpace(14);
-      let x=M;
-      doc.setTextColor(INK); doc.text(monthLabel(mth.key), x, y); x+=colW[0];
-      doc.setTextColor(MUTED); doc.text(fmtTime(mth.secs), x, y); x+=colW[1];
-      doc.text(String(Math.round(mth.sess)), x, y); x+=colW[2];
-      doc.text(String(mth.ques), x, y); x+=colW[3];
-      doc.text((Math.round((mth.avgSess||0)*10)/10).toString(), x, y); x+=colW[4];
-      doc.text((Math.round((mth.avgQues||0)*10)/10).toString(), x, y); x+=colW[5];
-      const otc=mth.onTargetPct>=80?GREEN:mth.onTargetPct>=50?GOLD:FAINT;
-      doc.setTextColor(otc); doc.text(`${mth.onTargetPct||0}%`, x, y);
-      y+=14;
-    });
-    y+=12;
-
-    sectionTitle('Monthly Focus Hours');
-    const chartH=85; ensureSpace(chartH+24);
-    const maxSecs=Math.max(...d.monthlyArr.map(mth=>mth.secs),1);
-    const bw=(W-2*M)/d.monthlyArr.length;
-    const baseY=y+chartH;
-    doc.setDrawColor(LINE); doc.setLineWidth(0.5); doc.line(M,baseY,W-M,baseY);
-    d.monthlyArr.forEach((mth,i)=>{
-      const bh=chartH*(mth.secs/maxSecs);
-      const bx=M+i*bw+bw*0.18;
-      doc.setFillColor(BLUE);
-      doc.roundedRect(bx, baseY-bh, bw*0.64, Math.max(bh,1.5), 2, 2, 'F');
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(MUTED);
-      const mo=mth.key.split('-')[1];
-      doc.text(MONTHS[parseInt(mo)-1], bx, baseY+11);
-    });
-    y=baseY+24;
+    d.monthlyArr.forEach(mth=>monthChart(mth));
   }
 
-  // ═══ WEEKLY BREAKDOWN — every week, with every logged day nested
-  // underneath so each individual day is traceable, not just the weekly
-  // total. Days with zero activity are skipped to keep this from
-  // ballooning — only days something was actually logged appear. ═══
+  // ═══ FULL SESSION LOG — every individual logged session, grouped by day.
+  // This is the raw ground truth: not a daily total, every single session
+  // entry (subject, chapter, task, duration) that was ever logged. ═══
   newPage();
-  sectionTitle('Weekly Breakdown', `${d.weeklyArr.length} week${d.weeklyArr.length!==1?'s':''} · every logged day listed`);
-  if(d.weeklyArr.length===0){
+  sectionTitle('Full Session Log', `${d.sessionLogCount} session${d.sessionLogCount!==1?'s':''} across ${d.sessionLog.length} day${d.sessionLog.length!==1?'s':''}`);
+  if(d.sessionLog.length===0){
     doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
-    doc.text('No weekly data yet.', M, y); y+=16;
+    doc.text('No sessions logged yet.', M, y); y+=16;
   } else {
-    const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    d.weeklyArr.forEach(w=>{
-      ensureSpace(15+((w.days||[]).length*11)+6);
-      // Week summary row
+    d.sessionLog.forEach(dayEntry=>{
+      const dt=new Date(dayEntry.dateStr+'T00:00:00');
+      const dayTotalSecs=dayEntry.sessions.reduce((a,s)=>a+s.durationSecs,0);
+      ensureSpace(11+dayEntry.sessions.length*9.5+4);
+      // Day header
       let x=M;
-      doc.setFont('helvetica','bold'); doc.setFontSize(8.3); doc.setTextColor(INK);
-      doc.text('Week of '+weekLabel(w.key), x, y); x=M+140;
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.6); doc.setTextColor(MUTED);
-      doc.text(`${fmtTime(w.secs)}  ·  ${Math.round(w.sess)} sess  ·  ${w.ques} ques`, x, y);
-      y+=6;
-      doc.setDrawColor(LINE); doc.setLineWidth(0.4); doc.line(M,y,W-M,y);
-      y+=11;
-      // Daily sub-rows
-      (w.days||[]).forEach(day=>{
-        ensureSpace(11);
-        const dt=new Date(day.dateStr+'T00:00:00');
-        const dow=DOW[dt.getDay()];
-        let xx=M+8;
-        doc.setFont('helvetica','normal'); doc.setFontSize(7);
-        doc.setTextColor(dt.getDay()===0?VIOLET:FAINT);
-        doc.text(dow, xx, y); xx+=26;
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.6);
+      doc.setTextColor(dt.getDay()===0?VIOLET:INK);
+      doc.text(`${DOW[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`, x, y);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(MUTED);
+      doc.text(`${dayEntry.sessions.length} session${dayEntry.sessions.length!==1?'s':''} · ${fmtTimeShort(dayTotalSecs)}`, W-M, y, {align:'right'});
+      y+=9;
+      doc.setDrawColor(LINE); doc.setLineWidth(0.35); doc.line(M,y,W-M,y);
+      y+=9;
+      // Each session, compact single line
+      dayEntry.sessions.forEach(s=>{
+        ensureSpace(9.5);
+        let xx=M+6;
+        const col=s.subj?subjColor[s.subj]:FAINT;
+        doc.setFillColor(col); doc.circle(xx, y-2.5, 1.8, 'F');
+        xx+=8;
+        doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor(INK);
+        doc.text(s.chapName||'—', xx, y, {maxWidth:260}); xx+=270;
         doc.setTextColor(MUTED);
-        doc.text(`${dt.getDate()} ${MONTHS[dt.getMonth()]}`, xx, y); xx+=55;
-        doc.setTextColor(day.sess>0?INK:FAINT);
-        doc.text(`${Math.round(day.sess*10)/10} sess`, xx, y); xx+=55;
-        doc.setTextColor(day.ques>0?INK:FAINT);
-        doc.text(`${day.ques} ques`, xx, y); xx+=55;
-        doc.setTextColor(day.secs>0?INK:FAINT);
-        doc.text(fmtTime(day.secs), xx, y);
-        y+=11;
+        doc.text(s.task?s.task[0].toUpperCase()+s.task.slice(1):'—', xx, y); xx+=90;
+        doc.setTextColor(INK);
+        doc.text(fmtTimeShort(s.durationSecs), xx, y);
+        y+=9.5;
       });
       y+=6;
     });
   }
 
-  // ═══ TEST PERFORMANCE — aggregate + every single entry ═══
+  // ═══ WEEKLY SUMMARY — quick scan, one row per week (the Full Session Log
+  // above already covers per-day/per-session detail, so this stays compact
+  // rather than repeating it). ═══
   newPage();
+  sectionTitle('Weekly Summary', `${d.weeklyArr.length} week${d.weeklyArr.length!==1?'s':''}`);
+  if(d.weeklyArr.length===0){
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
+    doc.text('No weekly data yet.', M, y); y+=16;
+  } else {
+    const colW=[150,130,110,110];
+    tableHeader(['Week Of','Focus Time','Sessions','Questions'], colW);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    d.weeklyArr.forEach(w=>{
+      ensureSpace(15);
+      let x=M;
+      doc.setTextColor(INK); doc.text(weekLabel(w.key), x, y); x+=colW[0];
+      doc.setTextColor(MUTED); doc.text(fmtTime(w.secs), x, y); x+=colW[1];
+      doc.text(String(Math.round(w.sess)), x, y); x+=colW[2];
+      doc.text(String(w.ques), x, y);
+      y+=15;
+    });
+  }
+  y+=12;
+
+  // ═══ TEST PERFORMANCE — aggregate + every single entry ═══
   sectionTitle('Test Performance');
   statGrid([
     ['Mains avg', d.mainsStats.totalAvgPct!=null?`${Math.round(d.mainsStats.totalMarks)}/300`:'—'],
@@ -2674,12 +2643,7 @@ function buildAnalyticsPDFDoc(d){
     ['Advanced avg', d.advStats.totalAvgPct!=null?`${Math.round(d.advStats.totalMarks)}/360`:'—'],
     ['Advanced best', d.advBest!=null?`${Math.round(d.advBest)}/360`:'—'],
   ], 2);
-
-  sectionTitle('Full Test Log', `${d.testEntries.length} test${d.testEntries.length!==1?'s':''}`);
-  if(d.testEntries.length===0){
-    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
-    doc.text('No tests logged yet.', M, y); y+=16;
-  } else {
+  if(d.testEntries.length>0){
     const colW=[75,55,80,80,80,90];
     tableHeader(['Date','Type','Math','Chem','Phys','Total'], colW);
     doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
@@ -2700,10 +2664,19 @@ function buildAnalyticsPDFDoc(d){
       y+=14;
     });
   }
-  y+=10;
 
-  // ═══ BACKLOG — every overdue chapter, uncapped ═══
-  sectionTitle(`Backlog — ${d.backlog.length} Chapter${d.backlog.length!==1?'s':''} Overdue`);
+  // ═══ SYLLABUS — condensed to one dense page: completion bars, task-type
+  // breakdown, backlog, and every chapter in a single compact combined
+  // table (not one page per subject) since logging is the priority now. ═══
+  newPage();
+  sectionTitle('Syllabus Overview');
+  ['math','chem','phys'].forEach(k=>{
+    const st=d.subjStats[k], pct=st.total>0?st.done/st.total:0;
+    barRow(subjLabel[k], `${st.done}/${st.total} · ${Math.round(pct*100)}%  ·  ${fmtTime(d.subjTime[k])}`, pct, subjColor[k]);
+  });
+  y+=8;
+
+  sectionTitle(`Backlog — ${d.backlog.length} Overdue`);
   if(d.backlog.length===0){
     doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
     doc.text('No overdue chapters — fully on track.', M, y); y+=16;
@@ -2712,14 +2685,21 @@ function buildAnalyticsPDFDoc(d){
   }
   y+=8;
 
-  // ═══ ALL TOUCHED CHAPTERS, RANKED BY TIME ═══
-  sectionTitle('Chapters Ranked by Time Spent');
-  if(d.topChapters.length===0){
-    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
-    doc.text('No chapter-level focus time logged yet.', M, y); y+=16;
-  } else {
-    d.topChapters.forEach(c=>dotRow(subjColor[c.subj], c.name, fmtTime(c.secs)));
-  }
+  sectionTitle('All Chapters', 'dots = Theory · Module · PYQ · Revision (filled = done)');
+  tableHeader(['Chapter','T · M · P · R','Time','Status'], [225,80,80,90]);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.2);
+  d.allChapters.forEach(c=>{
+    ensureSpace(11.5);
+    const xName=M, xFlags=M+225, xTime=M+300, xStatus=M+365;
+    doc.setFillColor(subjColor[c.subj]); doc.circle(xName-4,y-2.5,1.8,'F');
+    doc.setTextColor(INK);
+    doc.text(c.name, xName+4, y, {maxWidth:216});
+    ['theory','module','pyq','revision'].forEach((tk,i)=>{ taskDot(xFlags+i*12, y-2.2, taskColor[tk], c[tk]); });
+    doc.setTextColor(MUTED); doc.text(fmtTime(c.secs), xTime, y);
+    const statusColor = c.status==='Done'?GREEN : c.status.indexOf('Overdue')>=0?RED : c.status==='In progress'?GOLD : FAINT;
+    doc.setTextColor(statusColor); doc.text(c.status, xStatus, y, {maxWidth:100});
+    y+=11.5;
+  });
 
   // ═══ FOOTER on every page ═══
   const pageCount=doc.internal.getNumberOfPages();
