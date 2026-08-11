@@ -461,8 +461,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
    glides between pill positions and recolors (iOS segmented-control style)
    — instead of each pill flipping its own background independently, which
    read as a flatter, less considered switch. */
-#pdfExportBtn:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);}
-#pdfExportBtn:active{opacity:.7;}
+#pdfExportBtn:hover{background:rgba(35,35,38,0.94);border-color:rgba(255,255,255,0.24);}
+#pdfExportBtn:active{transform:scale(.92);}
 @keyframes pdfBtnSpin{to{transform:rotate(360deg);}}
 #pdfExportBtn.loading #pdfExportBtnIcon{animation:pdfBtnSpin .9s linear infinite;}
 
@@ -1603,6 +1603,17 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <!-- ANALYTICS -->
   <div class="panel" id="p-ana">
     <div id="anaContent"></div>
+
+    <!-- Export PDF — a real floating action button, fixed to the viewport
+         (not nested inside any card), so it never competes with the Hero
+         Card's own layout/decorations. Being a direct child of this .panel
+         means it automatically disappears when you switch to another tab
+         (the panel itself gets display:none) — no extra show/hide JS
+         needed, and it's always in the same reachable spot regardless of
+         scroll position while on Analytics. -->
+    <button id="pdfExportBtn" onclick="downloadAnalyticsPDF(this)" title="Export analytics as PDF" style="position:fixed;right:18px;bottom:86px;z-index:40;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:rgba(20,20,22,0.92);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.14);border-radius:50%;box-shadow:0 4px 18px rgba(0,0,0,0.45),0 0 0 1px rgba(255,255,255,0.02);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .2s ease,border-color .2s ease,transform .15s ease;">
+      <svg id="pdfExportBtnIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
   </div>
 
 </div>
@@ -2857,14 +2868,6 @@ function renderAnalytics(){
   @keyframes heroBarIn{from{width:0%}to{width:var(--tw)}}
 </style>
 <div class="ana-section" style="padding:24px 26px 22px;animation-delay:.02s;overflow:hidden;position:relative;">
-
-  <!-- Export PDF — small icon-only button tucked into the Hero Card's own
-       top-right corner (sits in the card's top padding, above the status
-       row, so it never collides with any content) instead of a separate
-       row that pushed the whole card down. -->
-  <button id="pdfExportBtn" onclick="downloadAnalyticsPDF(this)" title="Export analytics as PDF" style="position:absolute;top:14px;right:16px;z-index:2;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:99px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .2s ease,border-color .2s ease,opacity .2s ease;">
-    <svg id="pdfExportBtnIcon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-  </button>
 
   <!-- plum left-corner ambient bleed — JEE colour -->
   <div style="position:absolute;top:-50px;left:-30px;width:220px;height:180px;border-radius:50%;background:radial-gradient(ellipse,rgba(119,217,211,.06) 0%,transparent 68%);pointer-events:none;"></div>
