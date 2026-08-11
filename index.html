@@ -461,6 +461,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
    glides between pill positions and recolors (iOS segmented-control style)
    — instead of each pill flipping its own background independently, which
    read as a flatter, less considered switch. */
+#pdfExportBtn:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);}
+#pdfExportBtn:active{opacity:.7;}
+@keyframes pdfBtnSpin{to{transform:rotate(360deg);}}
+#pdfExportBtn.loading #pdfExportBtnIcon{animation:pdfBtnSpin .9s linear infinite;}
+
 .tpc-pill-row{position:relative;display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:nowrap;}
 .tpc-pill-indicator{position:absolute;top:0;left:0;width:0;height:100%;border-radius:99px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);transition:left .32s cubic-bezier(.16,1,.3,1),width .32s cubic-bezier(.16,1,.3,1),background .22s ease,border-color .22s ease;pointer-events:none;z-index:0;}
 .tpc-pill{position:relative;z-index:1;background:transparent;border:1px solid transparent;border-radius:99px;padding:5px 11px;font-size:9.5px;font-family:'JetBrains Mono',monospace;color:var(--t3);cursor:pointer;letter-spacing:.02em;transition:color .22s ease;-webkit-tap-highlight-color:transparent;white-space:nowrap;}
@@ -2129,6 +2134,605 @@ function computeExamStats(entries, targetTotal){
   };
 }
 
+/* ═══ Analytics PDF Export ═══════════════════════════════════════════════
+   Lazy-loads jsPDF from CDN only when the button is actually clicked (keeps
+   the tracker file itself small and fully offline-capable until export is
+   used). Everything drawn is vector (rects/lines/text via jsPDF's own API,
+   no rasterized DOM screenshots), which is what keeps the output file tiny
+   even with charts on every page — a couple hundred KB, not megabytes.
+   All figures are computed fresh from localStorage using the SAME formulas
+   already used elsewhere in the app (computeExamStats, isDone/isAny, the
+   shared computeWastedSessionsAllTime helper, the same backlog definition
+   used by the Syllabus Tracker) so the PDF can never silently disagree with
+   what's on screen. */
+
+function loadJsPDF(cb){
+  if(window.jspdf && window.jspdf.jsPDF){ cb(); return; }
+  const existing=document.getElementById('jspdf-cdn-script');
+  if(existing){ existing.addEventListener('load',cb); return; }
+  const s=document.createElement('script');
+  s.id='jspdf-cdn-script';
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  s.onload=cb;
+  s.onerror=()=>alert('Could not load the PDF library — check your internet connection and try again.');
+  document.head.appendChild(s);
+}
+
+const PDF_ICON_DOWNLOAD='<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>';
+const PDF_ICON_LOADING='<circle cx="12" cy="12" r="9" stroke-dasharray="42" stroke-dashoffset="14"/>';
+const PDF_ICON_CHECK='<polyline points="20 6 9 17 4 12"/>';
+const PDF_ICON_ERROR='<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';
+
+function downloadAnalyticsPDF(btnEl){
+  const icon=document.getElementById('pdfExportBtnIcon');
+  const setIcon=(svgInner, spinning, strokeColor)=>{
+    if(!icon) return;
+    icon.innerHTML=svgInner;
+    icon.style.stroke=strokeColor||'rgba(255,255,255,0.6)';
+    if(btnEl) btnEl.classList.toggle('loading', !!spinning);
+  };
+  if(btnEl) btnEl.style.pointerEvents='none';
+  setIcon(PDF_ICON_LOADING, true);
+  const finish=(state)=>{
+    if(state==='ok') setIcon(PDF_ICON_CHECK, false, '#8fd4a8');
+    else if(state==='err') setIcon(PDF_ICON_ERROR, false, '#e08a8a');
+    setTimeout(()=>{
+      setIcon(PDF_ICON_DOWNLOAD, false);
+      if(btnEl) btnEl.style.pointerEvents='auto';
+    }, 1600);
+  };
+  loadJsPDF(()=>{
+    try{
+      const data=gatherAnalyticsPDFData();
+      buildAnalyticsPDFDoc(data);
+      finish('ok');
+    }catch(e){
+      console.error('PDF export failed:',e);
+      finish('err');
+    }
+  });
+}
+
+function gatherAnalyticsPDFData(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const allSubjs=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
+
+  // ── Chapter completion, per subject (same isDone() used everywhere) ──
+  const subjStats={
+    math:{done:MATH.filter(ch=>isDone('math',ch.n)).length,total:MATH.length},
+    chem:{done:CHEM.filter(ch=>isDone('chem',ch.n)).length,total:CHEM.length},
+    phys:{done:PHYS.filter(ch=>isDone('phys',ch.n)).length,total:PHYS.length},
+  };
+  const totalDone=subjStats.math.done+subjStats.chem.done+subjStats.phys.done;
+  const totalChaps=MATH.length+CHEM.length+PHYS.length;
+
+  // ── Task-type totals: aggregate AND per-subject breakdown ──
+  const taskTotals={theory:0,module:0,pyq:0,revision:0};
+  const taskBySubj={
+    math:{theory:0,module:0,pyq:0,revision:0,max:MATH.length},
+    chem:{theory:0,module:0,pyq:0,revision:0,max:CHEM.length},
+    phys:{theory:0,module:0,pyq:0,revision:0,max:PHYS.length},
+  };
+  allSubjs.forEach(({s,ch})=>{
+    const t=gs(s,ch.n);
+    Object.keys(taskTotals).forEach(k=>{ if(t[k]){ taskTotals[k]++; taskBySubj[s][k]++; } });
+  });
+  const taskMax=allSubjs.length;
+  const mainsReadyDone=taskTotals.theory+taskTotals.pyq;
+  const mainsReadyMax=taskMax*2;
+  const mainsReadyPct=mainsReadyMax>0?Math.round(mainsReadyDone/mainsReadyMax*100):0;
+
+  // ── All-time totals + monthly/weekly buckets + subject/chapter time ──
+  function weekKey(dateStr){
+    const dt=new Date(dateStr+'T00:00:00');
+    const day=dt.getDay();
+    dt.setDate(dt.getDate()+(day===0?-6:1-day)); // Monday of that week
+    return localDateKey(dt);
+  }
+  let totalFocusSecs=0, totalSessions=0, totalQuestions=0, activeDays=0;
+  const monthly={}, weekly={}, daily={};
+  const subjTime={math:0,chem:0,phys:0};
+  const chapTime={};
+  try{
+    getKeysWithPrefix('fent_sessions_').forEach(k=>{
+      const v=parseFloat(localStorage.getItem(k)||'0')||0;
+      if(v<=0) return;
+      totalSessions+=v; activeDays++;
+      const dateStr=k.replace('fent_sessions_',''), mk=dateStr.slice(0,7), wk=weekKey(dateStr);
+      (monthly[mk]=monthly[mk]||{secs:0,sess:0,ques:0}).sess+=v;
+      (weekly[wk]=weekly[wk]||{secs:0,sess:0,ques:0}).sess+=v;
+      (daily[dateStr]=daily[dateStr]||{secs:0,sess:0,ques:0}).sess+=v;
+    });
+    getKeysWithPrefix('fent_ques_').forEach(k=>{
+      const v=parseInt(localStorage.getItem(k)||'0')||0;
+      if(v<=0) return;
+      totalQuestions+=v;
+      const dateStr=k.replace('fent_ques_',''), mk=dateStr.slice(0,7), wk=weekKey(dateStr);
+      (monthly[mk]=monthly[mk]||{secs:0,sess:0,ques:0}).ques+=v;
+      (weekly[wk]=weekly[wk]||{secs:0,sess:0,ques:0}).ques+=v;
+      (daily[dateStr]=daily[dateStr]||{secs:0,sess:0,ques:0}).ques+=v;
+    });
+    getKeysWithPrefix('fent_focuslog_').forEach(k=>{
+      let arr=[]; try{arr=JSON.parse(localStorage.getItem(k)||'[]');}catch{}
+      const dateStr=k.replace('fent_focuslog_',''), mk=dateStr.slice(0,7), wk=weekKey(dateStr);
+      arr.forEach(e=>{
+        if(!e.durationSecs) return;
+        totalFocusSecs+=e.durationSecs;
+        (monthly[mk]=monthly[mk]||{secs:0,sess:0,ques:0}).secs+=e.durationSecs;
+        (weekly[wk]=weekly[wk]||{secs:0,sess:0,ques:0}).secs+=e.durationSecs;
+        (daily[dateStr]=daily[dateStr]||{secs:0,sess:0,ques:0}).secs+=e.durationSecs;
+        if(e.subj && subjTime[e.subj]!=null) subjTime[e.subj]+=e.durationSecs;
+        if(e.subj && e.chapN!=null){
+          const ck=e.subj+'_'+e.chapN;
+          if(!chapTime[ck]) chapTime[ck]={secs:0,byTask:{theory:0,module:0,pyq:0,revision:0}};
+          chapTime[ck].secs+=e.durationSecs;
+          if(e.task && chapTime[ck].byTask[e.task]!=null) chapTime[ck].byTask[e.task]+=e.durationSecs;
+        }
+      });
+    });
+  }catch(e){}
+
+  // ── Per-month Progress-panel stats — the SAME formulas the app's own
+  // month view uses (avg sess/day, avg ques/day, on-target %): active days
+  // = every non-Sunday that's passed, plus Sundays only if something was
+  // actually logged; on-target = sess >= that day's own saved target
+  // snapshot. Computed independently per calendar month, not all-time. ──
+  const dailyTarget=(typeof focusSettings!=='undefined'&&focusSettings.dailyTarget)||4;
+  const quesTarget=(typeof focusSettings!=='undefined'&&focusSettings.dailyQuesTarget)||70;
+  Object.keys(monthly).forEach(mk=>{
+    const [yr,mo]=mk.split('-').map(Number);
+    const daysInMonth=new Date(yr,mo,0).getDate();
+    let activeCount=0,sumSess=0,sumQues=0,workCount=0,metCount=0;
+    for(let day=1; day<=daysInMonth; day++){
+      const dt=new Date(yr,mo-1,day);
+      if(dt>today) break;
+      const isSun=dt.getDay()===0;
+      const k=localDateKey(dt);
+      const sess=parseFloat(localStorage.getItem('fent_sessions_'+k)||'0')||0;
+      const ques=parseInt(localStorage.getItem('fent_ques_'+k)||'0')||0;
+      const isToday=dt.getTime()===today.getTime();
+      const dayTarget=isToday?dailyTarget:(parseFloat(localStorage.getItem('fent_daytarget_'+k)||String(dailyTarget)));
+      if(!isSun || sess>0 || ques>0){ activeCount++; sumSess+=sess; sumQues+=ques; }
+      if(!isSun){ workCount++; if(sess>=dayTarget) metCount++; }
+    }
+    monthly[mk].avgSess=activeCount>0?sumSess/activeCount:0;
+    monthly[mk].avgQues=activeCount>0?sumQues/activeCount:0;
+    monthly[mk].onTargetPct=workCount>0?Math.round(metCount/workCount*100):0;
+  });
+
+  // ── Attach a compact daily log to each week (every logged day, so every
+  // single day is traceable) — days with zero activity are skipped to keep
+  // the report from ballooning with empty rows. ──
+  Object.keys(daily).forEach(dateStr=>{
+    const wk=weekKey(dateStr);
+    if(!weekly[wk]) return;
+    (weekly[wk].days=weekly[wk].days||[]).push({dateStr, ...daily[dateStr]});
+  });
+  Object.values(weekly).forEach(w=>{ if(w.days) w.days.sort((a,b)=>a.dateStr<b.dateStr?-1:1); });
+
+  const wastedSessions=computeWastedSessionsAllTime((typeof focusSettings!=='undefined'&&focusSettings.dailyTarget)||4, today).wastedSessions;
+
+  // ── Test log — full entries (every test, not just the aggregate) AND
+  // the same computeExamStats() used by Analytics itself for the averages ──
+  let allTestEntries=[];
+  try{
+    getKeysWithPrefix('fent_testlog_').forEach(k=>{
+      const dateStr=k.replace('fent_testlog_','');
+      let arr=[]; try{arr=JSON.parse(localStorage.getItem(k)||'[]');}catch{}
+      arr.forEach(t=>{ if(t.normalizedTotal!=null) allTestEntries.push({...t, dateStr}); });
+    });
+  }catch(e){}
+  allTestEntries.sort((a,b)=>a.dateStr<b.dateStr?-1:a.dateStr>b.dateStr?1:0);
+  const mainsEntries=allTestEntries.filter(t=>t.testType==='mains');
+  const advEntries=allTestEntries.filter(t=>t.testType==='adv');
+  const mainsStats=computeExamStats(mainsEntries,300);
+  const advStats=computeExamStats(advEntries,360);
+  const mainsBest=mainsEntries.length?Math.max(...mainsEntries.map(t=>t.normalizedTotal)):null;
+  const advBest=advEntries.length?Math.max(...advEntries.map(t=>t.normalizedTotal)):null;
+
+  // ── Backlog — identical definition to the Syllabus Tracker's own backlog ──
+  const backlog=allSubjs.filter(({s,ch})=>parseDate(ch.e)<today&&!isAny(s,ch.n))
+    .map(({s,ch})=>({subj:s,name:ch.name,daysOver:Math.round((today-parseDate(ch.e))/864e5)}))
+    .sort((a,b)=>b.daysOver-a.daysOver);
+
+  // ── EVERY chapter, in full — the core of "nothing excluded" ──
+  const allChapters=allSubjs.map(({s,ch})=>{
+    const t=gs(s,ch.n);
+    const ck=s+'_'+ch.n;
+    const ct=chapTime[ck];
+    const done=isDone(s,ch.n), any=isAny(s,ch.n), overdue=parseDate(ch.e)<today;
+    let status='Not started';
+    if(done) status='Done';
+    else if(overdue && any) status='In progress (overdue)';
+    else if(overdue) status='Overdue';
+    else if(any) status='In progress';
+    return {
+      subj:s, n:ch.n, name:ch.name, start:ch.s, end:ch.e,
+      theory:!!t.theory, module:!!t.module, pyq:!!t.pyq, revision:!!t.revision,
+      secs:ct?ct.secs:0, status,
+    };
+  });
+
+  const daysToJEE=Math.max(0,Math.round((JEE_DATE-today)/864e5));
+
+  return {
+    generatedAt:new Date(),
+    daysToJEE,
+    totalFocusSecs, totalSessions:Math.round(totalSessions), totalQuestions, activeDays,
+    subjStats, totalDone, totalChaps,
+    taskTotals, taskBySubj, taskMax, mainsReadyPct,
+    wastedSessions,
+    mainsStats, advStats, mainsBest, advBest, testCount:allTestEntries.length, testEntries:allTestEntries,
+    subjTime,
+    monthlyArr:Object.keys(monthly).sort().map(mk=>({key:mk,...monthly[mk]})),
+    weeklyArr:Object.keys(weekly).sort().map(wk=>({key:wk,...weekly[wk]})),
+    topChapters:Object.values(chapTime).length?allChapters.filter(c=>c.secs>0).sort((a,b)=>b.secs-a.secs):[],
+    allChapters,
+    backlog,
+  };
+}
+
+function buildAnalyticsPDFDoc(d){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'pt',format:'a4'});
+  const W=595, H=842, M=42;
+  let y=M;
+
+  // AMOLED-black theme, matching the tracker's own exact palette rather than
+  // a plain white document — --bg:#000000, --t1/t2/t3, --m/--c/--p/--red.
+  const BG='#000000';
+  const INK='#f0f0f3', MUTED='#9a9aa2', FAINT='#6b6b72';
+  const LINE='#2a2a2e', TRACK='#1c1c20';
+  const GOLD='#c2a359', GREEN='#6b9e83', VIOLET='#908bb0', RED='#c46464', BLUE='#8aa0d8';
+  const subjColor={math:GOLD,chem:GREEN,phys:VIOLET};
+  const subjLabel={math:'Mathematics',chem:'Chemistry',phys:'Physics'};
+  const taskColor={theory:GOLD,module:GREEN,pyq:VIOLET,revision:RED};
+  const taskLabel={theory:'Theory',module:'Module',pyq:'PYQ',revision:'Revision'};
+
+  function fmtTime(s){
+    if(!s||s<=0) return '—';
+    const h=Math.floor(s/3600), m=Math.floor((s%3600)/60);
+    return h>0?`${h}h ${m}m`:`${m}m`;
+  }
+  function monthLabel(mk){ const [yr,mo]=mk.split('-'); return `${MONTHS[parseInt(mo)-1]} ${yr}`; }
+  function weekLabel(wk){ const p=wk.split('-'); return `${parseInt(p[2])} ${MONTHS[parseInt(p[1])-1]}`; }
+
+  function paintPageBg(){ doc.setFillColor(BG); doc.rect(0,0,W,H,'F'); }
+  function newPage(){ doc.addPage(); paintPageBg(); y=M; }
+  function ensureSpace(need){ if(y+need>H-M-20) newPage(); }
+
+  function sectionTitle(txt, sub){
+    ensureSpace(sub?38:30);
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(INK);
+    doc.text(txt.toUpperCase(), M, y);
+    if(sub){
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(MUTED);
+      doc.text(sub, W-M, y, {align:'right'});
+    }
+    doc.setDrawColor(LINE); doc.setLineWidth(0.75);
+    doc.line(M, y+6, W-M, y+6);
+    y+=24;
+  }
+  function subHeading(txt, color){
+    ensureSpace(20);
+    doc.setFillColor(color); doc.circle(M+3, y-3, 3, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(INK);
+    doc.text(txt, M+13, y);
+    y+=15;
+  }
+  function statGrid(items, cols){
+    const colW=(W-2*M)/cols;
+    const rowH=44;
+    items.forEach((it,i)=>{
+      const col=i%cols, row=Math.floor(i/cols);
+      const x=M+col*colW, yy=y+row*rowH;
+      doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(INK);
+      doc.text(String(it[1]), x, yy);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(MUTED);
+      doc.text(it[0].toUpperCase(), x, yy+12);
+    });
+    y+=rowH*Math.ceil(items.length/cols)+12;
+  }
+  function barRow(label, sub, pct, color){
+    ensureSpace(26);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(INK);
+    doc.text(label, M, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(MUTED);
+    doc.text(sub, W-M, y, {align:'right'});
+    y+=6;
+    doc.setFillColor(TRACK); doc.roundedRect(M,y,W-2*M,5,2.5,2.5,'F');
+    doc.setFillColor(color); doc.roundedRect(M,y,Math.max(4,(W-2*M)*pct),5,2.5,2.5,'F');
+    y+=18;
+  }
+  function tableHeader(cols, widths, xStart){
+    ensureSpace(20);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.8); doc.setTextColor(MUTED);
+    let x=xStart||M; cols.forEach((c,i)=>{ doc.text(c.toUpperCase(), x, y); x+=widths[i]; });
+    y+=5;
+    doc.setDrawColor(LINE); doc.setLineWidth(0.5); doc.line(M,y,W-M,y);
+    y+=12;
+  }
+  function dotRow(color, name, valueTxt, valueColor){
+    ensureSpace(14.5);
+    doc.setFillColor(color); doc.circle(M+2, y-3, 2.2, 'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(INK);
+    doc.text(name, M+11, y, {maxWidth:W-2*M-90});
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(valueColor||MUTED);
+    doc.text(valueTxt, W-M, y, {align:'right'});
+    y+=14.5;
+  }
+  // Small filled/outline dot used for the T·M·P·R task flags in the
+  // per-chapter tables — filled = done, outline = not done.
+  function taskDot(x, yy, color, done){
+    if(done){ doc.setFillColor(color); doc.circle(x, yy, 2.6, 'F'); }
+    else { doc.setDrawColor(FAINT); doc.setLineWidth(0.6); doc.circle(x, yy, 2.6, 'S'); }
+  }
+
+  // ═══ COVER / HEADER ═══
+  paintPageBg();
+  doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(INK);
+  doc.text('JEE Tracker — Analytics Report', M, y); y+=17;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(MUTED);
+  doc.text(`Generated ${d.generatedAt.getDate()} ${MONTHS[d.generatedAt.getMonth()]} ${d.generatedAt.getFullYear()}  ·  ${d.daysToJEE} days to JEE 2027`, M, y);
+  y+=18;
+  doc.setDrawColor(INK); doc.setLineWidth(1.1); doc.line(M,y,W-M,y);
+  y+=26;
+
+  // ═══ ALL-TIME OVERVIEW ═══
+  sectionTitle('All-Time Overview');
+  statGrid([
+    ['Focus time', fmtTime(d.totalFocusSecs)],
+    ['Sessions', d.totalSessions],
+    ['Questions', d.totalQuestions.toLocaleString()],
+    ['Active days', d.activeDays],
+    ['Chapters done', `${d.totalDone}/${d.totalChaps}`],
+    ['Mains Ready', `${d.mainsReadyPct}%`],
+    ['Sessions wasted', Math.round(d.wastedSessions*10)/10],
+    ['Tests logged', d.testCount],
+  ], 4);
+
+  // ═══ SYLLABUS COMPLETION ═══
+  sectionTitle('Syllabus Completion');
+  ['math','chem','phys'].forEach(k=>{
+    const st=d.subjStats[k], pct=st.total>0?st.done/st.total:0;
+    barRow(subjLabel[k], `${st.done}/${st.total} · ${Math.round(pct*100)}%`, pct, subjColor[k]);
+  });
+  y+=6;
+
+  // ═══ COMPLETION BY TASK TYPE — aggregate, then per-subject ═══
+  sectionTitle('Completion by Task Type');
+  [['theory','Theory',GOLD],['module','Module',GREEN],['pyq','PYQ',VIOLET],['revision','Revision',RED]].forEach(([key,label,color])=>{
+    const pct=d.taskMax>0?d.taskTotals[key]/d.taskMax:0;
+    barRow(label, `${d.taskTotals[key]}/${d.taskMax} · ${Math.round(pct*100)}%`, pct, color);
+  });
+  y+=4;
+  ensureSpace(60);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(MUTED);
+  doc.text('BY SUBJECT', M, y); y+=12;
+  const tCols=['T','M','P','R']; const tKeys=['theory','module','pyq','revision'];
+  ['math','chem','phys'].forEach(k=>{
+    ensureSpace(14);
+    doc.setFillColor(subjColor[k]); doc.circle(M+2,y-3,2.2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(INK);
+    doc.text(subjLabel[k], M+10, y);
+    let x=M+130;
+    tKeys.forEach((tk,i)=>{
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(MUTED);
+      doc.text(`${tCols[i]} ${d.taskBySubj[k][tk]}/${d.taskBySubj[k].max}`, x, y);
+      x+=95;
+    });
+    y+=14;
+  });
+  y+=10;
+
+  // ═══ TIME BY SUBJECT (stacked bar + legend) ═══
+  sectionTitle('Time by Subject');
+  const totalSubjTime=d.subjTime.math+d.subjTime.chem+d.subjTime.phys;
+  if(totalSubjTime>0){
+    ensureSpace(50);
+    let bx=M;
+    ['math','chem','phys'].forEach(k=>{
+      const w=(W-2*M)*(d.subjTime[k]/totalSubjTime);
+      doc.setFillColor(subjColor[k]); doc.rect(bx,y,Math.max(w,0),13,'F');
+      bx+=w;
+    });
+    y+=24;
+    ['math','chem','phys'].forEach(k=>{
+      doc.setFillColor(subjColor[k]); doc.circle(M+3,y-3,2.6,'F');
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(INK);
+      doc.text(`${subjLabel[k]}  —  ${fmtTime(d.subjTime[k])}`, M+12, y);
+      y+=14;
+    });
+  } else {
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
+    doc.text('No chapter-level focus time logged yet.', M, y); y+=16;
+  }
+
+  // ═══ FULL CHAPTER-BY-CHAPTER LISTING — every one of the 69 chapters ═══
+  newPage();
+  sectionTitle('Full Chapter Listing', 'every chapter · dots = Theory · Module · PYQ · Revision (filled = done)');
+  const chapColW=[195,80,70,70]; // name, window, flags(unused,drawn manually), time+status combined
+  ['math','chem','phys'].forEach(subjKey=>{
+    const chaps=d.allChapters.filter(c=>c.subj===subjKey);
+    ensureSpace(34);
+    subHeading(`${subjLabel[subjKey]}  —  ${d.subjStats[subjKey].done}/${d.subjStats[subjKey].total} done`, subjColor[subjKey]);
+    tableHeader(['Chapter','Window','T · M · P · R','Time','Status'], [190,75,70,60,90]);
+    chaps.forEach(c=>{
+      ensureSpace(13.5);
+      const xName=M, xWindow=M+190, xFlags=M+265, xTime=M+335, xStatus=M+400;
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.8); doc.setTextColor(INK);
+      doc.text(c.name, xName, y, {maxWidth:185});
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(FAINT);
+      doc.text(`${c.start}–${c.end}`, xWindow, y);
+      ['theory','module','pyq','revision'].forEach((tk,i)=>{
+        taskDot(xFlags+i*13, y-2.5, taskColor[tk], c[tk]);
+      });
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.3); doc.setTextColor(MUTED);
+      doc.text(fmtTime(c.secs), xTime, y);
+      const statusColor = c.status==='Done'?GREEN : c.status.indexOf('Overdue')>=0?RED : c.status==='In progress'?GOLD : FAINT;
+      doc.setTextColor(statusColor);
+      doc.text(c.status, xStatus, y, {maxWidth:105});
+      y+=13.5;
+    });
+    y+=10;
+  });
+
+  // ═══ MONTHLY / WEEKLY ═══
+  newPage();
+  sectionTitle('Monthly Breakdown', 'avg/day + on-target % use the same active-day formula as the app');
+  if(d.monthlyArr.length===0){
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
+    doc.text('No monthly data yet.', M, y); y+=16;
+  } else {
+    const colW=[62,66,50,58,62,62,52];
+    tableHeader(['Month','Focus Time','Sess','Ques','Avg S/D','Avg Q/D','On Tgt'], colW);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.6);
+    d.monthlyArr.forEach(mth=>{
+      ensureSpace(14);
+      let x=M;
+      doc.setTextColor(INK); doc.text(monthLabel(mth.key), x, y); x+=colW[0];
+      doc.setTextColor(MUTED); doc.text(fmtTime(mth.secs), x, y); x+=colW[1];
+      doc.text(String(Math.round(mth.sess)), x, y); x+=colW[2];
+      doc.text(String(mth.ques), x, y); x+=colW[3];
+      doc.text((Math.round((mth.avgSess||0)*10)/10).toString(), x, y); x+=colW[4];
+      doc.text((Math.round((mth.avgQues||0)*10)/10).toString(), x, y); x+=colW[5];
+      const otc=mth.onTargetPct>=80?GREEN:mth.onTargetPct>=50?GOLD:FAINT;
+      doc.setTextColor(otc); doc.text(`${mth.onTargetPct||0}%`, x, y);
+      y+=14;
+    });
+    y+=12;
+
+    sectionTitle('Monthly Focus Hours');
+    const chartH=85; ensureSpace(chartH+24);
+    const maxSecs=Math.max(...d.monthlyArr.map(mth=>mth.secs),1);
+    const bw=(W-2*M)/d.monthlyArr.length;
+    const baseY=y+chartH;
+    doc.setDrawColor(LINE); doc.setLineWidth(0.5); doc.line(M,baseY,W-M,baseY);
+    d.monthlyArr.forEach((mth,i)=>{
+      const bh=chartH*(mth.secs/maxSecs);
+      const bx=M+i*bw+bw*0.18;
+      doc.setFillColor(BLUE);
+      doc.roundedRect(bx, baseY-bh, bw*0.64, Math.max(bh,1.5), 2, 2, 'F');
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(MUTED);
+      const mo=mth.key.split('-')[1];
+      doc.text(MONTHS[parseInt(mo)-1], bx, baseY+11);
+    });
+    y=baseY+24;
+  }
+
+  // ═══ WEEKLY BREAKDOWN — every week, with every logged day nested
+  // underneath so each individual day is traceable, not just the weekly
+  // total. Days with zero activity are skipped to keep this from
+  // ballooning — only days something was actually logged appear. ═══
+  newPage();
+  sectionTitle('Weekly Breakdown', `${d.weeklyArr.length} week${d.weeklyArr.length!==1?'s':''} · every logged day listed`);
+  if(d.weeklyArr.length===0){
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
+    doc.text('No weekly data yet.', M, y); y+=16;
+  } else {
+    const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    d.weeklyArr.forEach(w=>{
+      ensureSpace(15+((w.days||[]).length*11)+6);
+      // Week summary row
+      let x=M;
+      doc.setFont('helvetica','bold'); doc.setFontSize(8.3); doc.setTextColor(INK);
+      doc.text('Week of '+weekLabel(w.key), x, y); x=M+140;
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.6); doc.setTextColor(MUTED);
+      doc.text(`${fmtTime(w.secs)}  ·  ${Math.round(w.sess)} sess  ·  ${w.ques} ques`, x, y);
+      y+=6;
+      doc.setDrawColor(LINE); doc.setLineWidth(0.4); doc.line(M,y,W-M,y);
+      y+=11;
+      // Daily sub-rows
+      (w.days||[]).forEach(day=>{
+        ensureSpace(11);
+        const dt=new Date(day.dateStr+'T00:00:00');
+        const dow=DOW[dt.getDay()];
+        let xx=M+8;
+        doc.setFont('helvetica','normal'); doc.setFontSize(7);
+        doc.setTextColor(dt.getDay()===0?VIOLET:FAINT);
+        doc.text(dow, xx, y); xx+=26;
+        doc.setTextColor(MUTED);
+        doc.text(`${dt.getDate()} ${MONTHS[dt.getMonth()]}`, xx, y); xx+=55;
+        doc.setTextColor(day.sess>0?INK:FAINT);
+        doc.text(`${Math.round(day.sess*10)/10} sess`, xx, y); xx+=55;
+        doc.setTextColor(day.ques>0?INK:FAINT);
+        doc.text(`${day.ques} ques`, xx, y); xx+=55;
+        doc.setTextColor(day.secs>0?INK:FAINT);
+        doc.text(fmtTime(day.secs), xx, y);
+        y+=11;
+      });
+      y+=6;
+    });
+  }
+
+  // ═══ TEST PERFORMANCE — aggregate + every single entry ═══
+  newPage();
+  sectionTitle('Test Performance');
+  statGrid([
+    ['Mains avg', d.mainsStats.totalAvgPct!=null?`${Math.round(d.mainsStats.totalMarks)}/300`:'—'],
+    ['Mains best', d.mainsBest!=null?`${Math.round(d.mainsBest)}/300`:'—'],
+    ['Advanced avg', d.advStats.totalAvgPct!=null?`${Math.round(d.advStats.totalMarks)}/360`:'—'],
+    ['Advanced best', d.advBest!=null?`${Math.round(d.advBest)}/360`:'—'],
+  ], 2);
+
+  sectionTitle('Full Test Log', `${d.testEntries.length} test${d.testEntries.length!==1?'s':''}`);
+  if(d.testEntries.length===0){
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
+    doc.text('No tests logged yet.', M, y); y+=16;
+  } else {
+    const colW=[75,55,80,80,80,90];
+    tableHeader(['Date','Type','Math','Chem','Phys','Total'], colW);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
+    d.testEntries.forEach(t=>{
+      ensureSpace(14);
+      let x=M;
+      const parts=t.dateStr.split('-');
+      doc.setTextColor(INK); doc.text(`${parseInt(parts[2])} ${MONTHS[parseInt(parts[1])-1]}`, x, y); x+=colW[0];
+      doc.setTextColor(t.testType==='mains'?RED:VIOLET); doc.text(t.testType==='mains'?'Mains':'Adv', x, y); x+=colW[1];
+      doc.setTextColor(MUTED);
+      ['math','chem','phys'].forEach((sk,i)=>{
+        const sub=t.subjects&&t.subjects[sk];
+        doc.text(sub&&sub.max?`${sub.score}/${sub.max}`:'—', x, y); x+=colW[2+i];
+      });
+      doc.setTextColor(INK);
+      const target=t.testType==='mains'?300:360;
+      doc.text(`${Math.round(t.normalizedTotal)}/${target}`, x, y);
+      y+=14;
+    });
+  }
+  y+=10;
+
+  // ═══ BACKLOG — every overdue chapter, uncapped ═══
+  sectionTitle(`Backlog — ${d.backlog.length} Chapter${d.backlog.length!==1?'s':''} Overdue`);
+  if(d.backlog.length===0){
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
+    doc.text('No overdue chapters — fully on track.', M, y); y+=16;
+  } else {
+    d.backlog.forEach(b=>dotRow(subjColor[b.subj], b.name, `+${b.daysOver}d`, RED));
+  }
+  y+=8;
+
+  // ═══ ALL TOUCHED CHAPTERS, RANKED BY TIME ═══
+  sectionTitle('Chapters Ranked by Time Spent');
+  if(d.topChapters.length===0){
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(MUTED);
+    doc.text('No chapter-level focus time logged yet.', M, y); y+=16;
+  } else {
+    d.topChapters.forEach(c=>dotRow(subjColor[c.subj], c.name, fmtTime(c.secs)));
+  }
+
+  // ═══ FOOTER on every page ═══
+  const pageCount=doc.internal.getNumberOfPages();
+  for(let p=1;p<=pageCount;p++){
+    doc.setPage(p);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(FAINT);
+    doc.text(`Page ${p} of ${pageCount}`, W-M, H-24, {align:'right'});
+    doc.text('JEE Tracker', M, H-24);
+  }
+
+  doc.save(`jee-analytics-${d.generatedAt.toISOString().slice(0,10)}.pdf`);
+}
+
 function renderAnalytics(){
   const el=document.getElementById('anaContent');
   const today=new Date(); today.setHours(0,0,0,0);
@@ -2273,6 +2877,14 @@ function renderAnalytics(){
   @keyframes heroBarIn{from{width:0%}to{width:var(--tw)}}
 </style>
 <div class="ana-section" style="padding:24px 26px 22px;animation-delay:.02s;overflow:hidden;position:relative;">
+
+  <!-- Export PDF — small icon-only button tucked into the Hero Card's own
+       top-right corner (sits in the card's top padding, above the status
+       row, so it never collides with any content) instead of a separate
+       row that pushed the whole card down. -->
+  <button id="pdfExportBtn" onclick="downloadAnalyticsPDF(this)" title="Export analytics as PDF" style="position:absolute;top:14px;right:16px;z-index:2;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:99px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .2s ease,border-color .2s ease,opacity .2s ease;">
+    <svg id="pdfExportBtnIcon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  </button>
 
   <!-- plum left-corner ambient bleed — JEE colour -->
   <div style="position:absolute;top:-50px;left:-30px;width:220px;height:180px;border-radius:50%;background:radial-gradient(ellipse,rgba(119,217,211,.06) 0%,transparent 68%);pointer-events:none;"></div>
