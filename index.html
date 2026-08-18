@@ -1004,6 +1004,80 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 @keyframes hgCompletionBreath{0%{opacity:.55;}30%{opacity:1;}100%{opacity:.55;}}
 @keyframes ffCompletionSettle{0%{transform:scale(1);}30%{transform:scale(1.018);}100%{transform:scale(1);}}
 
+/* ============================================================
+   INFINITE MODE — indefinite (no-break) stopwatch.
+   ------------------------------------------------------------
+   A "hardware synth" stage with an inset LCD screen. The wave is
+   carved from a reference design: one clean quadratic-bezier sine
+   over a graph-paper grid, scrolled via translateX(-50%) on a
+   double-width track for a perfectly seamless loop, at the
+   reference's own 1s pace. Recoloured to a single cyan (an OLED-
+   friendly accent — deep blacks either side of the glow, nothing
+   washed out) instead of the reference's purple/pink. Tapping the
+   screen toggles run/pause. Pausing freezes the scroll and dims
+   the screen. The digital readout lives BELOW the stage in the
+   shared .focus-time-big, same as every other mode. */
+.focus-clock-outer.focus-field.infinite-field{max-width:320px;border-color:rgba(34,211,238,0.10);}
+.focus-clock-outer.focus-field.infinite-field.running{border-color:rgba(34,211,238,0.18);}
+.focus-clock-outer.focus-field.infinite-field .focus-mode-lbl{color:var(--t3);}
+.focus-clock-outer.focus-field.infinite-field .focus-time-big{margin-top:16px;}
+
+.synth-casing{
+  position:relative;width:100%;aspect-ratio:290/172;
+  border-radius:22px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  background:linear-gradient(160deg,#161618 0%,#0b0b0d 55%,#000 100%);
+  border:1px solid rgba(255,255,255,0.07);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),inset 0 0 0 1px rgba(0,0,0,0.4),0 18px 42px rgba(0,0,0,0.5);
+  padding:15px;display:flex;flex-direction:column;
+  transition:transform .18s var(--ease),box-shadow .5s ease;
+}
+.synth-casing:active{transform:scale(.988);}
+.synth-led{position:absolute;top:11px;left:15px;width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,0.14);transition:all .6s cubic-bezier(.16,1,.3,1);z-index:3;}
+.synth-led.on{background:#8cf3ff;box-shadow:0 0 6px 1.5px rgba(34,211,238,0.7);}
+.synth-screen{
+  position:relative;flex:1;border-radius:11px;overflow:hidden;
+  background:linear-gradient(180deg,#040605 0%,#000 100%);
+  border:1px solid rgba(255,255,255,0.045);
+  box-shadow:inset 0 0 20px rgba(0,0,0,0.9),inset 0 0 2px rgba(255,255,255,0.03);
+}
+/* Grid — lifted straight from the reference: a faint graph-paper
+   backdrop behind the wave, exactly what makes it read as an
+   instrument screen instead of just a glowing squiggle. */
+.synth-grid{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background-image:linear-gradient(rgba(34,211,238,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,0.035) 1px,transparent 1px);
+  background-size:19px 19px;}
+/* Wave — exact carve of the reference's shape and 1s pace, recoloured
+   to a layered cyan glow: a soft wide bloom, a tighter saturated glow,
+   and a bright near-white core line on top — reads as an actual lit
+   neon/OLED trace rather than a flat colored stroke. */
+.synth-wave-track{position:absolute;inset:0;overflow:hidden;z-index:2;}
+.synth-wave{position:absolute;top:0;left:0;height:100%;width:200%;
+  animation:synthWaveScroll 1s linear infinite;transition:opacity .5s ease,filter .5s ease;}
+.synth-wave-path{fill:none;stroke:#d4fbff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.synth-wave-glow{fill:none;stroke:#22d3ee;stroke-width:5.5;stroke-linecap:round;filter:blur(6px);opacity:.65;mix-blend-mode:screen;}
+.synth-wave-glow2{fill:none;stroke:#0ea5c4;stroke-width:11;stroke-linecap:round;filter:blur(15px);opacity:.4;mix-blend-mode:screen;}
+@keyframes synthWaveScroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+.synth-casing.paused .synth-wave{animation-play-state:paused;opacity:.24;filter:saturate(0) brightness(.6);}
+.synth-casing.paused .synth-wave-glow,.synth-casing.paused .synth-wave-glow2{opacity:0;}
+
+/* Toggle — a single small glyph, pinned top-right of the clock card.
+   No label, no border chrome when idle (reads as part of the card,
+   not a separate control); brightens to plain white the instant
+   it's active — same restrained monochrome as the rest of the app. */
+.focus-infinity-toggle{
+  position:absolute;top:12px;right:12px;z-index:5;
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid transparent;
+  color:var(--t3);cursor:pointer;font-size:13px;line-height:1;
+  transition:all .4s cubic-bezier(.16,1,.3,1);
+}
+.focus-infinity-toggle:hover{color:var(--t1);background:rgba(255,255,255,0.05);}
+.focus-infinity-toggle.active{color:var(--t1);background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.16);box-shadow:0 0 10px rgba(255,255,255,0.06);}
+.focus-infinity-toggle.disabled{opacity:.25;cursor:not-allowed;pointer-events:none;}
+.focus-infinity-toggle svg{width:14px;height:14px;display:block;}
+
 /* Controls */
 .focus-controls{display:flex;gap:12px;align-items:center;margin-top:20px;justify-content:center;}
 .focus-btn-main{
@@ -5672,6 +5746,24 @@ let focusTimer = {
   segStart:null,     // Date.now() when current segment started
 };
 
+// ── Infinite Mode — an indefinite (no-break) stopwatch, mutually exclusive
+// with the Pomodoro clock and Test mode at the UI level, exactly like Test
+// mode already is with Pomodoro. Shares focusTimer.currentChap/currentTask
+// (the chapter/task selector is common ground for every mode), but keeps its
+// own running/paused/elapsed state so it never touches Pomodoro's fields.
+// Logging reuses the exact same today-log + fent_sessions_ storage every
+// other mode writes to (see commitInfiniteSegment/infiniteFinish below), so
+// stats, streaks and the heatmap need zero extra code to understand it.
+let infiniteMode=false;      // is the Infinite Mode face currently showing
+let infiniteTimer={
+  running:false,
+  paused:false,       // has been started, currently paused (elapsed>0, not running)
+  startedAt:null,      // Date.now() when the current running stretch began
+  elapsedSecs:0,        // total elapsed across all run/pause stretches of this indefinite session
+  segStart:null,         // mirrors focusTimer.segStart — when the current LOGGED segment began
+  intervalId:null,
+};
+
 // ── Log Test — a completely independent stopwatch. Counts UP with no target
 // duration, for logging a mock test you just took. Never reads or writes any
 // field on focusTimer above — the two are mutually exclusive at the UI level
@@ -6954,6 +7046,72 @@ function renderFocus(){
     <button class="focus-btn-sm" onclick="testLogCancel()" title="Discard test">↺</button>
   </div>`;
     }
+  } else if(infiniteMode){
+    // ============================================================
+    // INFINITE MODE — indefinite (no-break) stopwatch face.
+    // A "hardware synth" stage with an inset LCD screen. The wave
+    // itself is carved straight from a reference design: one clean
+    // quadratic-bezier sine built from repeated SVG "T" (smooth)
+    // commands over a graph-paper grid, scrolled via translateX
+    // (-50%) on a double-width track for a perfectly seamless loop
+    // — just recoloured to plain white instead of the reference's
+    // purple/pink, to match this app's own restrained palette. The
+    // digital readout sits BELOW the stage, reusing .focus-time-big
+    // exactly like every other mode, so the layout rhythm (graphic,
+    // then time, then status) stays identical across all three
+    // faces. Tapping the screen toggles run/pause; the ▶/⏸ button
+    // below does the same.
+    // ============================================================
+    const IT=infiniteTimer;
+    const infSecs=infiniteCurrentSecs();
+    const ih=Math.floor(infSecs/3600), im=Math.floor((infSecs%3600)/60), is=infSecs%60;
+    const infTimeStr=(ih>0?String(ih).padStart(2,'0')+':':'')+String(im).padStart(2,'0')+':'+String(is).padStart(2,'0');
+    const infPausedCls=IT.running?'':' paused';
+    // Exact carve of the reference: M<start> Q<ctrl> <end> then repeated
+    // T<end> commands (each auto-mirrors the previous control point), at
+    // the reference's own numbers — half-arc 50, height 100, amplitude
+    // 40 (a 0.4 ratio) — so the shape and density of humps on screen is
+    // identical to the source file, not just "similar". Built across two
+    // full loops so the first/second half of the path are pixel-
+    // identical, which is what makes the CSS translateX(-50%) scroll
+    // seamless with zero per-frame JS — same trick, cleaner DOM (one
+    // stretched <svg> instead of the reference's extra wrapper div).
+    const halfArc=50, scopeH=100, halfArcsPerLoop=4; // 4 half-arcs = 2 cycles visible per screen, same as the reference
+    const loopW=halfArc*halfArcsPerLoop, scopeW=loopW*2;
+    const scopeMid=scopeH/2, scopeAmp=scopeH*0.4;
+    let scopePath=`M0,${scopeMid} Q${halfArc/2},${(scopeMid-scopeAmp).toFixed(1)} ${halfArc},${scopeMid}`;
+    for(let x=halfArc*2;x<=scopeW;x+=halfArc) scopePath+=` T${x},${scopeMid}`;
+    clockFaceHTML=`
+  <div class="focus-clock-outer focus-field infinite-field${IT.running?' running':''}" id="focusClockOuter">
+    <button class="focus-infinity-toggle active" onclick="toggleInfiniteMode()" title="Exit Infinite Mode">
+      <svg viewBox="0 0 24 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2C3.24 2 1 4.24 1 7s2.24 5 5 5c2 0 3.3-1.1 4.3-2.4L12 8l1.7 1.6C14.7 10.9 16 12 18 12c2.76 0 5-2.24 5-5s-2.24-5-5-5c-2 0-3.3 1.1-4.3 2.4L12 6l-1.7-1.6C9.3 3.1 8 2 6 2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="ff-core">
+      <div class="focus-mode-lbl">Infinite</div>
+      <div class="synth-casing${infPausedCls}" onclick="infiniteToggle()" title="${IT.running?'Tap to pause':'Tap to start'}">
+        <div class="synth-led${IT.running?' on':''}"></div>
+        <div class="synth-screen">
+          <div class="synth-grid"></div>
+          <div class="synth-wave-track">
+            <svg class="synth-wave" viewBox="0 0 ${scopeW} ${scopeH}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <path class="synth-wave-glow2" d="${scopePath}"/>
+              <path class="synth-wave-glow" d="${scopePath}"/>
+              <path class="synth-wave-path" d="${scopePath}"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="focus-time-big" id="focusTimeBig">${infTimeStr}</div>
+      <div class="focus-session-lbl">${IT.running?'Running':(IT.paused?'Paused':'Ready')}</div>
+    </div>
+  </div>`;
+    controlsHTML=`<div class="focus-controls">
+    <button class="focus-btn-sm" onclick="infiniteFinish()" title="End session" ${(IT.running||IT.paused)?'':'style="opacity:0.3;cursor:not-allowed" disabled'}>⟫</button>
+    <button class="focus-btn-main${IT.running?' running':''}" onclick="infiniteToggle()" id="focusMainBtn" style="${IT.running?'border-color:rgba(34,211,238,0.4);background:rgba(34,211,238,0.08);':''}">
+      ${IT.running?'⏸':'▶'}
+    </button>
+    <button class="focus-btn-sm" onclick="infiniteDiscard()" title="Reset" ${(IT.running||IT.paused)?'':'style="opacity:0.3;cursor:not-allowed" disabled'}>↺</button>
+  </div>`;
   } else {
     // ============================================================
     // FOCUS TIMER — "Hourglass" rebuild (curved glass pass).
@@ -7017,6 +7175,9 @@ function renderFocus(){
     const pausedCls=T.running?'':' paused';
     clockFaceHTML=`
   <div class="focus-clock-outer focus-field${T.running?' running':''} ${modeCls}" id="focusClockOuter" style="--accent:${accent};--accent2:${accent2};--accent-border:${accent}2e;">
+    <button class="focus-infinity-toggle${T.running?' disabled':''}" onclick="toggleInfiniteMode()" title="Infinite Mode">
+      <svg viewBox="0 0 24 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2C3.24 2 1 4.24 1 7s2.24 5 5 5c2 0 3.3-1.1 4.3-2.4L12 8l1.7 1.6C14.7 10.9 16 12 18 12c2.76 0 5-2.24 5-5s-2.24-5-5-5c-2 0-3.3 1.1-4.3 2.4L12 6l-1.7-1.6C9.3 3.1 8 2 6 2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    </button>
     <div class="ff-core">
       <div class="focus-mode-lbl">${modeLabels[T.mode]}</div>
       <div class="hg-halo${pausedCls}"></div>
@@ -7293,7 +7454,7 @@ function renderFocus(){
   ${clockFaceHTML}
 
   <!-- Session dots -->
-  ${inTestMode?'':`<div class="focus-sessions-row">${dots.join('')}</div>`}
+  ${(inTestMode||infiniteMode)?'':`<div class="focus-sessions-row">${dots.join('')}</div>`}
 
   <!-- Controls -->
   ${controlsHTML}
@@ -7403,8 +7564,8 @@ function focusSearch(v){
 function focusSelectChap(c){
   // c may arrive as object via onclick JSON encoding
   if(typeof c==='string') try{c=JSON.parse(c);}catch{}
-  // Commit current segment before changing
-  commitFocusSegment();
+  // Commit current segment before changing — whichever mode is actually active
+  commitActiveSegment();
   focusTimer.currentChap=c;
   focusTimer.currentTask=null; // always reset task on new chapter selection
   // segStart stays null until task is picked and we are in session mode
@@ -7414,19 +7575,28 @@ function focusSelectChap(c){
 }
 
 function focusSelectTask(k){
-  commitFocusSegment();
+  commitActiveSegment();
   focusTimer.currentTask=k;
   // Only start tracking if timer is running AND we're in a session — never during breaks
   if(focusTimer.running && focusTimer.mode==='session') focusTimer.segStart=Date.now();
+  // Infinite Mode has no breaks — resume logging immediately if it's the active mode
+  if(infiniteTimer.running) infiniteTimer.segStart=Date.now();
   renderFocus();
 }
 
 function focusClearLog(){
-  commitFocusSegment();
+  commitActiveSegment();
   focusTimer.currentChap=null;
   focusTimer.currentTask=null;
   focusChapSearch='';
   renderFocus();
+}
+
+// Routes segment-commit to whichever timer is actually the live one — chapter/
+// task selection is shared UI, but only one mode is ever "the" active clock.
+function commitActiveSegment(){
+  if(infiniteTimer.running||infiniteTimer.paused){ commitInfiniteSegment(); }
+  else { commitFocusSegment(); }
 }
 
 function focusLogQues(){
@@ -7461,6 +7631,158 @@ function commitFocusSegment(){
   // Only restart segment clock if we are running AND currently in a session.
   // During breaks, segStart must remain null — break time is never logged as focus.
   T.segStart=(T.running && T.mode==='session') ? Date.now() : null;
+}
+
+// ═══════════════════════════════════════════════
+// INFINITE MODE — indefinite (no-break) stopwatch
+// ═══════════════════════════════════════════════
+
+// Turns the Infinite Mode face on/off. Blocked while any other clock is
+// actually live (same rule Test mode already enforces against Pomodoro) so
+// there is never a moment where two timers are silently running at once.
+function toggleInfiniteMode(){
+  if(!infiniteMode){
+    // Entering — blocked only if another clock is genuinely live.
+    if(focusTimer.running){ toast('Pause your current session first'); return; }
+    if(testLogTimer.running||testLogScoreStep||testLogOpen){ toast('Finish logging your test first'); return; }
+    infiniteMode=true;
+    infiniteToggle(); // starts the stopwatch immediately — tapping ∞ IS starting it
+    animateClockCardIn();
+  } else {
+    // Exiting — never blocks and never leaves anything half-finished: a
+    // real stretch gets logged automatically, a negligible one is just
+    // quietly dropped. One tap, always resolves cleanly.
+    if((infiniteTimer.running||infiniteTimer.paused) && infiniteCurrentSecs()>=5){
+      infiniteFinish(); // logs, resets, exits, renders, animates
+    } else {
+      clearInterval(infiniteTimer.intervalId);
+      infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null};
+      infiniteMode=false;
+      renderFocus();
+      animateClockCardIn();
+    }
+  }
+}
+
+// Same quiet fade+rise the hourglass already uses when swapping between
+// session/break (see focusOnModeEnd) — reused here so switching in/out of
+// Infinite Mode feels like one continuous card, not a hard cut to a new one.
+function animateClockCardIn(){
+  const outer=document.getElementById('focusClockOuter');
+  if(!outer) return;
+  outer.style.transition='none';
+  outer.style.opacity='0';
+  outer.style.transform='scale(.97) translateY(3px)';
+  void outer.offsetHeight; // force reflow — commits the "from" frame
+  outer.style.transition='opacity .5s cubic-bezier(.25,.7,.4,1), transform .55s cubic-bezier(.16,1,.3,1)';
+  requestAnimationFrame(()=>{
+    outer.style.opacity='1';
+    outer.style.transform='scale(1) translateY(0)';
+  });
+}
+
+// Commits whatever's been logged so far in this stretch into today's log,
+// exactly the same shape/keying commitFocusSegment already uses — this is
+// the only reason Infinite Mode needs zero new analytics/heatmap code.
+function commitInfiniteSegment(){
+  const T=focusTimer;
+  if(infiniteTimer.segStart&&T.currentChap&&T.currentTask){
+    const secs=Math.floor((Date.now()-infiniteTimer.segStart)/1000);
+    if(secs>5){
+      const log=getTodayLog();
+      const idx=log.findIndex(e=>e.subj===T.currentChap.subj&&e.chapN===T.currentChap.n&&e.task===T.currentTask);
+      if(idx>=0){log[idx].durationSecs+=secs;}
+      else log.push({chapName:T.currentChap.name,subj:T.currentChap.subj,chapN:T.currentChap.n,task:T.currentTask,durationSecs:secs});
+      saveTodayLog(log);
+    }
+  }
+  infiniteTimer.segStart=infiniteTimer.running?Date.now():null;
+}
+
+function infiniteToggle(){
+  // No chapter/task required to start — that selector stays visible and
+  // usable the whole time, so you can attach what you're working on
+  // whenever you want, or never, and just track raw time either way.
+  if(!focusSoundCtx){
+    try{focusSoundCtx=new (window.AudioContext||window.webkitAudioContext)();}catch{}
+  }
+  if(focusSoundCtx&&focusSoundCtx.state==='suspended'){ focusSoundCtx.resume().catch(()=>{}); }
+
+  if(infiniteTimer.running){
+    // Pause — bank the elapsed time, commit the log segment, stop the clock.
+    infiniteTimer.elapsedSecs+=Math.floor((Date.now()-infiniteTimer.startedAt)/1000);
+    infiniteTimer.startedAt=null;
+    infiniteTimer.running=false;
+    infiniteTimer.paused=true;
+    commitInfiniteSegment();
+    clearInterval(infiniteTimer.intervalId);
+    infiniteTimer.intervalId=null;
+  } else {
+    // Start (fresh) or Resume (from paused)
+    infiniteTimer.running=true;
+    infiniteTimer.paused=false;
+    infiniteTimer.startedAt=Date.now();
+    infiniteTimer.segStart=Date.now();
+    infiniteStartInterval();
+  }
+  renderFocus();
+}
+
+function infiniteStartInterval(){
+  clearInterval(infiniteTimer.intervalId);
+  infiniteTimer.intervalId=setInterval(updateInfiniteClockFast,500);
+}
+
+function infiniteCurrentSecs(){
+  const T=infiniteTimer;
+  return T.elapsedSecs+(T.running&&T.startedAt?Math.floor((Date.now()-T.startedAt)/1000):0);
+}
+
+function updateInfiniteClockFast(){
+  const secs=infiniteCurrentSecs();
+  const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
+  const str=(h>0?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  const el=document.getElementById('focusTimeBig');
+  if(el&&el.textContent!==str) el.textContent=str;
+}
+
+// Ends the indefinite session: commits the final segment, credits session
+// time into the SAME fent_sessions_ pool every other mode writes to (using
+// the identical duration/sessionMins fractional-credit formula logTestSession
+// already uses, so a long Infinite run can legitimately count as >1 session,
+// and a short one counts as a fair fraction — never silently rounded to 1),
+// then resets back to idle and hands the UI back to the Pomodoro face.
+function infiniteFinish(){
+  const secs=infiniteCurrentSecs();
+  if(secs<5){ infiniteDiscard(); return; }
+  commitInfiniteSegment();
+  clearInterval(infiniteTimer.intervalId);
+
+  const sessionMins=focusSettings.sessionMins||90;
+  const credit=secs/(sessionMins*60);
+  const todaySessKey='fent_sessions_'+localDateKey();
+  const cur=parseFloat(localStorage.getItem(todaySessKey)||'0');
+  localStorage.setItem(todaySessKey,cur+credit);
+  localStorage.setItem('fent_daytarget_'+localDateKey(),focusSettings.dailyTarget);
+
+  const m=Math.floor(secs/60), h=Math.floor(m/60);
+  const durStr=h>0?`${h}h ${m%60}m`:`${m}m`;
+  toast('✓ Infinite session logged — '+durStr);
+
+  infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null};
+  infiniteMode=false;
+  renderFocus();
+  animateClockCardIn();
+  if(document.getElementById('p-ana')&&document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
+}
+
+// Discards the in-progress indefinite session with no credit and no log
+// entry — for "that was a mistake, not a real session" moments. Stays in
+// Infinite Mode, just resets the stopwatch back to zero, ready to restart.
+function infiniteDiscard(){
+  clearInterval(infiniteTimer.intervalId);
+  infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null};
+  renderFocus();
 }
 
 function focusToggle(){
@@ -7534,8 +7856,10 @@ function updateFocusClockFast(){
   // state — the 30s background done-by-tick was previously calling this
   // unconditionally and stomping the live test clock with stale/paused
   // Pomodoro countdown data every 30 seconds, causing a visible flicker/jump.
-  // Guard fixes it completely.
-  if(testLogTimer.running || testLogScoreStep) return;
+  // Guard fixes it completely. Same reasoning applies to Infinite Mode —
+  // it owns #focusTimeBig via its own interval (updateInfiniteClockFast)
+  // whenever infiniteMode is showing, so this must bail out too.
+  if(testLogTimer.running || testLogScoreStep || infiniteMode) return;
 
   const mins=Math.floor(T.secondsLeft/60);
   const secs=T.secondsLeft%60;
