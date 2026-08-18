@@ -1007,59 +1007,57 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 /* ============================================================
    INFINITE MODE — indefinite (no-break) stopwatch.
    ------------------------------------------------------------
-   A "hardware synth" stage with an inset LCD screen. The wave is
-   carved from a reference design: one clean quadratic-bezier sine
-   over a graph-paper grid, scrolled via translateX(-50%) on a
-   double-width track for a perfectly seamless loop, at the
-   reference's own 1s pace. Recoloured to a single cyan (an OLED-
-   friendly accent — deep blacks either side of the glow, nothing
-   washed out) instead of the reference's purple/pink. Tapping the
-   screen toggles run/pause. Pausing freezes the scroll and dims
-   the screen. The digital readout lives BELOW the stage in the
+   Ported 1:1 from the user's own reference oscilloscope build
+   (synth.html): same casing size/ratio, same #0a0a0a/#050505
+   two-layer synth-and-LCD colours, same 20px white grid, same
+   purple→pink→purple wave gradient with a drop-shadow glow (not
+   a layered blur stack), same 1s scroll pace, same paused
+   opacity/colour/filter behaviour. Tapping the screen toggles
+   run/pause. The digital readout lives BELOW the stage in the
    shared .focus-time-big, same as every other mode. */
-.focus-clock-outer.focus-field.infinite-field{max-width:320px;border-color:rgba(34,211,238,0.10);}
-.focus-clock-outer.focus-field.infinite-field.running{border-color:rgba(34,211,238,0.18);}
+.focus-clock-outer.focus-field.infinite-field{max-width:320px;border-color:rgba(184,41,234,0.10);}
+.focus-clock-outer.focus-field.infinite-field.running{border-color:rgba(184,41,234,0.18);}
 .focus-clock-outer.focus-field.infinite-field .focus-mode-lbl{color:var(--t3);}
 .focus-clock-outer.focus-field.infinite-field .focus-time-big{margin-top:16px;}
 
 .synth-casing{
-  position:relative;width:100%;aspect-ratio:290/172;
-  border-radius:22px;cursor:pointer;-webkit-tap-highlight-color:transparent;
-  background:linear-gradient(160deg,#161618 0%,#0b0b0d 55%,#000 100%);
-  border:1px solid rgba(255,255,255,0.07);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04),inset 0 0 0 1px rgba(0,0,0,0.4),0 18px 42px rgba(0,0,0,0.5);
-  padding:15px;display:flex;flex-direction:column;
+  position:relative;width:100%;aspect-ratio:280/120;
+  border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  background:#0a0a0a;
+  border:2px solid #1a1a1a;
+  box-shadow:0 10px 30px rgba(0,0,0,0.8);
+  padding:10px;display:flex;flex-direction:column;
   transition:transform .18s var(--ease),box-shadow .5s ease;
 }
 .synth-casing:active{transform:scale(.988);}
 .synth-led{position:absolute;top:11px;left:15px;width:5px;height:5px;border-radius:50%;
   background:rgba(255,255,255,0.14);transition:all .6s cubic-bezier(.16,1,.3,1);z-index:3;}
-.synth-led.on{background:#8cf3ff;box-shadow:0 0 6px 1.5px rgba(34,211,238,0.7);}
+.synth-led.on{background:#ff5fd8;box-shadow:0 0 6px 1.5px rgba(184,41,234,0.7);}
 .synth-screen{
-  position:relative;flex:1;border-radius:11px;overflow:hidden;
-  background:linear-gradient(180deg,#040605 0%,#000 100%);
-  border:1px solid rgba(255,255,255,0.045);
-  box-shadow:inset 0 0 20px rgba(0,0,0,0.9),inset 0 0 2px rgba(255,255,255,0.03);
+  position:relative;flex:1;border-radius:6px;overflow:hidden;
+  background:#050505;
+  border:1px solid #111;
+  box-shadow:inset 0 2px 10px rgba(0,0,0,1);
+  display:flex;align-items:center;
 }
-/* Grid — lifted straight from the reference: a faint graph-paper
-   backdrop behind the wave, exactly what makes it read as an
-   instrument screen instead of just a glowing squiggle. */
+/* Grid — exact match: faint white graph-paper, 20px cells */
 .synth-grid{position:absolute;inset:0;z-index:1;pointer-events:none;
-  background-image:linear-gradient(rgba(34,211,238,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,0.035) 1px,transparent 1px);
-  background-size:19px 19px;}
-/* Wave — exact carve of the reference's shape and 1s pace, recoloured
-   to a layered cyan glow: a soft wide bloom, a tighter saturated glow,
-   and a bright near-white core line on top — reads as an actual lit
-   neon/OLED trace rather than a flat colored stroke. */
-.synth-wave-track{position:absolute;inset:0;overflow:hidden;z-index:2;}
-.synth-wave{position:absolute;top:0;left:0;height:100%;width:200%;
-  animation:synthWaveScroll 1s linear infinite;transition:opacity .5s ease,filter .5s ease;}
-.synth-wave-path{fill:none;stroke:#d4fbff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-.synth-wave-glow{fill:none;stroke:#22d3ee;stroke-width:5.5;stroke-linecap:round;filter:blur(6px);opacity:.65;mix-blend-mode:screen;}
-.synth-wave-glow2{fill:none;stroke:#0ea5c4;stroke-width:11;stroke-linecap:round;filter:blur(15px);opacity:.4;mix-blend-mode:screen;}
+  background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
+  background-size:20px 20px;}
+/* Wave — exact carve of the reference's shape and 1s pace: single
+   stroke riding a purple→pink→purple horizontal gradient, glowing
+   via one drop-shadow filter (not a layered blur stack) — a
+   cheaper, punchier neon look true to the source file. */
+.synth-wave-track{position:absolute;inset:0;overflow:hidden;z-index:2;display:flex;align-items:center;}
+.synth-wave{position:absolute;top:0;left:0;width:200%;height:100%;
+  display:flex;align-items:center;
+  animation:synthWaveScroll 1s linear infinite;
+  opacity:.9;transition:opacity .4s,filter .4s;
+  filter:drop-shadow(0 0 8px #b829ea);}
+.synth-wave-path{fill:none;stroke:url(#synthWaveGrad);stroke-width:3;stroke-linecap:round;}
 @keyframes synthWaveScroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-.synth-casing.paused .synth-wave{animation-play-state:paused;opacity:.24;filter:saturate(0) brightness(.6);}
-.synth-casing.paused .synth-wave-glow,.synth-casing.paused .synth-wave-glow2{opacity:0;}
+.synth-casing.paused .synth-wave{animation-play-state:paused;opacity:.3;filter:none;}
+.synth-casing.paused .synth-wave-path{stroke:#333;}
 
 /* Toggle — a single small glyph, pinned top-right of the clock card.
    No label, no border chrome when idle (reads as part of the card,
@@ -5762,6 +5760,9 @@ let infiniteTimer={
   elapsedSecs:0,        // total elapsed across all run/pause stretches of this indefinite session
   segStart:null,         // mirrors focusTimer.segStart — when the current LOGGED segment began
   intervalId:null,
+  committedSecs:0,       // how much of elapsedSecs has already been credited into fent_sessions_
+                          // (session count) so far this stretch — lets us credit incrementally at
+                          // every pause without ever double-crediting the same seconds twice
 };
 
 // ── Log Test — a completely independent stopwatch. Counts UP with no target
@@ -6063,6 +6064,28 @@ function computeCompletedBy(){
 
   const todaySessKey='fent_sessions_'+localDateKey();
   const todaySessions=parseFloat(localStorage.getItem(todaySessKey)||'0');
+
+  // ── Infinite Mode branch ────────────────────────────────────────────────
+  // Infinite Mode has no fixed duration and no breaks, so it can't walk the
+  // session/break cycle below — instead: take whatever's already banked in
+  // fent_sessions_ (from earlier pauses this stretch, or earlier Pomodoro
+  // sessions today), add the LIVE uncommitted credit of the current running
+  // stretch (infiniteCurrentSecs() minus what's already been committed at
+  // the last pause — never double-counted), and project the remainder
+  // forward assuming the rest is also spent in Infinite Mode (no breaks).
+  // This is why switching into Infinite Mode gives an immediate new "finish
+  // by" value: the live credit starts at 0 the instant you enter, so the
+  // full untouched remaining target reprojects at the flat sessionMins
+  // rate right away, then counts down smoothly as you go.
+  if(infiniteMode){
+    const sessSecs=S.sessionMins*60;
+    const uncommittedSecs=Math.max(0,infiniteCurrentSecs()-(infiniteTimer.committedSecs||0));
+    const liveCredit=uncommittedSecs/sessSecs;
+    const effectiveRemaining=S.dailyTarget-todaySessions-liveCredit;
+    if(effectiveRemaining<=0) return null; // already done
+    return new Date(Date.now()+effectiveRemaining*sessSecs*1000);
+  }
+
   const remaining=Math.max(0,S.dailyTarget-todaySessions);
   if(remaining<=0) return null; // already done
 
@@ -7093,9 +7116,14 @@ function renderFocus(){
         <div class="synth-screen">
           <div class="synth-grid"></div>
           <div class="synth-wave-track">
-            <svg class="synth-wave" viewBox="0 0 ${scopeW} ${scopeH}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-              <path class="synth-wave-glow2" d="${scopePath}"/>
-              <path class="synth-wave-glow" d="${scopePath}"/>
+            <svg class="synth-wave" width="100%" height="100%" viewBox="0 0 ${scopeW} ${scopeH}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="synthWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#b829ea"/>
+                  <stop offset="50%" stop-color="#ff0f7b"/>
+                  <stop offset="100%" stop-color="#b829ea"/>
+                </linearGradient>
+              </defs>
               <path class="synth-wave-path" d="${scopePath}"/>
             </svg>
           </div>
@@ -7107,7 +7135,7 @@ function renderFocus(){
   </div>`;
     controlsHTML=`<div class="focus-controls">
     <button class="focus-btn-sm" onclick="infiniteFinish()" title="End session" ${(IT.running||IT.paused)?'':'style="opacity:0.3;cursor:not-allowed" disabled'}>⟫</button>
-    <button class="focus-btn-main${IT.running?' running':''}" onclick="infiniteToggle()" id="focusMainBtn" style="${IT.running?'border-color:rgba(34,211,238,0.4);background:rgba(34,211,238,0.08);':''}">
+    <button class="focus-btn-main${IT.running?' running':''}" onclick="infiniteToggle()" id="focusMainBtn" style="${IT.running?'border-color:rgba(184,41,234,0.4);background:rgba(184,41,234,0.08);':''}">
       ${IT.running?'⏸':'▶'}
     </button>
     <button class="focus-btn-sm" onclick="infiniteDiscard()" title="Reset" ${(IT.running||IT.paused)?'':'style="opacity:0.3;cursor:not-allowed" disabled'}>↺</button>
@@ -7462,15 +7490,15 @@ function renderFocus(){
   <!-- Stats strip -->
   <div class="focus-stats-strip">
     <div class="focus-stat-cell">
-      <div class="focus-stat-num">${fmtSess(todaySessions)}</div>
+      <div class="focus-stat-num" id="focusStatDoneToday">${fmtSess(todaySessions)}</div>
       <div class="focus-stat-lbl">Done Today</div>
     </div>
     <div class="focus-stat-cell">
-      <div class="focus-stat-num" style="color:${sessionsToGo<=0?'var(--c)':'var(--t1)'};">${fmtSess(Math.max(0,sessionsToGo))}</div>
+      <div class="focus-stat-num" id="focusStatToGo" style="color:${sessionsToGo<=0?'var(--c)':'var(--t1)'};">${fmtSess(Math.max(0,sessionsToGo))}</div>
       <div class="focus-stat-lbl">To Go</div>
     </div>
     <div class="focus-stat-cell">
-      <div class="focus-stat-num" style="font-size:16px;">${focusTimeStr||'—'}</div>
+      <div class="focus-stat-num" id="focusStatFocusTime" style="font-size:16px;">${focusTimeStr||'—'}</div>
       <div class="focus-stat-lbl">Focus Time</div>
     </div>
     <div class="focus-stat-cell">
@@ -7491,7 +7519,7 @@ function renderFocus(){
       const hTill=Math.floor(secsTill/3600);
       const mTill=Math.floor((secsTill%3600)/60);
       const tillStr=hTill>0?`${hTill}h ${mTill}m`:`${mTill}m`;
-      const isPaused=!T.running;
+      const isPaused=infiniteMode?!infiniteTimer.running:!T.running;
       return `<span class="focus-doneby-prefix">finish by</span><span class="focus-doneby-by${isPaused?' style="color:var(--t2);"':''}" id="focusDoneByVal">${cbStr}</span><span class="focus-doneby-sep">·</span><span class="focus-doneby-rem" id="focusDoneByTill">${tillStr}</span>`;
     })()}
   </div>
@@ -7656,7 +7684,7 @@ function toggleInfiniteMode(){
       infiniteFinish(); // logs, resets, exits, renders, animates
     } else {
       clearInterval(infiniteTimer.intervalId);
-      infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null};
+      infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null,committedSecs:0};
       infiniteMode=false;
       renderFocus();
       animateClockCardIn();
@@ -7699,6 +7727,27 @@ function commitInfiniteSegment(){
   infiniteTimer.segStart=infiniteTimer.running?Date.now():null;
 }
 
+// Credits whatever hasn't yet been credited into the SAME fent_sessions_
+// pool every other mode writes to, using the identical duration/sessionMins
+// fractional-credit formula the old one-shot infiniteFinish() used — but
+// applied only to the DELTA since the last commit (infiniteTimer.committedSecs),
+// so calling this at every pause (not just at the very end) is safe and never
+// double-credits seconds that were already banked at an earlier pause in the
+// same stretch. This is what keeps "Done Today"/"To Go" accurate the instant
+// you pause, instead of only once you fully end the session.
+function infiniteCommitSessionCredit(){
+  const nowSecs=infiniteCurrentSecs();
+  const deltaSecs=nowSecs-(infiniteTimer.committedSecs||0);
+  if(deltaSecs<=0) return;
+  const sessionMins=focusSettings.sessionMins||90;
+  const credit=deltaSecs/(sessionMins*60);
+  const todaySessKey='fent_sessions_'+localDateKey();
+  const cur=parseFloat(localStorage.getItem(todaySessKey)||'0');
+  localStorage.setItem(todaySessKey,cur+credit);
+  localStorage.setItem('fent_daytarget_'+localDateKey(),focusSettings.dailyTarget);
+  infiniteTimer.committedSecs=nowSecs;
+}
+
 function infiniteToggle(){
   // No chapter/task required to start — that selector stays visible and
   // usable the whole time, so you can attach what you're working on
@@ -7715,6 +7764,7 @@ function infiniteToggle(){
     infiniteTimer.running=false;
     infiniteTimer.paused=true;
     commitInfiniteSegment();
+    infiniteCommitSessionCredit(); // bank Done Today/To Go credit right now, on every pause
     clearInterval(infiniteTimer.intervalId);
     infiniteTimer.intervalId=null;
   } else {
@@ -7744,6 +7794,64 @@ function updateInfiniteClockFast(){
   const str=(h>0?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
   const el=document.getElementById('focusTimeBig');
   if(el&&el.textContent!==str) el.textContent=str;
+
+  // ── Live-sync Done Today / To Go / Focus Time / finish-by / tab badge ──
+  // Everything below is a DOM-id patch only (never a full renderFocus()),
+  // so the synth wave's CSS scroll animation is never interrupted or
+  // restarted mid-loop — same "patch, don't rebuild" approach
+  // updateFocusClockFast() already uses for the hourglass.
+  const fmtSess=v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
+  const S=focusSettings;
+  const todaySessKey='fent_sessions_'+localDateKey();
+  const bankedSessions=parseFloat(localStorage.getItem(todaySessKey)||'0');
+  const uncommittedSecs=Math.max(0,secs-(infiniteTimer.committedSecs||0));
+  const liveSessions=bankedSessions+(uncommittedSecs/(S.sessionMins*60));
+  const liveSessionsToGo=Math.max(0,S.dailyTarget-liveSessions);
+
+  const doneEl=document.getElementById('focusStatDoneToday');
+  if(doneEl) doneEl.textContent=fmtSess(liveSessions);
+  const toGoEl=document.getElementById('focusStatToGo');
+  if(toGoEl){
+    toGoEl.textContent=fmtSess(liveSessionsToGo);
+    toGoEl.style.color=liveSessionsToGo<=0?'var(--c)':'var(--t1)';
+  }
+
+  // Focus Time — banked todayLog minutes plus whatever's accrued in the
+  // current logged segment (only counts if a chapter/task is selected,
+  // same rule commitInfiniteSegment already follows for what gets logged).
+  const todayLog=getTodayLog();
+  let liveFocusSecs=todayLog.reduce((a,e)=>a+e.durationSecs,0);
+  if(infiniteTimer.segStart&&focusTimer.currentChap&&focusTimer.currentTask){
+    liveFocusSecs+=Math.floor((Date.now()-infiniteTimer.segStart)/1000);
+  }
+  const liveFocusMins=Math.floor(liveFocusSecs/60);
+  const liveFocusH=Math.floor(liveFocusMins/60), liveFocusM=liveFocusMins%60;
+  const focusTimeEl=document.getElementById('focusStatFocusTime');
+  if(focusTimeEl) focusTimeEl.textContent=liveFocusH>0?`${liveFocusH}h ${liveFocusM}m`:`${liveFocusM}m`;
+
+  // Focus tab badge — same instant-sync rule the Pomodoro path already follows
+  const fbadge=document.getElementById('bFocus');
+  if(fbadge) fbadge.textContent=liveSessions>0?fmtSess(liveSessions)+'✓':'—';
+
+  // finish-by — computeCompletedBy() is already infinite-mode-aware (reads
+  // infiniteCurrentSecs()/committedSecs live), so this just needs repainting.
+  const cbDt=computeCompletedBy();
+  const doneByVal=document.getElementById('focusDoneByVal');
+  const doneByTill=document.getElementById('focusDoneByTill');
+  if(cbDt){
+    if(doneByVal){
+      doneByVal.textContent=fmtCompletedBy(cbDt);
+      doneByVal.style.color=infiniteTimer.running?'var(--c)':'var(--t2)';
+    }
+    if(doneByTill){
+      const secsTill=Math.max(0,Math.round((cbDt.getTime()-Date.now())/1000));
+      const hTill=Math.floor(secsTill/3600), mTill=Math.floor((secsTill%3600)/60);
+      doneByTill.textContent=hTill>0?`${hTill}h ${mTill}m`:`${mTill}m`;
+    }
+  } else {
+    if(doneByVal){doneByVal.textContent='✓ target done';doneByVal.style.color='var(--c)';}
+    if(doneByTill) doneByTill.textContent='';
+  }
 }
 
 // Ends the indefinite session: commits the final segment, credits session
@@ -7756,20 +7864,14 @@ function infiniteFinish(){
   const secs=infiniteCurrentSecs();
   if(secs<5){ infiniteDiscard(); return; }
   commitInfiniteSegment();
+  infiniteCommitSessionCredit(); // credits only the delta not already banked at an earlier pause
   clearInterval(infiniteTimer.intervalId);
-
-  const sessionMins=focusSettings.sessionMins||90;
-  const credit=secs/(sessionMins*60);
-  const todaySessKey='fent_sessions_'+localDateKey();
-  const cur=parseFloat(localStorage.getItem(todaySessKey)||'0');
-  localStorage.setItem(todaySessKey,cur+credit);
-  localStorage.setItem('fent_daytarget_'+localDateKey(),focusSettings.dailyTarget);
 
   const m=Math.floor(secs/60), h=Math.floor(m/60);
   const durStr=h>0?`${h}h ${m%60}m`:`${m}m`;
   toast('✓ Infinite session logged — '+durStr);
 
-  infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null};
+  infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null,committedSecs:0};
   infiniteMode=false;
   renderFocus();
   animateClockCardIn();
@@ -7781,7 +7883,7 @@ function infiniteFinish(){
 // Infinite Mode, just resets the stopwatch back to zero, ready to restart.
 function infiniteDiscard(){
   clearInterval(infiniteTimer.intervalId);
-  infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null};
+  infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null,committedSecs:0};
   renderFocus();
 }
 
