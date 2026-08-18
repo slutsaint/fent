@@ -1007,57 +1007,68 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 /* ============================================================
    INFINITE MODE — indefinite (no-break) stopwatch.
    ------------------------------------------------------------
-   Ported 1:1 from the user's own reference oscilloscope build
-   (synth.html): same casing size/ratio, same #0a0a0a/#050505
-   two-layer synth-and-LCD colours, same 20px white grid, same
-   purple→pink→purple wave gradient with a drop-shadow glow (not
-   a layered blur stack), same 1s scroll pace, same paused
-   opacity/colour/filter behaviour. Tapping the screen toggles
-   run/pause. The digital readout lives BELOW the stage in the
-   shared .focus-time-big, same as every other mode. */
-.focus-clock-outer.focus-field.infinite-field{max-width:320px;border-color:rgba(184,41,234,0.10);}
-.focus-clock-outer.focus-field.infinite-field.running{border-color:rgba(184,41,234,0.18);}
+   Palette + fade/pause behaviour ported EXACTLY from the user's
+   "Aviation Cobalt Oscilloscope" reference file — same three
+   cobalt-blue hex values, same LCD/casing colours, same 20px
+   blue-tinted grid, same drop-shadow glow radius, same paused
+   opacity/filter/stroke blackout, same 0.4s ease timing. Only the
+   layout is adapted to fit into this app's existing clock-card
+   structure (LED + label + time readout below, instead of the
+   reference's standalone tap-zone). */
+:root{
+  --inf-anchor:#1d4ed8;   /* deep cobalt — gradient outer stops   */
+  --inf-core:#60a5fa;     /* light cobalt — gradient middle stop  */
+  --inf-primary:#3b82f6;  /* primary — LED / active accents       */
+  --inf-glow:rgba(59,130,246,0.65); /* wave drop-shadow glow      */
+}
+.focus-clock-outer.focus-field.infinite-field{max-width:320px;border-color:rgba(59,130,246,0.10);transition:border-color .4s ease;}
+.focus-clock-outer.focus-field.infinite-field.running{border-color:rgba(59,130,246,0.18);}
 .focus-clock-outer.focus-field.infinite-field .focus-mode-lbl{color:var(--t3);}
-.focus-clock-outer.focus-field.infinite-field .focus-time-big{margin-top:16px;}
+.focus-clock-outer.focus-field.infinite-field .focus-time-big{margin-top:30px;}
 
 .synth-casing{
   position:relative;width:100%;aspect-ratio:280/120;
-  border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;
-  background:#0a0a0a;
-  border:2px solid #1a1a1a;
-  box-shadow:0 10px 30px rgba(0,0,0,0.8);
+  border-radius:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  background:#080808;
+  border:2px solid #141820;
+  box-shadow:0 16px 40px rgba(0,0,0,0.95),inset 0 1px 0 rgba(255,255,255,0.04);
   padding:10px;display:flex;flex-direction:column;
-  transition:transform .18s var(--ease),box-shadow .5s ease;
+  transition:border-color .4s ease,box-shadow .4s ease,transform .18s ease;
 }
 .synth-casing:active{transform:scale(.988);}
+.synth-casing.paused{border-color:#101216;}
 .synth-led{position:absolute;top:11px;left:15px;width:5px;height:5px;border-radius:50%;
-  background:rgba(255,255,255,0.14);transition:all .6s cubic-bezier(.16,1,.3,1);z-index:3;}
-.synth-led.on{background:#ff5fd8;box-shadow:0 0 6px 1.5px rgba(184,41,234,0.7);}
+  background:#1e293b;transition:background-color .4s ease,box-shadow .4s ease;z-index:3;}
+.synth-led.on{background:var(--inf-primary);box-shadow:0 0 10px var(--inf-primary);}
 .synth-screen{
-  position:relative;flex:1;border-radius:6px;overflow:hidden;
-  background:#050505;
-  border:1px solid #111;
-  box-shadow:inset 0 2px 10px rgba(0,0,0,1);
+  position:relative;flex:1;border-radius:8px;overflow:hidden;
+  background:#020408;
+  border:1px solid #0d1522;
+  box-shadow:inset 0 2px 14px rgba(0,0,0,1);
   display:flex;align-items:center;
 }
-/* Grid — exact match: faint white graph-paper, 20px cells */
+/* Grid — exact match: faint cobalt-tinted graph-paper, 20px cells */
 .synth-grid{position:absolute;inset:0;z-index:1;pointer-events:none;
-  background-image:linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
+  background-image:linear-gradient(rgba(59,130,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,0.03) 1px,transparent 1px);
   background-size:20px 20px;}
-/* Wave — exact carve of the reference's shape and 1s pace: single
-   stroke riding a purple→pink→purple horizontal gradient, glowing
-   via one drop-shadow filter (not a layered blur stack) — a
-   cheaper, punchier neon look true to the source file. */
+/* Wave — exact carve of the reference's shape/pace: single stroke riding
+   an anchor→core→anchor cobalt gradient, glowing via one drop-shadow
+   filter. Pausing is a straight fade to near-invisible (opacity .98→.2)
+   plus the glow dropping out entirely — the same "blackout" the
+   reference uses, not a gradual desaturate. The stroke itself swaps to
+   a flat dark slate on pause too; that swap can't tween (paint-server
+   references never do), but by then opacity has already carried it
+   past the point of being visible, exactly like the reference. */
 .synth-wave-track{position:absolute;inset:0;overflow:hidden;z-index:2;display:flex;align-items:center;}
 .synth-wave{position:absolute;top:0;left:0;width:200%;height:100%;
   display:flex;align-items:center;
   animation:synthWaveScroll 1s linear infinite;
-  opacity:.9;transition:opacity .4s,filter .4s;
-  filter:drop-shadow(0 0 8px #b829ea);}
-.synth-wave-path{fill:none;stroke:url(#synthWaveGrad);stroke-width:3;stroke-linecap:round;}
+  opacity:.98;transition:opacity .4s ease,filter .4s ease;
+  filter:drop-shadow(0 0 10px var(--inf-glow));}
+.synth-wave-path{fill:none;stroke:var(--inf-primary);stroke-width:2.8;stroke-linecap:round;}
 @keyframes synthWaveScroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-.synth-casing.paused .synth-wave{animation-play-state:paused;opacity:.3;filter:none;}
-.synth-casing.paused .synth-wave-path{stroke:#333;}
+.synth-casing.paused .synth-wave{animation-play-state:paused;opacity:.2;filter:none;}
+.synth-casing.paused .synth-wave-path{stroke:#1e293b;}
 
 /* Toggle — a single small glyph, pinned top-right of the clock card.
    No label, no border chrome when idle (reads as part of the card,
@@ -1069,12 +1080,46 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   display:flex;align-items:center;justify-content:center;
   background:transparent;border:1px solid transparent;
   color:var(--t3);cursor:pointer;font-size:13px;line-height:1;
-  transition:all .4s cubic-bezier(.16,1,.3,1);
+  transition:color .4s ease,background .4s ease,border-color .4s ease,box-shadow .4s ease,transform .2s ease;
 }
 .focus-infinity-toggle:hover{color:var(--t1);background:rgba(255,255,255,0.05);}
+.focus-infinity-toggle:active{transform:scale(.86);}
 .focus-infinity-toggle.active{color:var(--t1);background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.16);box-shadow:0 0 10px rgba(255,255,255,0.06);}
 .focus-infinity-toggle.disabled{opacity:.25;cursor:not-allowed;pointer-events:none;}
 .focus-infinity-toggle svg{width:14px;height:14px;display:block;}
+
+/* Infinite-mode main play/pause button — kept perfectly neutral on
+   purpose (no colour wash). Life/state is communicated by the LED,
+   wave and timer, exactly like the reference's dock buttons stay
+   plain while only the session dot and readout carry colour. */
+.focus-wrap:has(.infinite-field) .focus-btn-main.running{border-color:rgba(255,255,255,0.22);background:rgba(255,255,255,0.05);}
+.focus-wrap:has(.infinite-field) .focus-btn-main.running:hover{border-color:rgba(255,255,255,0.32);background:rgba(255,255,255,0.08);}
+
+/* Quick question logging — fast, tap-first entry so a question tally
+   never has to wait for a break like the Pomodoro flow needs. Chips
+   cover the common batch sizes; the small "+" reveals a plain number
+   input for anything else. Tagged to whatever chapter is currently
+   selected, via the exact same addTodayQues/addQuesToChapter pair the
+   break-mode ques box already writes through — same storage, same
+   analytics, zero new data model. */
+.inf-ques-quick{display:flex;align-items:center;justify-content:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--b1);width:100%;}
+.inf-ques-log-btn{display:flex;align-items:center;gap:5px;padding:5px 12px 5px 9px;border-radius:14px;background:var(--s1);border:1px solid var(--b1);color:var(--t2);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .2s var(--ease),border-color .2s var(--ease),color .2s var(--ease),transform .15s var(--ease);}
+.inf-ques-log-btn:hover{background:var(--s2);border-color:rgba(255,255,255,0.2);color:var(--t1);}
+.inf-ques-log-btn:active{transform:scale(.96);}
+.inf-ques-log-btn.open{background:var(--s2);border-color:rgba(255,255,255,0.24);color:var(--t1);}
+.inf-ques-log-icon{width:11px;height:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1;font-weight:300;transition:transform .3s var(--ease);}
+.inf-ques-log-btn.open .inf-ques-log-icon{transform:rotate(45deg);}
+.inf-ques-log-txt{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;}
+.inf-ques-custom-row{display:flex;align-items:center;justify-content:center;gap:6px;max-height:0;opacity:0;overflow:hidden;margin-top:0;transition:max-height .35s var(--ease),opacity .3s var(--ease),margin-top .35s var(--ease);}
+.inf-ques-custom-row.open{max-height:50px;opacity:1;margin-top:10px;}
+.inf-ques-custom-inp{width:58px;background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--t1);font-family:'JetBrains Mono',monospace;outline:none;text-align:center;-moz-appearance:textfield;transition:border-color .2s var(--ease);}
+.inf-ques-custom-inp:focus{border-color:rgba(255,255,255,0.24);}
+.inf-ques-custom-inp::-webkit-outer-spin-button,.inf-ques-custom-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.inf-ques-custom-inp::placeholder{color:var(--t3);opacity:.4;}
+.inf-ques-custom-log{font-size:9.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--bg);background:var(--t1);border:none;border-radius:6px;padding:6px 13px;cursor:pointer;transition:background .2s var(--ease),transform .15s var(--ease);}
+.inf-ques-custom-log:hover{background:var(--t2);}
+.inf-ques-custom-log:active{transform:scale(.94);}
+
 
 /* Controls */
 .focus-controls{display:flex;gap:12px;align-items:center;margin-top:20px;justify-content:center;}
@@ -7117,13 +7162,6 @@ function renderFocus(){
           <div class="synth-grid"></div>
           <div class="synth-wave-track">
             <svg class="synth-wave" width="100%" height="100%" viewBox="0 0 ${scopeW} ${scopeH}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="synthWaveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stop-color="#b829ea"/>
-                  <stop offset="50%" stop-color="#ff0f7b"/>
-                  <stop offset="100%" stop-color="#b829ea"/>
-                </linearGradient>
-              </defs>
               <path class="synth-wave-path" d="${scopePath}"/>
             </svg>
           </div>
@@ -7131,11 +7169,21 @@ function renderFocus(){
       </div>
       <div class="focus-time-big" id="focusTimeBig">${infTimeStr}</div>
       <div class="focus-session-lbl">${IT.running?'Running':(IT.paused?'Paused':'Ready')}</div>
+      <div class="inf-ques-quick">
+        <button class="inf-ques-log-btn" id="infQuesLogBtn" onclick="infiniteToggleQuesCustom()" title="Log questions solved">
+          <span class="inf-ques-log-icon">+</span><span class="inf-ques-log-txt">Log ques</span>
+        </button>
+      </div>
+      <div class="inf-ques-custom-row" id="infQuesCustomRow">
+        <input class="inf-ques-custom-inp" id="infQuesCustomInp" type="number" min="0" max="999" placeholder="0"
+          onkeydown="if(event.key==='Enter'){infiniteCustomQues();}" autocomplete="off"/>
+        <button class="inf-ques-custom-log" onclick="infiniteCustomQues()">Log</button>
+      </div>
     </div>
   </div>`;
     controlsHTML=`<div class="focus-controls">
     <button class="focus-btn-sm" onclick="infiniteFinish()" title="End session" ${(IT.running||IT.paused)?'':'style="opacity:0.3;cursor:not-allowed" disabled'}>⟫</button>
-    <button class="focus-btn-main${IT.running?' running':''}" onclick="infiniteToggle()" id="focusMainBtn" style="${IT.running?'border-color:rgba(184,41,234,0.4);background:rgba(184,41,234,0.08);':''}">
+    <button class="focus-btn-main${IT.running?' running':''}" onclick="infiniteToggle()" id="focusMainBtn">
       ${IT.running?'⏸':'▶'}
     </button>
     <button class="focus-btn-sm" onclick="infiniteDiscard()" title="Reset" ${(IT.running||IT.paused)?'':'style="opacity:0.3;cursor:not-allowed" disabled'}>↺</button>
@@ -7502,7 +7550,7 @@ function renderFocus(){
       <div class="focus-stat-lbl">Focus Time</div>
     </div>
     <div class="focus-stat-cell">
-      <div class="focus-stat-num" style="color:${getTodayQues()>=(S.dailyQuesTarget||70)?'var(--c)':getTodayQues()>0?'var(--p)':'var(--t3)'};">${getTodayQues()||'—'}</div>
+      <div class="focus-stat-num" id="focusStatQues" style="color:${getTodayQues()>=(S.dailyQuesTarget||70)?'var(--c)':getTodayQues()>0?'var(--p)':'var(--t3)'};">${getTodayQues()||'—'}</div>
       <div class="focus-stat-lbl">Ques / ${S.dailyQuesTarget||70}</div>
     </div>
   </div>
@@ -7643,6 +7691,49 @@ function focusLogQues(){
   if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
 }
 
+// ── Infinite Mode — fast question logging ──────────────────────────────────
+// Same storage path as the break-mode ques box (addTodayQues +
+// addQuesToChapter, tagged to whatever chapter is currently selected) —
+// purely a faster, tap-first UI on top of data that already exists. Patches
+// the two on-screen counters directly instead of calling renderFocus(), so
+// a quick "+5" tap never interrupts the synth wave's scroll animation.
+function infiniteQuickQues(n){
+  const total=addTodayQues(n);
+  if(focusTimer.currentChap){ addQuesToChapter(n, focusTimer.currentChap); }
+  toast('✓ +'+n+' questions — '+total+' today');
+  const qTarget=focusSettings.dailyQuesTarget||70;
+  const statEl=document.getElementById('focusStatQues');
+  if(statEl){
+    statEl.textContent=total||'—';
+    statEl.style.color=total>=qTarget?'var(--c)':total>0?'var(--p)':'var(--t3)';
+  }
+  if(document.getElementById('p-ana')&&document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
+}
+
+function infiniteToggleQuesCustom(){
+  const row=document.getElementById('infQuesCustomRow');
+  const btn=document.getElementById('infQuesLogBtn');
+  if(!row) return;
+  row.classList.toggle('open');
+  if(btn) btn.classList.toggle('open',row.classList.contains('open'));
+  if(row.classList.contains('open')){
+    setTimeout(()=>{const inp=document.getElementById('infQuesCustomInp'); if(inp) inp.focus();},350);
+  }
+}
+
+function infiniteCustomQues(){
+  const inp=document.getElementById('infQuesCustomInp');
+  if(!inp) return;
+  const n=parseInt(inp.value||'0');
+  if(isNaN(n)||n<=0){toast('Enter a number of questions');return;}
+  infiniteQuickQues(n);
+  inp.value='';
+  const row=document.getElementById('infQuesCustomRow');
+  const btn=document.getElementById('infQuesLogBtn');
+  if(row) row.classList.remove('open');
+  if(btn) btn.classList.remove('open');
+}
+
 function commitFocusSegment(){
   const T=focusTimer;
   if(T.segStart&&T.currentChap&&T.currentTask){
@@ -7695,17 +7786,21 @@ function toggleInfiniteMode(){
 // Same quiet fade+rise the hourglass already uses when swapping between
 // session/break (see focusOnModeEnd) — reused here so switching in/out of
 // Infinite Mode feels like one continuous card, not a hard cut to a new one.
+// Slightly more travel + a soft blur-through than a plain fade, so the ∞
+// toggle reads as one deliberate, weighted motion instead of a UI flicker.
 function animateClockCardIn(){
   const outer=document.getElementById('focusClockOuter');
   if(!outer) return;
   outer.style.transition='none';
   outer.style.opacity='0';
-  outer.style.transform='scale(.97) translateY(3px)';
+  outer.style.transform='scale(.93) translateY(10px)';
+  outer.style.filter='blur(9px)';
   void outer.offsetHeight; // force reflow — commits the "from" frame
-  outer.style.transition='opacity .5s cubic-bezier(.25,.7,.4,1), transform .55s cubic-bezier(.16,1,.3,1)';
+  outer.style.transition='opacity .65s var(--ease), transform .75s var(--ease), filter .6s var(--ease)';
   requestAnimationFrame(()=>{
     outer.style.opacity='1';
     outer.style.transform='scale(1) translateY(0)';
+    outer.style.filter='blur(0px)';
   });
 }
 
@@ -7775,7 +7870,58 @@ function infiniteToggle(){
     infiniteTimer.segStart=Date.now();
     infiniteStartInterval();
   }
-  renderFocus();
+  // Patch the existing DOM in place rather than a full renderFocus() rebuild.
+  // A full rebuild replaces the synth-casing node every single tap, which
+  // means the browser never actually has a "previous state" to transition
+  // FROM — every CSS transition on it (opacity/filter/border/LED/shadow)
+  // gets skipped and just snaps straight to the final frame. Patching only
+  // the classes/text that changed lets those transitions play for real,
+  // which is the whole difference between "instant snap" and "smooth,
+  // premium fade". Falls back to a full render if the card isn't mounted
+  // yet (e.g. the very first tap that enters Infinite Mode).
+  if(document.querySelector('#focusClockOuter.infinite-field')){
+    patchInfiniteRunState();
+  } else {
+    renderFocus();
+  }
+}
+
+// Lightweight DOM patch for the run/pause state only — no innerHTML
+// rebuild, so every CSS transition already defined on these elements
+// (synth-wave opacity/filter, synth-led glow, casing border, timer
+// colour) gets to animate instead of snapping. Time text and the stats
+// strip are kept live by updateInfiniteClockFast(), called once below so
+// Done Today / To Go / Focus Time reflect the pause credit immediately
+// even though its interval just stopped.
+function patchInfiniteRunState(){
+  const IT=infiniteTimer;
+  const running=IT.running;
+  const outer=document.getElementById('focusClockOuter');
+  if(!outer) return;
+  const casing=outer.querySelector('.synth-casing');
+  const led=outer.querySelector('.synth-led');
+  const lbl=outer.querySelector('.focus-session-lbl');
+  const mainBtn=document.getElementById('focusMainBtn');
+  outer.classList.toggle('running',running);
+  if(casing){
+    casing.classList.toggle('paused',!running);
+    casing.title=running?'Tap to pause':'Tap to start';
+  }
+  if(led) led.classList.toggle('on',running);
+  if(lbl) lbl.textContent=running?'Running':(IT.paused?'Paused':'Ready');
+  if(mainBtn){
+    mainBtn.classList.toggle('running',running);
+    mainBtn.textContent=running?'⏸':'▶';
+  }
+  // Finish/Discard become usable the moment a stretch exists (running or
+  // paused with time on it) — same enable rule the old full render used.
+  document.querySelectorAll('.focus-controls .focus-btn-sm').forEach(b=>{
+    const enable=running||IT.paused;
+    b.disabled=!enable;
+    b.style.opacity=enable?'':'0.3';
+    b.style.cursor=enable?'':'not-allowed';
+  });
+  updateInfiniteClockFast();
 }
 
 function infiniteStartInterval(){
