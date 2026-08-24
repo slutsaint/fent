@@ -317,6 +317,159 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .modal-submit{width:100%;padding:12px;background:var(--t1);color:var(--bg);border:none;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;letter-spacing:.02em;transition:all .2s;}
 .modal-submit:hover{background:var(--t2);}
 
+/* ─── EXIT INTERVIEW (early-discard reflection prompt) ───
+   Deliberately its own visual family, not the generic .modal: this is a
+   single, calm, one-time friction point — never punitive, never red/alarm-
+   coded. Pure OLED-black backdrop, soft neutral card, one thin-stroke icon
+   from the same line-art family as the break glyphs. */
+.ei-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s var(--ease);}
+.ei-overlay.show{opacity:1;}
+.ei-card{width:100%;max-width:360px;background:linear-gradient(180deg,var(--s1),var(--bg));border:1px solid var(--b2);border-radius:18px;padding:26px 24px 22px;box-shadow:0 30px 70px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.02);transform:translateY(14px) scale(.97);opacity:0;transition:transform .4s var(--ease),opacity .4s var(--ease);}
+.ei-overlay.show .ei-card{transform:translateY(0) scale(1);opacity:1;}
+.ei-icon{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--b1);color:var(--t2);}
+.ei-icon svg{width:16px;height:16px;}
+.ei-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.ei-badge{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);letter-spacing:.04em;background:var(--s2);border:1px solid var(--b1);border-radius:20px;padding:4px 9px;}
+.ei-title{font-size:15px;font-weight:400;color:var(--t1);letter-spacing:-.01em;margin-bottom:6px;}
+.ei-sub{font-size:11px;color:var(--t3);letter-spacing:.01em;line-height:1.55;margin-bottom:18px;}
+.ei-last{display:flex;flex-direction:column;gap:3px;background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:10px 12px;margin-bottom:14px;}
+.ei-last-lbl{display:flex;justify-content:space-between;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+.ei-last-txt{font-size:11.5px;color:var(--t2);font-style:italic;line-height:1.45;}
+.ei-plan{margin-bottom:14px;}
+.ei-plan-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;}
+.ei-plan-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.ei-plan-chip{font-size:10.5px;color:var(--t2);background:var(--s2);border:1px solid var(--b1);border-radius:20px;padding:5px 10px;letter-spacing:.005em;}
+.ei-input{width:100%;background:var(--bg);border:1px solid var(--b1);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--t1);outline:none;transition:border-color .2s,background .2s;font-family:inherit;letter-spacing:-.005em;}
+.ei-input::placeholder{color:var(--t3);}
+.ei-input:focus{border-color:var(--b2);background:var(--s2);}
+.ei-actions{display:flex;gap:8px;margin-top:18px;}
+.ei-btn{flex:1;padding:12px;border-radius:10px;font-size:12px;font-weight:500;letter-spacing:.02em;cursor:pointer;transition:all .2s;border:1px solid transparent;-webkit-tap-highlight-color:transparent;}
+.ei-btn-ghost{background:transparent;border-color:var(--b1);color:var(--t2);}
+.ei-btn-ghost:hover{background:var(--s2);color:var(--t1);border-color:var(--b2);}
+.ei-btn-ghost:active{transform:scale(.97);}
+.ei-btn-primary{background:var(--t1);color:var(--bg);}
+.ei-btn-primary:disabled{opacity:.3;cursor:not-allowed;}
+.ei-btn-primary:not(:disabled):hover{background:var(--t2);}
+.ei-btn-primary:not(:disabled):active{transform:scale(.97);}
+
+/* ─── DRIFT BANNER (re-entry check-in) ───
+   Deliberately unskippable — no close button, no backdrop-click, no Escape.
+   The only way out is the single Start action. A giant, barely-visible
+   quote mark sits behind the copy as a quiet editorial texture — reads as
+   considered/premium rather than a plain alert screen, without adding any
+   actual visual noise (it's the same near-invisible depth trick as a
+   watermark, not a design element you're meant to consciously notice). */
+.drift-overlay{position:fixed;inset:0;background:var(--bg);z-index:2100;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .4s var(--ease);overflow-y:auto;overflow-x:hidden;}
+.drift-overlay.show{opacity:1;}
+.drift-card{position:relative;width:100%;max-width:400px;margin:auto;transform:translateY(10px);opacity:0;transition:transform .5s var(--ease),opacity .5s var(--ease);}
+.drift-overlay.show .drift-card{transform:translateY(0);opacity:1;}
+.drift-quotemark{position:absolute;top:-58px;left:50%;transform:translateX(-50%);font-family:Georgia,'Times New Roman',serif;font-size:220px;line-height:1;font-weight:700;color:var(--t1);opacity:.035;user-select:none;pointer-events:none;z-index:0;}
+.drift-card>*{position:relative;z-index:1;}
+.drift-gap-row{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-bottom:18px;}
+.drift-gap-num{font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:200;color:var(--t1);letter-spacing:-.03em;line-height:1;}
+.drift-gap-num.urgent{color:var(--m);}
+.drift-gap-lbl{font-size:11px;color:var(--t3);letter-spacing:.02em;max-width:90px;line-height:1.35;}
+.drift-eyebrow{text-align:center;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:7px;}
+.drift-eyebrow-dot{width:5px;height:5px;border-radius:50%;background:var(--m);flex-shrink:0;animation:driftPulse 2s ease-in-out infinite;}
+@keyframes driftPulse{0%,100%{opacity:.4;transform:scale(1);}50%{opacity:1;transform:scale(1.3);}}
+.drift-title{text-align:center;font-size:23px;font-weight:400;color:var(--t1);letter-spacing:-.02em;line-height:1.3;margin-bottom:12px;}
+.drift-sub{text-align:center;font-size:13.5px;color:var(--t2);line-height:1.6;margin-bottom:28px;max-width:320px;margin-left:auto;margin-right:auto;letter-spacing:-.005em;}
+.drift-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;}
+.drift-stat{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:15px 10px;text-align:center;}
+.drift-stat-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--t1);letter-spacing:-.03em;line-height:1;}
+.drift-stat-lbl{font-size:8px;color:var(--t3);margin-top:6px;letter-spacing:.06em;text-transform:uppercase;line-height:1.3;}
+.drift-note{display:flex;align-items:center;gap:7px;justify-content:center;background:var(--s2);border:1px solid var(--b1);border-radius:9px;padding:10px 14px;margin-bottom:24px;font-size:10.5px;color:var(--t2);font-family:'JetBrains Mono',monospace;letter-spacing:.01em;}
+.drift-note-dot{width:5px;height:5px;border-radius:50%;background:var(--p);flex-shrink:0;}
+.drift-cta{width:100%;padding:16px;background:var(--t1);color:var(--bg);border:none;border-radius:13px;font-size:13.5px;font-weight:500;letter-spacing:.01em;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.drift-cta:hover{background:var(--t2);}
+.drift-cta:active{transform:scale(.98);}
+.drift-cta-note{text-align:center;font-size:10.5px;color:var(--t3);margin-top:13px;letter-spacing:.01em;line-height:1.5;max-width:290px;margin-left:auto;margin-right:auto;}
+
+/* ─── REVIEW CARD (end-of-session reflection + reward) ─── */
+.rv-overlay{position:fixed;inset:0;background:rgba(0,0,0,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:2050;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .35s var(--ease);overflow-y:auto;}
+.rv-overlay.show{opacity:1;}
+.rv-card{position:relative;width:100%;max-width:380px;margin:auto;background:linear-gradient(165deg,var(--s1) 0%,var(--bg) 100%);border:1px solid var(--b2);border-radius:22px;padding:32px 24px 24px;box-shadow:0 40px 90px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.03);transform:translateY(18px) scale(.96);opacity:0;transition:transform .48s cubic-bezier(0.19,1,0.22,1),opacity .4s var(--ease);}
+.rv-overlay.show .rv-card{transform:translateY(0) scale(1);opacity:1;}
+.rv-close{position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:50%;background:var(--s2);border:1px solid var(--b1);color:var(--t3);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.rv-close:hover{color:var(--t1);border-color:var(--b2);transform:rotate(90deg);}
+.rv-ring-wrap{position:relative;width:68px;height:68px;margin:0 auto 18px;}
+.rv-ring{width:68px;height:68px;transform:rotate(-90deg);filter:drop-shadow(0 0 8px rgba(107,158,131,0.25));}
+.rv-ring-track{fill:none;stroke:var(--s2);stroke-width:4;}
+.rv-ring-fill{fill:none;stroke:var(--c);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(0.19,1,0.22,1);}
+.rv-ring-check{position:absolute;top:50%;left:50%;width:22px;height:22px;transform:translate(-50%,-50%) scale(.5);color:var(--c);opacity:0;transition:opacity .35s var(--ease),transform .35s cubic-bezier(0.34,1.56,0.64,1);}
+.rv-ring-check.on{opacity:1;transform:translate(-50%,-50%) scale(1);}
+.rv-eyebrow{text-align:center;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--c);letter-spacing:.12em;text-transform:uppercase;margin-bottom:9px;}
+.rv-title{text-align:center;font-size:18px;font-weight:400;color:var(--t1);letter-spacing:-.015em;margin-bottom:20px;}
+.rv-checklist{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
+.rv-item{position:relative;display:flex;align-items:center;gap:11px;background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:12px 13px;cursor:pointer;transition:all .25s var(--ease);animation:rvRowIn .4s var(--ease) both;overflow:hidden;}
+@keyframes rvRowIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.rv-item:hover{border-color:var(--b2);}
+.rv-item:has(.rv-check:checked){background:rgba(107,158,131,0.07);border-color:rgba(107,158,131,0.3);}
+.rv-check{position:absolute;opacity:0;width:0;height:0;}
+.rv-check-box{flex-shrink:0;width:19px;height:19px;border-radius:6px;border:1.5px solid var(--b2);display:flex;align-items:center;justify-content:center;color:var(--bg);transition:all .25s cubic-bezier(0.34,1.56,0.64,1);}
+.rv-check-box svg{width:12px;height:12px;stroke-dasharray:20;stroke-dashoffset:20;transition:stroke-dashoffset .3s ease .05s;}
+.rv-check:checked+.rv-check-box{background:var(--c);border-color:var(--c);transform:scale(1.05);}
+.rv-check:checked+.rv-check-box svg{stroke-dashoffset:0;}
+.rv-item-txt{font-size:12.5px;color:var(--t1);letter-spacing:-.005em;line-height:1.4;transition:color .25s,opacity .25s;}
+.rv-item:has(.rv-check:checked) .rv-item-txt{color:var(--t3);text-decoration:line-through;text-decoration-color:var(--b2);opacity:.75;}
+.rv-item-new{background:var(--s2);border-style:dashed;cursor:default;}
+.on-static{background:var(--s2)!important;border-color:var(--b2)!important;color:var(--t2)!important;}
+.rv-item-x{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--s1);border:1px solid var(--b1);color:var(--t3);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.rv-item-x:hover{color:var(--t1);}
+.rv-empty{font-size:11.5px;color:var(--t3);text-align:center;line-height:1.55;margin-bottom:4px;padding:14px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;}
+.rv-addrow{display:flex;gap:7px;margin-top:8px;margin-bottom:20px;}
+.rv-add-input{flex:1;background:var(--s1);border:1px dashed var(--b2);border-radius:10px;padding:11px 13px;font-size:11.5px;color:var(--t1);outline:none;font-family:inherit;transition:border-color .2s,background .2s;}
+.rv-add-input::placeholder{color:var(--t3);}
+.rv-add-input:focus{border-style:solid;border-color:var(--b2);background:var(--s2);}
+.rv-add-btn{flex-shrink:0;width:38px;height:38px;border-radius:10px;background:var(--s2);border:1px solid var(--b1);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.rv-add-btn svg{width:15px;height:15px;}
+.rv-add-btn:hover{background:var(--t1);color:var(--bg);border-color:var(--t1);transform:rotate(90deg);}
+.rv-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
+.rv-stat{background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:12px 8px;text-align:center;}
+.rv-stat-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:300;color:var(--t1);letter-spacing:-.02em;}
+.rv-stat-lbl{font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.06em;text-transform:uppercase;}
+.rv-cta{width:100%;padding:15px;background:var(--t1);color:var(--bg);border:none;border-radius:13px;font-size:13px;font-weight:500;letter-spacing:.01em;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.rv-cta:hover{background:var(--t2);}
+.rv-cta:active{transform:scale(.97);}
+
+/* ─── DAILY PLAN (morning resolution) ───
+   Free-text task list — type anything, hit +. No categorization, no
+   picker. The premium feel comes from motion (each row eases in with a
+   soft stagger) and restraint (one input, one list, one button), not from
+   extra UI surface. */
+.dp-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.025),transparent 60%),var(--bg);z-index:1900;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;transition:opacity .4s var(--ease);overflow-y:auto;}
+.dp-overlay.show{opacity:1;}
+.dp-card{width:100%;max-width:400px;margin:auto;transform:translateY(8px);opacity:0;transition:transform .5s cubic-bezier(0.19,1,0.22,1),opacity .45s var(--ease);}
+.dp-overlay.show .dp-card{transform:translateY(0);opacity:1;}
+.dp-eyebrow{text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:11px;}
+.dp-title{text-align:center;font-size:21px;font-weight:400;color:var(--t1);letter-spacing:-.02em;line-height:1.3;margin-bottom:9px;}
+.dp-sub{text-align:center;font-size:12px;color:var(--t3);line-height:1.55;margin-bottom:26px;max-width:300px;margin-left:auto;margin-right:auto;}
+.dp-addrow{display:flex;gap:8px;margin-bottom:16px;}
+.dp-add-input{flex:1;background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--t1);outline:none;font-family:inherit;letter-spacing:-.005em;transition:border-color .2s,background .2s,box-shadow .2s;}
+.dp-add-input::placeholder{color:var(--t3);}
+.dp-add-input:focus{border-color:var(--b2);background:var(--s2);box-shadow:0 0 0 3px rgba(255,255,255,0.03);}
+.dp-add-btn{flex-shrink:0;width:46px;height:46px;border-radius:12px;background:var(--t1);color:var(--bg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s cubic-bezier(0.34,1.56,0.64,1);}
+.dp-add-btn svg{width:18px;height:18px;}
+.dp-add-btn:hover{background:var(--t2);transform:scale(1.06);}
+.dp-add-btn:active{transform:scale(.92) rotate(90deg);}
+.dp-tasklist{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;max-height:280px;overflow-y:auto;padding:2px;}
+.dp-task-row{display:flex;align-items:center;gap:11px;background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:12px 13px;animation:dpRowIn .38s cubic-bezier(0.19,1,0.22,1) both;transition:border-color .2s,opacity .25s,transform .25s;}
+@keyframes dpRowIn{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+.dp-task-row.removing{opacity:0;transform:translateX(8px) scale(.97);}
+.dp-task-row:hover{border-color:var(--b2);}
+.dp-task-dot{flex-shrink:0;width:6px;height:6px;border-radius:50%;background:var(--p);box-shadow:0 0 6px rgba(144,139,176,0.5);}
+.dp-task-txt{flex:1;font-size:12.5px;color:var(--t1);letter-spacing:-.005em;line-height:1.4;min-width:0;word-break:break-word;}
+.dp-task-x{flex-shrink:0;width:21px;height:21px;border-radius:50%;background:var(--s2);border:1px solid var(--b1);color:var(--t3);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.dp-task-x:hover{color:var(--t1);border-color:var(--b2);background:var(--red);color:#fff;opacity:.85;}
+.dp-empty{text-align:center;font-size:11.5px;color:var(--t3);padding:22px 14px;background:var(--s1);border:1px dashed var(--b2);border-radius:12px;margin-bottom:20px;line-height:1.5;}
+.dp-cta{width:100%;padding:16px;background:var(--t1);color:var(--bg);border:none;border-radius:13px;font-size:13.5px;font-weight:500;letter-spacing:.01em;cursor:pointer;transition:all .25s var(--ease);}
+.dp-cta:disabled{opacity:.3;cursor:not-allowed;}
+.dp-cta:not(:disabled):hover{background:var(--t2);}
+.dp-cta:not(:disabled):active{transform:scale(.98);}
+.dp-cta.locked{background:var(--c);color:var(--bg);}
+.dp-skip{text-align:center;font-size:10.5px;color:var(--t3);margin-top:14px;cursor:pointer;letter-spacing:.01em;text-decoration:underline;text-decoration-color:var(--b2);text-underline-offset:3px;transition:color .2s;}
+.dp-skip:hover{color:var(--t2);}
+
 /* ─── TOAST ─── */
 #toast{position:fixed;bottom:24px;right:24px;background:var(--s2);border:1px solid var(--b2);border-radius:6px;padding:10px 16px;font-size:11px;font-weight:400;color:var(--t1);transform:translateY(20px);opacity:0;transition:all .3s var(--ease);pointer-events:none;z-index:9998;letter-spacing:.02em; box-shadow:0 8px 24px rgba(0,0,0,0.6);}
 #toast.show{transform:translateY(0);opacity:1;}
@@ -1738,7 +1891,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
   <!-- MATHS -->
   <div class="panel math-panel" id="p-math">
-    <div class="sh"><span class="sh-lbl">Mathematics</span><span class="sh-val" id="scM">0 / 26</span></div>
+    <div class="sh"><span class="sh-lbl">Mathematics</span><span class="sh-val" id="scM">0 of 26</span></div>
     <div class="frow">
       <button class="fb on" onclick="fl('math','all',this)">All</button>
       <button class="fb" onclick="fl('math','wip',this)">In Progress</button>
@@ -1750,7 +1903,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
   <!-- CHEM -->
   <div class="panel chem-panel" id="p-chem">
-    <div class="sh"><span class="sh-lbl">Chemistry</span><span class="sh-val" id="scC">0 / 23</span></div>
+    <div class="sh"><span class="sh-lbl">Chemistry</span><span class="sh-val" id="scC">0 of 23</span></div>
     <div class="frow">
       <button class="fb on" onclick="fl('chem','all',this)">All</button>
       <button class="fb" onclick="fl('chem','wip',this)">In Progress</button>
@@ -1762,7 +1915,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
   <!-- PHYSICS -->
   <div class="panel phys-panel" id="p-phys">
-    <div class="sh"><span class="sh-lbl">Physics</span><span class="sh-val" id="scP">0 / 22</span></div>
+    <div class="sh"><span class="sh-lbl">Physics</span><span class="sh-val" id="scP">0 of 22</span></div>
     <div class="frow">
       <button class="fb on" onclick="fl('phys','all',this)">All</button>
       <button class="fb" onclick="fl('phys','wip',this)">In Progress</button>
@@ -1949,6 +2102,130 @@ function computeWastedSessionsAllTime(target, today){
 }
 // ── End wasted sessions ──────────────────────────────────────────────────────
 
+// ── Drift-banner stats — a small, self-contained read of real numbers for
+// the re-entry check-in. Deliberately independent of renderAnalytics()
+// (which is a much larger function tied to the Analytics tab's own DOM) —
+// same underlying formulas/keys, just a light standalone read so the banner
+// can compute this before the Analytics tab has ever been opened. ──
+function computeDriftStats(){
+  const target=focusSettings.dailyTarget||4;
+  const qTarget=focusSettings.dailyQuesTarget||70;
+  const today=new Date(); today.setHours(0,0,0,0);
+
+  const {wastedSessions,firstEffortDate}=computeWastedSessionsAllTime(target,today);
+
+  // On-target % + avg sessions/day, this calendar month so far. Every
+  // non-Sunday that's passed counts (a miss is a real miss); a Sunday only
+  // counts if something was actually logged on it.
+  let pastWorkDays=0,metDays=0,activeDays=0,sessSum=0,quesSum=0;
+  const y=today.getFullYear(),m=today.getMonth(),lastDay=today.getDate();
+  for(let dNum=1;dNum<=lastDay;dNum++){
+    const d=new Date(y,m,dNum);
+    const isSun=d.getDay()===0;
+    const k=localDateKey(d);
+    const sess=parseFloat(localStorage.getItem('fent_sessions_'+k)||'0');
+    const ques=parseInt(localStorage.getItem('fent_ques_'+k)||'0');
+    if(!isSun){
+      pastWorkDays++;
+      const isToday=d.toDateString()===today.toDateString();
+      const dayTarget=isToday?target:parseFloat(localStorage.getItem('fent_daytarget_'+k)||String(target));
+      if(sess>=dayTarget) metDays++;
+      activeDays++; sessSum+=sess; quesSum+=ques;
+    } else if(sess>0||ques>0){
+      activeDays++; sessSum+=sess; quesSum+=ques;
+    }
+  }
+  const onTargetPct=pastWorkDays>0?Math.round(metDays/pastWorkDays*100):0;
+  const avgSessPerDay=activeDays>0?sessSum/activeDays:0;
+
+  // Questions behind + days to clear it — same expected-vs-actual walk
+  // renderAnalytics uses, since firstEffortDate.
+  let quesBehind=0,daysToCover=0;
+  const totalQuesAllTime=getKeysWithPrefix('fent_ques_').reduce((a,k)=>a+(parseInt(localStorage.getItem(k)||'0')||0),0);
+  const hasQuesData=totalQuesAllTime>0;
+  if(firstEffortDate&&hasQuesData){
+    let expectedQues=0,actualQues=0;
+    const cQ=new Date(firstEffortDate);
+    const todayEnd=new Date(today); todayEnd.setHours(23,59,59,999);
+    while(cQ<=todayEnd){
+      const isSunQ=cQ.getDay()===0;
+      const k=localDateKey(cQ);
+      if(!isSunQ){ expectedQues+=parseInt(localStorage.getItem('fent_dayqtarget_'+k)||String(qTarget)); }
+      actualQues+=parseInt(localStorage.getItem('fent_ques_'+k)||'0');
+      cQ.setDate(cQ.getDate()+1);
+    }
+    quesBehind=Math.max(0,expectedQues-actualQues);
+    daysToCover=qTarget>0?Math.ceil(quesBehind/qTarget):0;
+  }
+
+  // Syllabus completion
+  const allChaps=[...MATH.map(ch=>({s:'math',ch})),...CHEM.map(ch=>({s:'chem',ch})),...PHYS.map(ch=>({s:'phys',ch}))];
+  const totalTasks=allChaps.length*4;
+  let tasksDone=0;
+  allChaps.forEach(({s,ch})=>{tasksDone+=tc(s,ch.n);});
+  const tasksRemaining=Math.max(0,totalTasks-tasksDone);
+  const syllabusPct=totalTasks>0?Math.round(tasksDone/totalTasks*100):0;
+
+  // Days to finish syllabus at current pace — same formula the Analytics
+  // tab uses (avg tasks/workday since firstEffortDate, falling back to an
+  // assumed 3-tasks-per-session estimate if there's no history yet).
+  let activeWorkdays=0;
+  if(firstEffortDate){
+    const cAW=new Date(firstEffortDate);
+    while(cAW<=today){ if(cAW.getDay()!==0) activeWorkdays++; cAW.setDate(cAW.getDate()+1); }
+  }
+  const avgTasksPerDay=activeWorkdays>0?tasksDone/activeWorkdays:0;
+  const syllabusDaysLeft=avgTasksPerDay>0
+    ? Math.ceil(tasksRemaining/avgTasksPerDay)
+    : (target>0?Math.ceil(tasksRemaining/(target*3)):null);
+
+  // Days until JEE — same global exam-date constant used elsewhere in the app.
+  const daysToJEE=Math.max(0,Math.round((JEE_DATE-today)/864e5));
+
+  return {wastedSessions,onTargetPct,avgSessPerDay,quesBehind,daysToCover,hasQuesData,syllabusPct,tasksDone,totalTasks,tasksRemaining,syllabusDaysLeft,daysToJEE,firstEffortDate};
+}
+// ── End drift-banner stats ────────────────────────────────────────────────────
+
+// ── Daily plan / resolution — set once each morning, referenced by the exit
+// interview and the review card, stored for future analytics use. ─────────
+function todayResolutionKey(){ return 'fent_resolution_'+localDateKey(); }
+function loadTodayResolution(){
+  let r;
+  try{ r=JSON.parse(localStorage.getItem(todayResolutionKey())||'null'); }catch{ return null; }
+  if(!r||!Array.isArray(r.items)) return r;
+  // Backward-compat: older saves (from before the task list was rebuilt as
+  // free text) stored items as {chapName, task, quesTarget} instead of
+  // {text}. Normalize on read so a leftover old-shaped record can never
+  // render as "undefined" instead of quietly falling back to whatever
+  // readable label it can find.
+  r.items=r.items.filter(it=>it&&(it.text||it.chapName)).map(it=>({
+    id:it.id||genTaskId(),
+    text:it.text||it.chapName||'',
+    done:!!it.done
+  }));
+  return r;
+}
+function saveTodayResolution(r){ try{localStorage.setItem(todayResolutionKey(),JSON.stringify(r));}catch{} }
+
+// ── Daily session target — shared check used to decide whether ending a
+// session counts as "quitting" (exit interview) or just "wrapping up after
+// hitting the goal" (review card, no friction). ─────────────────────────
+function targetMetToday(){
+  const sess=parseFloat(localStorage.getItem('fent_sessions_'+localDateKey())||'0');
+  const target=(focusSettings&&focusSettings.dailyTarget)||4;
+  return sess>=target;
+}
+// Called from every spot that credits fent_sessions_ (natural Pomodoro
+// completion, Skip's partial credit, Infinite's credit commit) — fires the
+// review card exactly once, the moment the day's target is first crossed.
+function checkTargetJustMet(){
+  if(!targetMetToday()) return;
+  const flagKey='fent_reviewshown_target_'+localDateKey();
+  if(localStorage.getItem(flagKey)) return;
+  localStorage.setItem(flagKey,'1');
+  openReviewCard('target');
+}
+
 function gs(s,n){const k=s+'_'+n;if(!ST[k])ST[k]={theory:false,module:false,pyq:false,revision:false};return ST[k]}
 function isDone(s,n){const t=gs(s,n);return t.theory&&t.module&&t.pyq&&t.revision}
 function tc(s,n){const t=gs(s,n);return[t.theory,t.module,t.pyq,t.revision].filter(Boolean).length}
@@ -1985,7 +2262,7 @@ function go(tab,btn){
   });
 
   if(tab==='overview'){pulseOffset=0;ovwWeekOffset=0;renderPulse();renderOverviewSummary();}
-  if(tab==='focus'){renderFocus(); startDoneByTick();}
+  if(tab==='focus'){renderFocus(); startDoneByTick(); checkDailyResolution();}
   if(tab==='ana'){stopDoneByTick(); renderAnalytics(); renderDeckAndLog();}
   if(tab!=='focus') stopDoneByTick();
 }
@@ -2139,9 +2416,9 @@ function stats(){
   const totalTasksAll=max*4;
   document.getElementById('mPct').textContent=Math.round((totalTasksDone/totalTasksAll)*100||0)+'%';
 
-  document.getElementById('scM').textContent=mCD+' / '+MATH.length;
-  document.getElementById('scC').textContent=cCD+' / '+CHEM.length;
-  document.getElementById('scP').textContent=pCD+' / '+PHYS.length;
+  document.getElementById('scM').textContent=mCD+' of '+MATH.length;
+  document.getElementById('scC').textContent=cCD+' of '+CHEM.length;
+  document.getElementById('scP').textContent=pCD+' of '+PHYS.length;
   document.getElementById('bM').textContent=mCD+'/'+MATH.length;
   document.getElementById('bC').textContent=cCD+'/'+CHEM.length;
   document.getElementById('bP').textContent=pCD+'/'+PHYS.length;
@@ -4344,7 +4621,7 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
 
     quesPanel=`<div style="margin-top:6px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.05);">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-    <span style="font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(144,139,176,0.6);letter-spacing:.08em;text-transform:uppercase;">Questions / Day</span>
+    <span style="font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(144,139,176,0.6);letter-spacing:.08em;text-transform:uppercase;">Questions per Day</span>
     <span style="font-size:7.5px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.18);">target <strong style="color:rgba(144,139,176,0.6);">${qTarget}</strong> · 30d <strong style="color:rgba(144,139,176,0.7);">${totalQues30Fmt}</strong></span>
   </div>
   <div style="position:relative;">
@@ -4423,7 +4700,7 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
   ${quesCatchupStrip}`;
 
   const sessLabel=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px;">
-    <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(107,158,131,0.65);letter-spacing:.08em;text-transform:uppercase;">Sessions / Day</span>
+    <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(107,158,131,0.65);letter-spacing:.08em;text-transform:uppercase;">Sessions per Day</span>
     <span style="font-size:8px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,0.2);">target <strong style="color:rgba(255,255,255,0.38);">${target}</strong> · 30d total <strong style="color:rgba(255,255,255,0.38);">${(Math.round(totalSess30*10)/10).toFixed(1)}</strong></span>
   </div>`;
 
@@ -4484,7 +4761,7 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
           <div style="font-size:7.5px;color:rgba(107,158,131,0.6);font-family:'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Sessions</div>
           <div style="margin-bottom:6px;">
             <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--c);letter-spacing:-.03em;line-height:1;">${sessActFmt}</div>
-            <div style="font-size:8px;color:var(--t3);margin-top:1px;">done / ${sessExpFmt} expected</div>
+            <div style="font-size:8px;color:var(--t3);margin-top:1px;">done of ${sessExpFmt} expected</div>
             ${miniBar(sessEffPct,'rgba(107,158,131,0.8)')}
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:6px;">
@@ -4532,7 +4809,7 @@ function buildSessLineChart(last30, target, today, chartMonth, chartYear, monthF
           <div style="font-size:7.5px;color:rgba(194,163,89,0.6);font-family:'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Syllabus</div>
           <div style="margin-bottom:6px;">
             <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--m);letter-spacing:-.03em;line-height:1;">${sylPct}<span style="font-size:12px;opacity:.6;">%</span></div>
-            <div style="font-size:8px;color:var(--t3);margin-top:1px;">${tasksDone} / ${totalTasks} tasks</div>
+            <div style="font-size:8px;color:var(--t3);margin-top:1px;">${tasksDone} of ${totalTasks} tasks</div>
             ${miniBar(sylPct,'rgba(194,163,89,0.75)')}
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:6px;">
@@ -5012,7 +5289,7 @@ function buildFocusActivitySections(today){
       // Sessions row — always shown when there's any focus activity; shows sess/target
       const sessRowHTML=hasFocus?`<div class="month-hm-detail-row">
           <span style="font-size:10px;color:var(--t3);flex:1;">Sessions</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}<span style="font-size:9px;color:var(--t3);opacity:.6;"> / ${sessTarget}</span>${dayTestCount>0?`<span style="font-size:9px;color:var(--red);opacity:.85;margin-left:5px;">· ${dayTestCount} test${dayTestCount>1?'s':''}</span>`:''}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${sessMetCol};">${fmtSess(daySess)}<span style="font-size:9px;color:var(--t3);opacity:.6;"> of ${sessTarget}</span>${dayTestCount>0?`<span style="font-size:9px;color:var(--red);opacity:.85;margin-left:5px;">· ${dayTestCount} test${dayTestCount>1?'s':''}</span>`:''}</span>
         </div>`:'';
 
       const statRowsHTML=`
@@ -5372,7 +5649,7 @@ function buildTestLogSection(){
 
   // ── Stat cards ────────────────────────────────────────────────────────────
   const avgScoreTxt=mainsAvg!=null&&advAvg!=null
-    ?`${mainsAvg}<span style="font-size:11px;color:var(--t3)"> / </span>${advAvg}`
+    ?`${mainsAvg}<span style="font-size:11px;color:var(--t3)"> · </span>${advAvg}`
     :(mainsAvg!=null?String(mainsAvg):(advAvg!=null?String(advAvg):'—'));
   const avgScoreSubLbl=mainsAvg!=null&&advAvg!=null?'M avg · A avg':(mainsAvg!=null?'mains avg':(advAvg!=null?'adv avg':'no scores yet'));
 
@@ -5638,11 +5915,11 @@ function buildChapterTimeBreakdown(){
     </div>
     <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:11px;text-align:center;animation:fadeUp .35s var(--ease) .07s both;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:var(--c);letter-spacing:-.03em;">${fmtTime(avgSecsPerChap)}</div>
-      <div style="font-size:7.5px;color:var(--t3);margin-top:3px;letter-spacing:.07em;text-transform:uppercase;">avg / chapter</div>
+      <div style="font-size:7.5px;color:var(--t3);margin-top:3px;letter-spacing:.07em;text-transform:uppercase;">avg per chapter</div>
     </div>
     <div style="background:var(--bg);border:1px solid var(--b1);border-radius:8px;padding:11px;text-align:center;animation:fadeUp .35s var(--ease) .11s both;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:300;color:${avgQuesPerChap>0?'var(--p)':'var(--t3)'};letter-spacing:-.03em;">${avgQuesPerChap>0?avgQuesPerChap:'—'}</div>
-      <div style="font-size:7.5px;color:var(--t3);margin-top:3px;letter-spacing:.07em;text-transform:uppercase;">avg ques / chap</div>
+      <div style="font-size:7.5px;color:var(--t3);margin-top:3px;letter-spacing:.07em;text-transform:uppercase;">avg ques per chap</div>
     </div>
   </div>`;
 
@@ -6170,6 +6447,84 @@ function recoverFromCrash(){
 }
 // ── End crash recovery ──────────────────────────────────────────────────────
 
+// ── Infinite Mode crash recovery ─────────────────────────────────────────
+// Same idea as Focus's crash snap above, adapted for a stopwatch instead of
+// a countdown: while actively running, periodically remember elapsedSecs +
+// when the current live stretch started + how much has already been
+// committed. On next load, if a snapshot says a stretch was mid-flight,
+// credit exactly the uncommitted portion once (same fraction/formula
+// infiniteCommitSessionCredit already uses) and leave the app idle —
+// mirrors Focus's approach of quietly banking the time rather than trying
+// to resurrect a live running session across a reload.
+const INF_CRASH_SNAP_KEY='fent_inf_crash_snap';
+
+function saveInfiniteCrashSnap(){
+  const T=infiniteTimer;
+  if(!T.running) return;
+  try{
+    localStorage.setItem(INF_CRASH_SNAP_KEY,JSON.stringify({
+      running:true,
+      elapsedSecs:T.elapsedSecs,       // already-banked-in-memory total before this live stretch
+      startedAt:T.startedAt,           // when the CURRENT live stretch began
+      committedSecs:T.committedSecs||0,// how much of the total has already reached fent_sessions_
+      segStart:T.segStart,
+      currentChap:focusTimer.currentChap,  // Infinite Mode reuses Focus's chapter/task selector
+      currentTask:focusTimer.currentTask,
+      savedAt:Date.now()
+    }));
+  }catch(e){}
+}
+function clearInfiniteCrashSnap(){
+  try{ localStorage.removeItem(INF_CRASH_SNAP_KEY); }catch(e){}
+}
+
+function recoverFromInfiniteCrash(){
+  let snap;
+  try{
+    const raw=localStorage.getItem(INF_CRASH_SNAP_KEY);
+    if(!raw) return;
+    snap=JSON.parse(raw);
+  }catch(e){ clearInfiniteCrashSnap(); return; }
+  clearInfiniteCrashSnap(); // always delete immediately — same anti-double-credit rule as Focus
+
+  if(!snap||!snap.running) return;
+  const age=Date.now()-(snap.savedAt||0);
+  if(age>CRASH_MAX_AGE_MS) return; // reuse Focus's 4hr staleness window
+
+  // Elapsed for the live stretch = time between it starting and the last
+  // confirmed-alive save, NOT Date.now() — we don't know how long the tab
+  // was actually gone versus just backgrounded, so use the last moment we
+  // know for certain it was still running.
+  let liveStretchSecs=0;
+  if(snap.startedAt&&snap.savedAt) liveStretchSecs=Math.max(0,Math.floor((snap.savedAt-snap.startedAt)/1000));
+  const totalSecs=(snap.elapsedSecs||0)+liveStretchSecs;
+  const uncommittedSecs=Math.max(0,totalSecs-(snap.committedSecs||0));
+  if(uncommittedSecs<5) return; // too little to bother crediting
+
+  if(snap.segStart&&snap.currentChap&&snap.currentTask){
+    try{
+      const secs=Math.floor(uncommittedSecs);
+      const log=getTodayLog();
+      const idx=log.findIndex(e=>e.subj===snap.currentChap.subj&&e.chapN===snap.currentChap.n&&e.task===snap.currentTask);
+      if(idx>=0) log[idx].durationSecs+=secs;
+      else log.push({chapName:snap.currentChap.name,subj:snap.currentChap.subj,chapN:snap.currentChap.n,task:snap.currentTask,durationSecs:secs});
+      saveTodayLog(log);
+    }catch(e){}
+  }
+
+  const sessSecs=(focusSettings.sessionMins||25)*60;
+  const credit=uncommittedSecs/sessSecs;
+  const todaySessKey='fent_sessions_'+localDateKey();
+  const cur=parseFloat(localStorage.getItem(todaySessKey)||'0');
+  try{
+    localStorage.setItem(todaySessKey,cur+credit);
+    localStorage.setItem('fent_daytarget_'+localDateKey(),focusSettings.dailyTarget);
+  }catch(e){}
+  checkTargetJustMet();
+  toast('✓ Recovered '+Math.round(uncommittedSecs/60)+'m from an interrupted Infinite session');
+}
+// ── End Infinite Mode crash recovery ─────────────────────────────────────
+
 
 // ── "Completed By" time calculator ─────────────────────────────────────────
 // Returns the estimated wall-clock time when all remaining sessions will be done.
@@ -6204,7 +6559,13 @@ function computeCompletedBy(){
     const liveCredit=uncommittedSecs/sessSecs;
     const effectiveRemaining=S.dailyTarget-todaySessions-liveCredit;
     if(effectiveRemaining<=0) return null; // already done
-    return new Date(Date.now()+effectiveRemaining*sessSecs*1000);
+    let etaMs=effectiveRemaining*sessSecs*1000;
+    // A break in progress doesn't count toward the target, so the time
+    // still left on it needs to push the estimate back by exactly that
+    // much — otherwise "finishes by" would silently ignore break time
+    // and read early the moment you're on one.
+    if(infiniteBreak.active) etaMs+=Math.max(0,infiniteBreak.endAt-Date.now());
+    return new Date(Date.now()+etaMs);
   }
 
   const remaining=Math.max(0,S.dailyTarget-todaySessions);
@@ -6917,7 +7278,7 @@ function hgSandU(fillX){
     const stepNum=testSetupStep==='subjects'?1:testSetupStep==='chapters'?2:3;
     const stepLbl=testSetupStep==='subjects'?'Subjects':testSetupStep==='chapters'?'Chapters':'Questions';
     h+='<div class="test-setup-head">';
-    h+='<span class="test-setup-steps-lbl">'+stepNum+' / 3 · '+stepLbl+'</span>';
+    h+='<span class="test-setup-steps-lbl">'+stepNum+' of 3 · '+stepLbl+'</span>';
     h+='<button class="test-setup-close" onclick="testSetupCancel()">✕</button>';
     h+='</div>';
     h+='<div class="test-setup-progress"><div class="test-setup-progress-fill" style="width:'+(stepNum/3*100)+'%;"></div></div>';
@@ -7047,15 +7408,30 @@ function renderFocus(){
 
   // Today's stats
   const todayLog=getTodayLog();
-  const totalFocusSecs=todayLog.reduce((a,e)=>a+e.durationSecs,0);
+  let totalFocusSecs=todayLog.reduce((a,e)=>a+e.durationSecs,0);
+  // Today's session count from storage — use local date so it resets at midnight local time
+  const todaySessKey='fent_sessions_'+localDateKey();
+  let todaySessions=parseFloat(localStorage.getItem(todaySessKey)||'0');
+  // Live top-up for an actively-running Infinite session: the numbers above
+  // are only what's already committed to storage, but while Infinite Mode
+  // is running there's real elapsed time that hasn't been banked yet (it
+  // only commits on pause/break/finish). Without this, the very first paint
+  // after returning to this tab shows the stale committed-only numbers for
+  // up to 500ms until the live tick (updateInfiniteClockFast) corrects
+  // them — visible as a jarring "wrong number, then right number" blink.
+  // Mirrors that same tick's formula exactly so the two never disagree.
+  if(infiniteMode&&infiniteTimer.running){
+    const liveSecs=infiniteCurrentSecs();
+    const uncommittedSecs=Math.max(0,liveSecs-(infiniteTimer.committedSecs||0));
+    todaySessions+=uncommittedSecs/(S.sessionMins*60);
+    if(infiniteTimer.segStart&&focusTimer.currentChap&&focusTimer.currentTask){
+      totalFocusSecs+=Math.floor((Date.now()-infiniteTimer.segStart)/1000);
+    }
+  }
   const totalFocusMins=Math.floor(totalFocusSecs/60);
   const totalFocusH=Math.floor(totalFocusMins/60);
   const totalFocusM=totalFocusMins%60;
   const focusTimeStr=totalFocusH>0?`${totalFocusH}h ${totalFocusM}m`:`${totalFocusM}m`;
-
-  // Today's session count from storage — use local date so it resets at midnight local time
-  const todaySessKey='fent_sessions_'+localDateKey();
-  const todaySessions=parseFloat(localStorage.getItem(todaySessKey)||'0');
   const sessionsToGo=Math.max(0,S.dailyTarget-todaySessions);
   // Display helper: show 1 decimal only when fractional
   const fmtSess=v=>{
@@ -7275,7 +7651,7 @@ function renderFocus(){
     </div>
   </div>`;
     controlsHTML=`<div class="focus-controls">
-    <button class="focus-btn-sm" onclick="infiniteFinish()" title="End session" ${(IT.running||IT.paused||IB.active)?'':'style="opacity:0.3;cursor:not-allowed" disabled'}>⟫</button>
+    <button class="focus-btn-sm" onclick="infiniteRequestFinish()" title="End session" ${(IT.running||IT.paused||IB.active)?'':'style="opacity:0.3;cursor:not-allowed" disabled'}>⟫</button>
     <button class="focus-btn-main${IT.running?' running':''}" onclick="infiniteToggle()" id="focusMainBtn" ${IB.active?'style="opacity:0.3;cursor:not-allowed" disabled':''}>
       ${IT.running?'⏸':'▶'}
     </button>
@@ -7400,7 +7776,7 @@ function renderFocus(){
     </div>
   </div>`;
     controlsHTML=`<div class="focus-controls">
-    <button class="focus-btn-sm" onclick="focusSkip()" title="Skip">⟫</button>
+    <button class="focus-btn-sm" onclick="focusRequestSkip()" title="Skip">⟫</button>
     <button class="focus-btn-main${T.running?' running':''}" onclick="focusToggle()" id="focusMainBtn" ${!canStart&&!T.running?'style="opacity:0.4;cursor:not-allowed" title="Select chapter & task first"':''}>
       ${T.running?'⏸':'▶'}
     </button>
@@ -7644,7 +8020,7 @@ function renderFocus(){
     </div>
     <div class="focus-stat-cell">
       <div class="focus-stat-num" id="focusStatQues" style="color:${getTodayQues()>=(S.dailyQuesTarget||70)?'var(--c)':getTodayQues()>0?'var(--p)':'var(--t3)'};">${getTodayQues()||'—'}</div>
-      <div class="focus-stat-lbl">Ques / ${S.dailyQuesTarget||70}</div>
+      <div class="focus-stat-lbl">Ques Target ${S.dailyQuesTarget||70}</div>
     </div>
   </div>
 
@@ -7946,6 +8322,7 @@ function infiniteCommitSessionCredit(){
   localStorage.setItem(todaySessKey,cur+credit);
   localStorage.setItem('fent_daytarget_'+localDateKey(),focusSettings.dailyTarget);
   infiniteTimer.committedSecs=nowSecs;
+  checkTargetJustMet();
 }
 
 function infiniteToggle(){
@@ -7972,6 +8349,7 @@ function infiniteToggle(){
     infiniteCommitSessionCredit(); // bank Done Today/To Go credit right now, on every pause
     clearInterval(infiniteTimer.intervalId);
     infiniteTimer.intervalId=null;
+    clearInfiniteCrashSnap(); // deliberate pause — already fully committed above, nothing left to recover
   } else {
     // Start (fresh) or Resume (from paused)
     infiniteTimer.running=true;
@@ -8044,7 +8422,7 @@ function patchInfiniteRunState(){
   // Finish becomes usable the moment a stretch exists (running, paused with
   // time on it, or on break); Reset is blocked during a break — skip the
   // break first, so a reset never has to reason about interrupting one.
-  const finishBtn=outer.closest('.focus-wrap')?.querySelector('.focus-controls .focus-btn-sm[onclick*="infiniteFinish"]');
+  const finishBtn=outer.closest('.focus-wrap')?.querySelector('.focus-controls .focus-btn-sm[onclick*="infiniteRequestFinish"]');
   const resetBtn=outer.closest('.focus-wrap')?.querySelector('.focus-controls .focus-btn-sm[onclick*="infiniteDiscard"]');
   if(finishBtn){
     const enable=running||IT.paused||IB.active;
@@ -8087,6 +8465,7 @@ function infiniteStartBreak(mins){
     infiniteCommitSessionCredit();
     clearInterval(infiniteTimer.intervalId);
     infiniteTimer.intervalId=null;
+    clearInfiniteCrashSnap(); // fully committed above — break time itself never needs recovery
   }
   // If already paused, infiniteToggle() already committed elapsedSecs/segment/
   // credit at pause time — nothing left to bank here, just fall through.
@@ -8154,12 +8533,21 @@ function infiniteCurrentSecs(){
   return T.elapsedSecs+(T.running&&T.startedAt?Math.floor((Date.now()-T.startedAt)/1000):0);
 }
 
+let lastInfSnapAt=0;
 function updateInfiniteClockFast(){
   const secs=infiniteCurrentSecs();
   const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
   const str=(h>0?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
   const el=document.getElementById('focusTimeBig');
   if(el&&el.textContent!==str) el.textContent=str;
+
+  // Throttled crash-recovery snapshot — same 4s cadence Focus mode uses,
+  // same reasoning: localStorage.setItem is synchronous/blocking, no need
+  // to pay that cost every 500ms for the length of an entire session.
+  if(infiniteTimer.running){
+    const nowTs=Date.now();
+    if(nowTs-lastInfSnapAt>=4000){ saveInfiniteCrashSnap(); lastInfSnapAt=nowTs; }
+  }
 
   // ── Live-sync Done Today / To Go / Focus Time / finish-by / tab badge ──
   // Everything below is a DOM-id patch only (never a full renderFocus()),
@@ -8239,6 +8627,7 @@ function infiniteFinish(){
   commitInfiniteSegment();
   infiniteCommitSessionCredit(); // credits only the delta not already banked at an earlier pause
   clearInterval(infiniteTimer.intervalId);
+  clearInfiniteCrashSnap(); // fully committed above — nothing left to recover
 
   const m=Math.floor(secs/60), h=Math.floor(m/60);
   const durStr=h>0?`${h}h ${m%60}m`:`${m}m`;
@@ -8254,6 +8643,551 @@ function infiniteFinish(){
 // Discards the in-progress indefinite session with no credit and no log
 // entry — for "that was a mistake, not a real session" moments. Stays in
 // Infinite Mode, just resets the stopwatch back to zero, ready to restart.
+/* ─── EXIT INTERVIEW ───
+   A single, calm speed-bump before ending a session early — not a nag, not
+   a guilt trip. Always appears the moment there's genuinely something to
+   ask about (any real elapsed time), with no expiry and no cooldown — it's
+   meant to run forever, exactly the same on session #1 and session #400.
+   Covers three exits: Focus Discard, Focus Skip (only while in an actual
+   session — skipping a break still needs no reason), and Infinite Discard.
+   While the card is open, the underlying timer is genuinely frozen — not
+   just visually paused — so however long you take to type doesn't get
+   logged as focus time either way this resolves. Reflects your last reason
+   back to you (quiet accountability, not shaming) then gets out of the way. */
+function loadExitReasons(){ try{return JSON.parse(localStorage.getItem('fent_exit_reasons_v1')||'{}');}catch{return{};} }
+function saveExitReason(ctx,reason){
+  const d=loadExitReasons();
+  d[ctx]={reason,ts:Date.now()};
+  try{localStorage.setItem('fent_exit_reasons_v1',JSON.stringify(d));}catch{}
+}
+function eiTimeAgo(ts){
+  const s=Math.floor((Date.now()-ts)/1000);
+  if(s<3600) return Math.max(1,Math.floor(s/60))+'m ago';
+  if(s<86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+function eiEscape(str){
+  return String(str).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let exitInterviewCtx=null;     // 'focusSkip' | 'infiniteFinish' | null — Discard/Reset no longer routes through here (see below)
+let exitInterviewFrozen=null;  // what freeze() did, so cancel can undo exactly it — { kind:'focus'|'infinite', wasRunning:bool }
+
+// ── Freeze / resume — a real pause, not a cosmetic one ─────────────────
+// Focus: identical to a normal Pause (commitFocusSegment banks the log
+// segment and nulls segStart), so deliberation time in the modal is simply
+// never part of any segment. On resume it's a normal Play — new segment,
+// new segStart — exactly like tapping ▶ after ⏸ manually.
+function focusFreezeForExit(){
+  const T=focusTimer;
+  const wasRunning=T.running;
+  if(wasRunning){
+    commitFocusSegment();
+    clearInterval(T.intervalId);
+    T.intervalId=null;
+    T.running=false;
+  }
+  exitInterviewFrozen={kind:'focus',wasRunning};
+}
+function focusResumeFromExit(){
+  if(!exitInterviewFrozen||exitInterviewFrozen.kind!=='focus') return;
+  const T=focusTimer;
+  if(exitInterviewFrozen.wasRunning){
+    T.running=true;
+    T.segStart=(T.mode==='session')?Date.now():null;
+    focusStartInterval();
+  }
+  exitInterviewFrozen=null;
+  renderFocus();
+}
+// Infinite: banks elapsedSecs in memory only (no localStorage write — the
+// eventual confirm action, Finish, does the real credit commit itself once
+// it runs, reading this same frozen elapsedSecs). The open in-progress
+// chapter/task micro-segment since the last real commit is dropped rather
+// than logged — at most a few seconds, same as any normal pause/resume
+// boundary already drops between segments.
+function infiniteFreezeForExit(){
+  const T=infiniteTimer;
+  const wasRunning=T.running;
+  if(wasRunning){
+    T.elapsedSecs+=Math.floor((Date.now()-T.startedAt)/1000);
+    T.startedAt=null;
+    T.running=false;
+    T.segStart=null;
+    clearInterval(T.intervalId);
+    T.intervalId=null;
+  }
+  exitInterviewFrozen={kind:'infinite',wasRunning};
+}
+function infiniteResumeFromExit(){
+  if(!exitInterviewFrozen||exitInterviewFrozen.kind!=='infinite') return;
+  const T=infiniteTimer;
+  if(exitInterviewFrozen.wasRunning){
+    T.running=true;
+    T.startedAt=Date.now();
+    T.segStart=Date.now();
+    infiniteStartInterval();
+  }
+  exitInterviewFrozen=null;
+  patchInfiniteRunState();
+}
+
+// Entry points — Discard/Reset (↺) are deliberately NOT gated: that button
+// means "rewind and go again," staying in the same mode, ready to restart
+// immediately — not actually leaving. Only the two genuine "leave" actions
+// go through here: Focus Skip (⟫, only mid-session — skipping a break needs
+// no reason) and Infinite Finish (⟫). Both fall straight through with zero
+// friction once today's session target is already met (finishing up after
+// you've hit your goal isn't quitting, it's just wrapping up) or if there's
+// genuinely nothing elapsed yet to explain.
+function focusRequestSkip(){
+  const T=focusTimer;
+  if(T.mode!=='session'){ focusSkip(); return; } // skipping a break needs no reason
+  const elapsed=Math.max(0,T.totalSeconds-T.secondsLeft);
+  if(elapsed<=0||targetMetToday()){ focusSkip(); return; }
+  focusFreezeForExit();
+  openExitInterview('focusSkip',elapsed);
+}
+function infiniteRequestFinish(){
+  const elapsed=infiniteCurrentSecs();
+  if(elapsed<5||targetMetToday()){ infiniteFinish(); return; } // <5s auto-discards inside infiniteFinish anyway
+  infiniteFreezeForExit();
+  openExitInterview('infiniteFinish',elapsed);
+}
+
+// Copy + which "memory bucket" and confirm-action each context maps to.
+const EI_COPY={
+  focusSkip:      { memKey:'focus',    title:'Before you go', line:'Cutting this one short. What happened',   confirmLbl:'Skip anyway'  },
+  infiniteFinish: { memKey:'infinite', title:'Before you go', line:'Wrapping up early. What pulled you away',  confirmLbl:'End session'  }
+};
+
+function openExitInterview(ctx,elapsedSecs){
+  exitInterviewCtx=ctx;
+  let overlay=document.getElementById('exitInterviewOverlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='exitInterviewOverlay';
+    overlay.className='ei-overlay';
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) closeExitInterview(); });
+    document.body.appendChild(overlay);
+  }
+  const copy=EI_COPY[ctx];
+  const last=loadExitReasons()[copy.memKey];
+  const mins=Math.floor(elapsedSecs/60);
+  const timeBadge=mins<1?'Just started':(mins+' min in');
+  const plan=loadTodayResolution();
+  const planHtml=(plan&&plan.items&&plan.items.length)
+    ? `<div class="ei-plan"><div class="ei-plan-lbl">Today's plan</div><div class="ei-plan-chips">${plan.items.map(it=>`<span class="ei-plan-chip${it.done?' done':''}">${eiEscape(it.text)}</span>`).join('')}</div></div>`
+    : '';
+  overlay.innerHTML=`
+    <div class="ei-card" role="dialog" aria-modal="true" aria-labelledby="eiTitle">
+      <div class="ei-top-row">
+        <div class="ei-icon"><svg viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="2.1" fill="currentColor"/><circle cx="19" cy="12" r="2.1" fill="currentColor"/><path d="M9 12h1.6M13.4 12H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="0.2 3.4"/></svg></div>
+        <span class="ei-badge">${timeBadge}</span>
+      </div>
+      <div class="ei-title" id="eiTitle">${copy.title}</div>
+      <div class="ei-sub">${copy.line}?</div>
+      ${planHtml}
+      ${last?`<div class="ei-last"><div class="ei-last-lbl"><span>Last time</span><span>${eiTimeAgo(last.ts)}</span></div><div class="ei-last-txt">"${eiEscape(last.reason)}"</div></div>`:''}
+      <input type="text" id="eiInput" class="ei-input" maxlength="140" placeholder="what pulled you away?" autocomplete="off"/>
+      <div class="ei-actions">
+        <button class="ei-btn ei-btn-ghost" onclick="closeExitInterview()">Keep going</button>
+        <button class="ei-btn ei-btn-primary" id="eiConfirmBtn" disabled onclick="confirmExitInterview()">${copy.confirmLbl}</button>
+      </div>
+    </div>`;
+  requestAnimationFrame(()=>overlay.classList.add('show'));
+  const inp=document.getElementById('eiInput');
+  const btn=document.getElementById('eiConfirmBtn');
+  inp.addEventListener('input',()=>{ btn.disabled=inp.value.trim().length===0; });
+  inp.addEventListener('keydown',e=>{
+    e.stopPropagation(); // never leak keystrokes to any app-level shortcut listeners
+    if(e.key==='Enter'&&!btn.disabled) confirmExitInterview();
+    if(e.key==='Escape') closeExitInterview();
+  });
+  setTimeout(()=>inp.focus(),260); // wait for the card's own entrance transition
+}
+
+function closeExitInterview(){
+  const overlay=document.getElementById('exitInterviewOverlay');
+  if(!overlay) return;
+  overlay.classList.remove('show');
+  const ctx=exitInterviewCtx;
+  exitInterviewCtx=null;
+  // "Keep going" — undo the freeze exactly, timer resumes right where it was
+  if(ctx==='focusSkip') focusResumeFromExit();
+  else if(ctx==='infiniteFinish') infiniteResumeFromExit();
+  setTimeout(()=>{ overlay.remove(); },320);
+}
+
+function confirmExitInterview(){
+  const inp=document.getElementById('eiInput');
+  const reason=inp?inp.value.trim():'';
+  if(!reason) return;
+  const ctx=exitInterviewCtx;
+  saveExitReason(EI_COPY[ctx].memKey,reason);
+  exitInterviewCtx=null;
+  const overlay=document.getElementById('exitInterviewOverlay');
+  if(overlay){ overlay.classList.remove('show'); setTimeout(()=>overlay.remove(),320); }
+  exitInterviewFrozen=null; // ending on purpose now — nothing to resume
+  if(ctx==='focusSkip') focusSkip();
+  else if(ctx==='infiniteFinish') infiniteFinish();
+  setTimeout(()=>openReviewCard('quit'),380); // idempotent — no-op if a 'target' review already opened from inside the action above
+}
+
+/* ─── REVIEW CARD (end-of-session reflection + reward) ───
+   Shows either when today's session target is first crossed, or right
+   after an early-exit is confirmed through the exit interview — always
+   idempotent (first trigger wins, the other becomes a no-op) so the two
+   paths never stack. Ticks against today's plan; anything you don't tick
+   rolls straight onto tomorrow's list, and you can add new tasks right
+   here too — they roll forward the same way. Falls back to a calm read of
+   today's real numbers if no plan was set. Ticks are stored on the
+   resolution record only, never touching the authoritative session/
+   question counters, so nothing here can double-count real data. */
+let rvExtraTasks=[]; // tasks added live inside the review card this session
+
+function openReviewCard(reason){
+  if(document.getElementById('reviewOverlay')) return; // first trigger wins, idempotent
+  rvExtraTasks=[];
+  const plan=loadTodayResolution();
+  const todaySess=parseFloat(localStorage.getItem('fent_sessions_'+localDateKey())||'0');
+  const rSess=Math.round(todaySess*10)/10;
+  const sessStr=rSess===Math.floor(rSess)?String(Math.floor(rSess)):rSess.toFixed(1);
+  const todayQues=parseInt(localStorage.getItem('fent_ques_'+localDateKey())||'0');
+  const eyebrow=reason==='target'?"today's target — met":'wrapping up';
+
+  const overlay=document.createElement('div');
+  overlay.id='reviewOverlay';
+  overlay.className='rv-overlay';
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) closeReviewCard(); });
+  overlay.innerHTML=`
+    <div class="rv-card" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
+      <button class="rv-close" onclick="closeReviewCard()" aria-label="Close">×</button>
+      <div class="rv-ring-wrap">
+        <svg class="rv-ring" viewBox="0 0 64 64">
+          <circle cx="32" cy="32" r="27" class="rv-ring-track"/>
+          <circle cx="32" cy="32" r="27" class="rv-ring-fill" id="rvRingFill"/>
+        </svg>
+        <svg class="rv-ring-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12.3l3.6 3.6L17.5 8.5"/></svg>
+      </div>
+      <div class="rv-eyebrow">${eyebrow}</div>
+      <div class="rv-title" id="rvTitle">How'd today go?</div>
+      <div id="rvBody"></div>
+      <div class="rv-stats">
+        <div class="rv-stat"><div class="rv-stat-val">${sessStr}</div><div class="rv-stat-lbl">sessions today</div></div>
+        <div class="rv-stat"><div class="rv-stat-val">${todayQues}</div><div class="rv-stat-lbl">questions today</div></div>
+      </div>
+      <button class="rv-cta" onclick="confirmReviewCard()">Done</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  renderReviewBody(plan);
+  requestAnimationFrame(()=>{ overlay.classList.add('show'); updateReviewRing(); });
+}
+
+function renderReviewBody(plan){
+  const body=document.getElementById('rvBody');
+  if(!body) return;
+  const items=(plan&&plan.items)?plan.items:[];
+  const rowsHtml=items.map((it,i)=>`
+    <label class="rv-item" style="animation-delay:${Math.min(i,6)*35}ms">
+      <input type="checkbox" class="rv-check" data-i="${i}" ${it.done?'checked':''} onchange="updateReviewRing()"/>
+      <span class="rv-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span>
+      <span class="rv-item-txt">${eiEscape(it.text)}</span>
+    </label>`).join('');
+  const extraHtml=rvExtraTasks.map((t,i)=>`
+    <div class="rv-item rv-item-new">
+      <span class="rv-check-box on-static"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+      <span class="rv-item-txt">${eiEscape(t)}</span>
+      <button class="rv-item-x" onclick="rvRemoveExtra(${i})" aria-label="Remove">×</button>
+    </div>`).join('');
+
+  body.innerHTML=(items.length||rvExtraTasks.length)
+    ? `<div class="rv-checklist" id="rvChecklist">${rowsHtml}${extraHtml}</div>`
+    : `<div class="rv-empty">No plan was set today — that's fine. Here's what's actually logged.</div>`;
+
+  body.insertAdjacentHTML('beforeend',`
+    <div class="rv-addrow">
+      <input type="text" id="rvDraftInput" class="rv-add-input" maxlength="80" placeholder="add one more for tomorrow" autocomplete="off"/>
+      <button class="rv-add-btn" onclick="rvAddExtra()" aria-label="Add task">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>`);
+  const input=document.getElementById('rvDraftInput');
+  if(input) input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); rvAddExtra(); } });
+}
+
+function rvAddExtra(){
+  const input=document.getElementById('rvDraftInput');
+  const text=input?input.value.trim():'';
+  if(!text) return;
+  rvExtraTasks.push(text);
+  renderReviewBody(loadTodayResolution());
+  updateReviewRing();
+  const newInput=document.getElementById('rvDraftInput');
+  if(newInput) newInput.focus();
+}
+function rvRemoveExtra(i){
+  rvExtraTasks.splice(i,1);
+  renderReviewBody(loadTodayResolution());
+  updateReviewRing();
+}
+
+function updateReviewRing(){
+  const ring=document.getElementById('rvRingFill');
+  if(!ring) return;
+  const boxes=document.querySelectorAll('#reviewOverlay .rv-check');
+  const total=boxes.length;
+  const done=[...boxes].filter(b=>b.checked).length;
+  const pct=total>0?done/total:1; // no checklist at all (fallback view) — read as "complete"
+  const C=2*Math.PI*27;
+  ring.style.strokeDasharray=C.toFixed(1);
+  ring.style.strokeDashoffset=(C*(1-pct)).toFixed(1);
+  const checkIcon=document.querySelector('.rv-ring-check');
+  if(checkIcon) checkIcon.classList.toggle('on',pct>=1);
+}
+
+function closeReviewCard(){
+  const overlay=document.getElementById('reviewOverlay');
+  if(!overlay) return;
+  overlay.classList.remove('show');
+  setTimeout(()=>overlay.remove(),320);
+}
+
+// Ticked items stay marked done on today's record (for later analytics).
+// Everything unticked — plus anything typed fresh into this card — rolls
+// straight onto tomorrow's plan, merged with whatever's already sitting
+// there rather than overwriting it.
+function confirmReviewCard(){
+  const plan=loadTodayResolution();
+  const carry=[];
+  if(plan&&plan.items&&plan.items.length){
+    const boxes=document.querySelectorAll('#reviewOverlay .rv-check');
+    boxes.forEach(b=>{
+      const i=parseInt(b.dataset.i,10);
+      if(plan.items[i]){
+        plan.items[i].done=b.checked;
+        if(!b.checked) carry.push(plan.items[i].text);
+      }
+    });
+    plan.reviewedAt=Date.now();
+    saveTodayResolution(plan);
+  }
+  rvExtraTasks.forEach(t=>carry.push(t));
+  if(carry.length) rollTasksToTomorrow(carry);
+  closeReviewCard();
+}
+
+function rollTasksToTomorrow(texts){
+  const tKey='fent_resolution_'+tomorrowKey();
+  let tomorrow;
+  try{ tomorrow=JSON.parse(localStorage.getItem(tKey)||'null'); }catch{ tomorrow=null; }
+  if(!tomorrow) tomorrow={items:[],locked:false,createdAt:Date.now()};
+  const existingTexts=new Set(tomorrow.items.map(it=>it.text));
+  texts.forEach(text=>{
+    if(!existingTexts.has(text)){
+      tomorrow.items.push({id:genTaskId(),text,done:false});
+      existingTexts.add(text);
+    }
+  });
+  try{ localStorage.setItem(tKey,JSON.stringify(tomorrow)); }catch{}
+}
+
+/* ─── DAILY PLAN (morning resolution) ───
+   Shown the first time the Focus tab is opened each day. Deliberately just
+   free-text tasks now — type anything ("electro 30 ques"), hit +, it's on
+   the list. No chapter picker, no task-type taxonomy — the point was
+   always "name today's tasks in twenty seconds," and a picker was more
+   friction than the idea needed. Whatever's left unticked at review time
+   rolls forward onto tomorrow's list automatically. Stored per day,
+   referenced by the exit interview and ticked off in the review card. A
+   quiet "skip today" is available — this only ever gates the Focus tab
+   itself, never the rest of the app. */
+let dpTasks=[];
+let dpDraft='';
+let suppressDailyResolutionCheck=false; // set briefly by startDriftInfiniteSession() so the one-tap auto-start isn't interrupted
+
+function genTaskId(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function tomorrowKey(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+1); return localDateKey(d); }
+
+function checkDailyResolution(){
+  if(suppressDailyResolutionCheck) return; // drift-banner auto-start bypasses this — session starts immediately, plan can be filled in next natural visit
+  const existing=loadTodayResolution();
+  if(existing&&existing.locked) return; // already locked in today
+  openDailyPlanOverlay(existing);
+}
+
+function openDailyPlanOverlay(existing){
+  if(document.getElementById('dpOverlay')) return;
+  // Pre-populate with anything rolled over from yesterday, still unlocked
+  dpTasks=(existing&&existing.items)?existing.items.map(it=>({id:it.id,text:it.text})):[];
+  dpDraft='';
+  const overlay=document.createElement('div');
+  overlay.id='dpOverlay';
+  overlay.className='dp-overlay';
+  document.body.appendChild(overlay);
+  renderDailyPlanOverlay(true);
+  requestAnimationFrame(()=>overlay.classList.add('show'));
+}
+
+function renderDailyPlanOverlay(isFirstRender){
+  const overlay=document.getElementById('dpOverlay');
+  if(!overlay) return;
+  const tasksHtml=dpTasks.map((t,i)=>`
+    <div class="dp-task-row" data-id="${t.id}" style="animation-delay:${Math.min(i,6)*35}ms">
+      <span class="dp-task-dot"></span>
+      <span class="dp-task-txt">${eiEscape(t.text)}</span>
+      <button class="dp-task-x" onclick="dpRemoveTask('${t.id}')" aria-label="Remove">×</button>
+    </div>`).join('');
+
+  overlay.innerHTML=`
+    <div class="dp-card">
+      <div class="dp-eyebrow">${MONTHS[new Date().getMonth()]} ${new Date().getDate()} · today's plan</div>
+      <div class="dp-title">What's the plan?</div>
+      <div class="dp-sub">Name today's tasks. Anything left unticked tonight carries straight to tomorrow.</div>
+
+      <div class="dp-addrow">
+        <input type="text" id="dpDraftInput" class="dp-add-input" maxlength="80" placeholder="e.g. electro — 30 ques" value="${eiEscape(dpDraft)}" autocomplete="off"/>
+        <button class="dp-add-btn" id="dpAddBtn" onclick="dpAddTask()" aria-label="Add task">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+
+      ${dpTasks.length?`<div class="dp-tasklist">${tasksHtml}</div>`:`<div class="dp-empty">Nothing yet — add your first task above.</div>`}
+
+      <button class="dp-cta" id="dpCta" ${dpTasks.length===0?'disabled':''} onclick="dpSubmit()">Lock it in${dpTasks.length?' — '+dpTasks.length+' task'+(dpTasks.length===1?'':'s'):''}</button>
+      <div class="dp-skip" onclick="dpSkip()">Skip for today</div>
+    </div>`;
+
+  const input=document.getElementById('dpDraftInput');
+  input.addEventListener('input',()=>{ dpDraft=input.value; });
+  input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); dpAddTask(); } });
+  if(isFirstRender) setTimeout(()=>input.focus(),400);
+}
+
+function dpAddTask(){
+  const input=document.getElementById('dpDraftInput');
+  const text=(input?input.value:dpDraft).trim();
+  if(!text) return;
+  dpTasks.push({id:genTaskId(),text});
+  dpDraft='';
+  renderDailyPlanOverlay(false);
+  const newInput=document.getElementById('dpDraftInput');
+  if(newInput) newInput.focus();
+}
+function dpRemoveTask(id){
+  const row=document.querySelector(`.dp-task-row[data-id="${id}"]`);
+  if(row){
+    row.classList.add('removing');
+    setTimeout(()=>{ dpTasks=dpTasks.filter(t=>t.id!==id); renderDailyPlanOverlay(false); },180);
+  } else {
+    dpTasks=dpTasks.filter(t=>t.id!==id);
+    renderDailyPlanOverlay(false);
+  }
+}
+
+function dpSubmit(){
+  if(dpTasks.length===0) return;
+  saveTodayResolution({items:dpTasks.map(t=>({id:t.id,text:t.text,done:false})),locked:true,createdAt:Date.now()});
+  const cta=document.getElementById('dpCta');
+  if(cta){ cta.classList.add('locked'); cta.textContent='Locked in'; }
+  setTimeout(closeDailyPlanOverlay,340);
+}
+function dpSkip(){ closeDailyPlanOverlay(); } // no save — will ask again next time Focus is opened today
+function closeDailyPlanOverlay(){
+  const overlay=document.getElementById('dpOverlay');
+  if(!overlay) return;
+  overlay.classList.remove('show');
+  setTimeout(()=>overlay.remove(),320);
+}
+
+/* ─── DRIFT BANNER (re-entry check-in) ───
+   A quiet re-entry prompt, not a guilt wall. Triggers once per load, only
+   when there's a real pattern to notice — never on day one, never while
+   today already has something logged. Once it's up the only way through is
+   the Start action; there's no dismiss, because the entire point is
+   collapsing "should I open the tracker" into "the tracker is already open
+   and running" — one tap instead of the ten decisions that gap usually
+   costs. Runs this same check forever, no matter how long the gap gets. */
+function daysSinceLastRealSession(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const cursor=new Date(today); cursor.setDate(cursor.getDate()-1);
+  for(let i=0;i<180;i++){
+    const sess=parseFloat(localStorage.getItem('fent_sessions_'+localDateKey(cursor))||'0');
+    if(sess>0) return i+1;
+    cursor.setDate(cursor.getDate()-1);
+  }
+  return null; // no session in the last ~6 months (or ever)
+}
+
+function checkDriftBanner(){
+  try{
+    // Never on a brand-new tracker — there's no pattern to notice yet.
+    const hasAnyHistory=getKeysWithPrefix('fent_sessions_').length>0||getKeysWithPrefix('fent_focuslog_').length>0;
+    if(!hasAnyHistory) return;
+    const today=new Date(); today.setHours(0,0,0,0);
+    const todaySess=parseFloat(localStorage.getItem('fent_sessions_'+localDateKey(today))||'0');
+    if(todaySess>0) return; // already did something today — nothing to say
+    const yest=new Date(today); yest.setDate(yest.getDate()-1);
+    const yestSess=parseFloat(localStorage.getItem('fent_sessions_'+localDateKey(yest))||'0');
+    const missedYesterday=yestSess<=0;      // a full miss day already happened — show right away
+    const pastNoon=new Date().getHours()>=12; // otherwise, give today until noon before saying anything
+    if(missedYesterday||pastNoon) openDriftBanner();
+  }catch(e){}
+}
+
+function openDriftBanner(){
+  if(document.getElementById('driftOverlay')) return; // already showing
+  const stats=computeDriftStats();
+  const gapDays=daysSinceLastRealSession();
+  const urgent=gapDays!==null&&gapDays>=5;
+  const eyebrowTxt=gapDays?((gapDays===1?'1 day':gapDays+' days')+' since your last real session'):'ready when you are';
+  const title=urgent?"Let's not let this stretch further.":"Let's get one session in.";
+  const avgSessStr=(Math.round(stats.avgSessPerDay*10)/10).toFixed(1);
+  const sylDaysStr=stats.syllabusDaysLeft!==null?stats.syllabusDaysLeft:'—';
+  const noteLine=`${stats.tasksDone} of ${stats.totalTasks} syllabus tasks done so far`;
+
+  const overlay=document.createElement('div');
+  overlay.id='driftOverlay';
+  overlay.className='drift-overlay';
+  overlay.innerHTML=`
+    <div class="drift-card">
+      <div class="drift-quotemark">"</div>
+      <div class="drift-eyebrow"><span class="drift-eyebrow-dot"></span>${eyebrowTxt}</div>
+      <div class="drift-gap-row">
+        <span class="drift-gap-num${urgent?' urgent':''}">${gapDays||'0'}</span>
+        <span class="drift-gap-lbl">day${gapDays===1?'':'s'} since your last real session</span>
+      </div>
+      <div class="drift-title">${title}</div>
+      <div class="drift-sub">A bad study day still beats no study day. Just show up for one.</div>
+      <div class="drift-stats">
+        <div class="drift-stat"><div class="drift-stat-val">${stats.onTargetPct}%</div><div class="drift-stat-lbl">on target this month</div></div>
+        <div class="drift-stat"><div class="drift-stat-val">${avgSessStr}</div><div class="drift-stat-lbl">avg sessions daily</div></div>
+        <div class="drift-stat"><div class="drift-stat-val">${sylDaysStr}</div><div class="drift-stat-lbl">days left · syllabus pace</div></div>
+        <div class="drift-stat"><div class="drift-stat-val">${stats.daysToJEE}</div><div class="drift-stat-lbl">days until JEE</div></div>
+      </div>
+      <div class="drift-note"><span class="drift-note-dot"></span><span>${noteLine}</span></div>
+      <button class="drift-cta" onclick="startDriftInfiniteSession()">Start a session</button>
+      <div class="drift-cta-note">Opens Infinite Mode. Stop whenever you need to — showing up is the part that matters today.</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.body.style.overflow='hidden';
+  requestAnimationFrame(()=>overlay.classList.add('show'));
+}
+
+// The only exit — jumps to the Focus tab and starts Infinite Mode immediately,
+// same one-tap-IS-starting behavior toggleInfiniteMode already has everywhere
+// else in the app.
+function startDriftInfiniteSession(){
+  const overlay=document.getElementById('driftOverlay');
+  if(overlay){ overlay.classList.remove('show'); setTimeout(()=>overlay.remove(),400); }
+  document.body.style.overflow='';
+  suppressDailyResolutionCheck=true; // one tap must start the session immediately — no plan-screen interruption
+  const focusBtn=document.querySelector(".tab[onclick=\"go('focus',this)\"]");
+  if(focusBtn) go('focus',focusBtn);
+  suppressDailyResolutionCheck=false; // scoped to this one go() call only — next natural Focus visit still asks normally
+  setTimeout(()=>{ if(!infiniteMode) toggleInfiniteMode(); },120);
+}
+
 function infiniteDiscard(){
   // The Reset button is already UI-disabled while on break (see
   // patchInfiniteRunState), but guard the function itself too — a stray
@@ -8267,6 +9201,7 @@ function infiniteDiscard(){
   }
   clearInterval(infiniteTimer.intervalId);
   infiniteTimer={running:false,paused:false,startedAt:null,elapsedSecs:0,segStart:null,intervalId:null,committedSecs:0};
+  clearInfiniteCrashSnap(); // deliberate discard — no credit was ever committed, nothing to recover
   renderFocus();
 }
 
@@ -8449,6 +9384,7 @@ function focusOnModeEnd(){
     // Snapshot today's session target — so if user later changes target,
     // this day's wasted calc still uses the target that was set when they studied.
     localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
+    checkTargetJustMet();
   }
 
   // Give the finished glass a moment to actually be seen (matching the
@@ -8559,6 +9495,7 @@ function focusSkip(){
       localStorage.setItem(todaySessKey, cur + partial); // store raw float, never round on write
       // Snapshot today's target for historical accuracy
       localStorage.setItem('fent_daytarget_'+localDateKey(), focusSettings.dailyTarget);
+      checkTargetJustMet();
     }
 
     T.cycleSessions++;
@@ -8997,7 +9934,7 @@ function renderOverviewSummary(){
             </div>
           </div>
           <div class="cal-slider-card">
-            <div class="cal-slider-label">Sessions / Cycle</div>
+            <div class="cal-slider-label">Sessions per Cycle</div>
             <div id="calfs_sessionsPerCycle" style="font-family:\'JetBrains Mono\',monospace;font-size:28px;font-weight:300;color:var(--t1);letter-spacing:-.04em;line-height:1;margin-bottom:4px;">3</div>
             <div style="font-size:9px;color:var(--t3);letter-spacing:.04em;margin-bottom:14px;">sessions</div>
             <div style="display:flex;align-items:center;gap:8px;">
@@ -9202,6 +10139,9 @@ document.addEventListener('keydown', function(e){
   if(e.key === 'Escape'){
     if(!document.getElementById('calOverlay').classList.contains('hidden')){
       closeCalibrate();
+    }
+    if(document.getElementById('exitInterviewOverlay')){
+      closeExitInterview();
     }
   }
 });
@@ -9710,16 +10650,17 @@ function refreshAllLists(){
 loadCalibration();
 // ── Crash recovery — must run before any UI renders ──
 recoverFromCrash();
+recoverFromInfiniteCrash();
 
 // ── Page-hide / beforeunload: save snapshot whenever tab might be closing ──
 // 'visibilitychange' fires on tab switch, phone lock screen, force-close.
 // 'beforeunload'/'pagehide' fire on close/navigate. Using both covers all browsers.
 document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState === 'hidden') saveCrashSnap();
+  if(document.visibilityState === 'hidden'){ saveCrashSnap(); saveInfiniteCrashSnap(); }
 });
-window.addEventListener('pagehide', saveCrashSnap);
+window.addEventListener('pagehide', ()=>{ saveCrashSnap(); saveInfiniteCrashSnap(); });
 // beforeunload is a best-effort fallback; pagehide is more reliable on mobile
-window.addEventListener('beforeunload', saveCrashSnap);
+window.addEventListener('beforeunload', ()=>{ saveCrashSnap(); saveInfiniteCrashSnap(); });
 (function(){
   document.getElementById('listM').innerHTML=MATH.map((ch,i)=>card('math',ch,i)).join('');
   document.getElementById('listC').innerHTML=CHEM.map((ch,i)=>card('chem',ch,i)).join('');
@@ -9733,6 +10674,10 @@ window.addEventListener('beforeunload', saveCrashSnap);
   const fbadge=document.getElementById('bFocus');
   const fmtSessInit=v=>{const r=Math.round(v*10)/10;return r===Math.floor(r)?String(Math.floor(r)):r.toFixed(1);};
   if(fbadge) fbadge.textContent=todaySess>0?fmtSessInit(todaySess)+'✓':'—';
+  // Re-entry check-in — runs after the very first paint, so it's the first
+  // thing seen on a genuine "opened the tracker again" moment, but never
+  // fights the initial page-load transition for attention.
+  setTimeout(checkDriftBanner,500);
 })();
 
 </script>
