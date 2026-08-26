@@ -339,6 +339,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .ei-plan-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;}
 .ei-plan-chips{display:flex;flex-wrap:wrap;gap:6px;}
 .ei-plan-chip{font-size:10.5px;color:var(--t2);background:var(--s2);border:1px solid var(--b1);border-radius:20px;padding:5px 10px;letter-spacing:.005em;}
+.ei-plan-chip.done{color:var(--c);border-color:rgba(107,158,131,.35);text-decoration:line-through;text-decoration-color:rgba(107,158,131,.5);}
 .ei-input{width:100%;background:var(--bg);border:1px solid var(--b1);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--t1);outline:none;transition:border-color .2s,background .2s;font-family:inherit;letter-spacing:-.005em;}
 .ei-input::placeholder{color:var(--t3);}
 .ei-input:focus{border-color:var(--b2);background:var(--s2);}
@@ -385,90 +386,135 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .drift-cta:active{transform:scale(.98);}
 .drift-cta-note{text-align:center;font-size:10.5px;color:var(--t3);margin-top:13px;letter-spacing:.01em;line-height:1.5;max-width:290px;margin-left:auto;margin-right:auto;}
 
-/* ─── REVIEW CARD (end-of-session reflection + reward) ─── */
-.rv-overlay{position:fixed;inset:0;background:rgba(0,0,0,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:2050;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .35s var(--ease);overflow-y:auto;}
-.rv-overlay.show{opacity:1;}
-.rv-card{position:relative;width:100%;max-width:380px;margin:auto;background:linear-gradient(165deg,var(--s1) 0%,var(--bg) 100%);border:1px solid var(--b2);border-radius:22px;padding:32px 24px 24px;box-shadow:0 40px 90px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.03);transform:translateY(18px) scale(.96);opacity:0;transition:transform .48s cubic-bezier(0.19,1,0.22,1),opacity .4s var(--ease);}
-.rv-overlay.show .rv-card{transform:translateY(0) scale(1);opacity:1;}
-.rv-close{position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:50%;background:var(--s2);border:1px solid var(--b1);color:var(--t3);font-size:15px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.rv-close:hover{color:var(--t1);border-color:var(--b2);transform:rotate(90deg);}
-.rv-ring-wrap{position:relative;width:68px;height:68px;margin:0 auto 18px;}
-.rv-ring{width:68px;height:68px;transform:rotate(-90deg);filter:drop-shadow(0 0 8px rgba(107,158,131,0.25));}
-.rv-ring-track{fill:none;stroke:var(--s2);stroke-width:4;}
-.rv-ring-fill{fill:none;stroke:var(--c);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(0.19,1,0.22,1);}
-.rv-ring-check{position:absolute;top:50%;left:50%;width:22px;height:22px;transform:translate(-50%,-50%) scale(.5);color:var(--c);opacity:0;transition:opacity .35s var(--ease),transform .35s cubic-bezier(0.34,1.56,0.64,1);}
-.rv-ring-check.on{opacity:1;transform:translate(-50%,-50%) scale(1);}
-.rv-eyebrow{text-align:center;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--c);letter-spacing:.12em;text-transform:uppercase;margin-bottom:9px;}
-.rv-title{text-align:center;font-size:18px;font-weight:400;color:var(--t1);letter-spacing:-.015em;margin-bottom:20px;}
-.rv-checklist{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
-.rv-item{position:relative;display:flex;align-items:center;gap:11px;background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:12px 13px;cursor:pointer;transition:all .25s var(--ease);animation:rvRowIn .4s var(--ease) both;overflow:hidden;}
-@keyframes rvRowIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.rv-item:hover{border-color:var(--b2);}
-.rv-item:has(.rv-check:checked){background:rgba(107,158,131,0.07);border-color:rgba(107,158,131,0.3);}
-.rv-check{position:absolute;opacity:0;width:0;height:0;}
-.rv-check-box{flex-shrink:0;width:19px;height:19px;border-radius:6px;border:1.5px solid var(--b2);display:flex;align-items:center;justify-content:center;color:var(--bg);transition:all .25s cubic-bezier(0.34,1.56,0.64,1);}
-.rv-check-box svg{width:12px;height:12px;stroke-dasharray:20;stroke-dashoffset:20;transition:stroke-dashoffset .3s ease .05s;}
-.rv-check:checked+.rv-check-box{background:var(--c);border-color:var(--c);transform:scale(1.05);}
-.rv-check:checked+.rv-check-box svg{stroke-dashoffset:0;}
-.rv-item-txt{font-size:12.5px;color:var(--t1);letter-spacing:-.005em;line-height:1.4;transition:color .25s,opacity .25s;}
-.rv-item:has(.rv-check:checked) .rv-item-txt{color:var(--t3);text-decoration:line-through;text-decoration-color:var(--b2);opacity:.75;}
-.rv-item-new{background:var(--s2);border-style:dashed;cursor:default;}
-.on-static{background:var(--s2)!important;border-color:var(--b2)!important;color:var(--t2)!important;}
-.rv-item-x{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--s1);border:1px solid var(--b1);color:var(--t3);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.rv-item-x:hover{color:var(--t1);}
-.rv-empty{font-size:11.5px;color:var(--t3);text-align:center;line-height:1.55;margin-bottom:4px;padding:14px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;}
-.rv-addrow{display:flex;gap:7px;margin-top:8px;margin-bottom:20px;}
-.rv-add-input{flex:1;background:var(--s1);border:1px dashed var(--b2);border-radius:10px;padding:11px 13px;font-size:11.5px;color:var(--t1);outline:none;font-family:inherit;transition:border-color .2s,background .2s;}
-.rv-add-input::placeholder{color:var(--t3);}
-.rv-add-input:focus{border-style:solid;border-color:var(--b2);background:var(--s2);}
-.rv-add-btn{flex-shrink:0;width:38px;height:38px;border-radius:10px;background:var(--s2);border:1px solid var(--b1);color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.rv-add-btn svg{width:15px;height:15px;}
-.rv-add-btn:hover{background:var(--t1);color:var(--bg);border-color:var(--t1);transform:rotate(90deg);}
-.rv-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
-.rv-stat{background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:12px 8px;text-align:center;}
-.rv-stat-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:300;color:var(--t1);letter-spacing:-.02em;}
-.rv-stat-lbl{font-size:8px;color:var(--t3);margin-top:4px;letter-spacing:.06em;text-transform:uppercase;}
-.rv-cta{width:100%;padding:15px;background:var(--t1);color:var(--bg);border:none;border-radius:13px;font-size:13px;font-weight:500;letter-spacing:.01em;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;}
-.rv-cta:hover{background:var(--t2);}
-.rv-cta:active{transform:scale(.97);}
+/* ─── GOALS PANEL (unified daily plan + tracking) — v4: monochrome, tightened ───
+   v3 mixed three accent colours (gold/green/purple) across the ring, dots,
+   checkboxes and bursts — user called it out as too busy for "minimal
+   premium," so all of that is gone. One neutral, near-monochrome palette
+   throughout (white/grey, matching the app's own base --t1/--t2/--t3/--s*
+   scale), with a single functional accent (var(--c), the same green the
+   rest of the app already uses for "done"/success) reserved for completion
+   states only — not decoration. Also a straight pass on timing: v3's
+   entrance/burst/pulse durations were all noticeably too slow for how
+   often they fire (every tick, every open); everything below is roughly
+   30-45% shorter and uses the app's own var(--ease) curve instead of ad-hoc
+   easing, so the board actually feels snappy rather than laggy. Data model
+   and function names are unchanged — `locked` alone still decides plan vs
+   track, every add/remove/tick still writes straight to storage with no
+   confirm step. */
+.gp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:2050;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .16s linear;overflow-y:auto;}
+.gp-overlay.show{opacity:1;}
+.gp-card{position:relative;width:100%;max-width:368px;margin:auto;background:var(--bg);border:1px solid var(--b1);border-radius:20px;padding:26px 20px 18px;box-shadow:0 24px 60px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.03);transform:translateY(10px) scale(.985);opacity:0;transition:transform .2s cubic-bezier(.22,1,.36,1),opacity .16s linear;overflow:hidden;will-change:transform,opacity;}
+.gp-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);}
+.gp-overlay.show .gp-card{transform:translateY(0) scale(1);opacity:1;}
+.gp-head{display:flex;justify-content:flex-end;margin-bottom:2px;}
+.gp-close{position:relative;width:24px;height:24px;border-radius:50%;background:var(--s2);border:1px solid var(--b1);color:var(--t3);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .16s;flex-shrink:0;}
+.gp-close:hover{color:var(--t1);border-color:var(--b2);transform:rotate(90deg);}
 
-/* ─── DAILY PLAN (morning resolution) ───
-   Free-text task list — type anything, hit +. No categorization, no
-   picker. The premium feel comes from motion (each row eases in with a
-   soft stagger) and restraint (one input, one list, one button), not from
-   extra UI surface. */
-.dp-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,0.025),transparent 60%),var(--bg);z-index:1900;display:flex;align-items:center;justify-content:center;padding:22px;opacity:0;transition:opacity .4s var(--ease);overflow-y:auto;}
-.dp-overlay.show{opacity:1;}
-.dp-card{width:100%;max-width:400px;margin:auto;transform:translateY(8px);opacity:0;transition:transform .5s cubic-bezier(0.19,1,0.22,1),opacity .45s var(--ease);}
-.dp-overlay.show .dp-card{transform:translateY(0);opacity:1;}
-.dp-eyebrow{text-align:center;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:11px;}
-.dp-title{text-align:center;font-size:21px;font-weight:400;color:var(--t1);letter-spacing:-.02em;line-height:1.3;margin-bottom:9px;}
-.dp-sub{text-align:center;font-size:12px;color:var(--t3);line-height:1.55;margin-bottom:26px;max-width:300px;margin-left:auto;margin-right:auto;}
-.dp-addrow{display:flex;gap:8px;margin-bottom:16px;}
-.dp-add-input{flex:1;background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--t1);outline:none;font-family:inherit;letter-spacing:-.005em;transition:border-color .2s,background .2s,box-shadow .2s;}
-.dp-add-input::placeholder{color:var(--t3);}
-.dp-add-input:focus{border-color:var(--b2);background:var(--s2);box-shadow:0 0 0 3px rgba(255,255,255,0.03);}
-.dp-add-btn{flex-shrink:0;width:46px;height:46px;border-radius:12px;background:var(--t1);color:var(--bg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s cubic-bezier(0.34,1.56,0.64,1);}
-.dp-add-btn svg{width:18px;height:18px;}
-.dp-add-btn:hover{background:var(--t2);transform:scale(1.06);}
-.dp-add-btn:active{transform:scale(.92) rotate(90deg);}
-.dp-tasklist{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;max-height:280px;overflow-y:auto;padding:2px;}
-.dp-task-row{display:flex;align-items:center;gap:11px;background:var(--s1);border:1px solid var(--b1);border-radius:11px;padding:12px 13px;animation:dpRowIn .38s cubic-bezier(0.19,1,0.22,1) both;transition:border-color .2s,opacity .25s,transform .25s;}
-@keyframes dpRowIn{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
-.dp-task-row.removing{opacity:0;transform:translateX(8px) scale(.97);}
-.dp-task-row:hover{border-color:var(--b2);}
-.dp-task-dot{flex-shrink:0;width:6px;height:6px;border-radius:50%;background:var(--p);box-shadow:0 0 6px rgba(144,139,176,0.5);}
-.dp-task-txt{flex:1;font-size:12.5px;color:var(--t1);letter-spacing:-.005em;line-height:1.4;min-width:0;word-break:break-word;}
-.dp-task-x{flex-shrink:0;width:21px;height:21px;border-radius:50%;background:var(--s2);border:1px solid var(--b1);color:var(--t3);font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.dp-task-x:hover{color:var(--t1);border-color:var(--b2);background:var(--red);color:#fff;opacity:.85;}
-.dp-empty{text-align:center;font-size:11.5px;color:var(--t3);padding:22px 14px;background:var(--s1);border:1px dashed var(--b2);border-radius:12px;margin-bottom:20px;line-height:1.5;}
-.dp-cta{width:100%;padding:16px;background:var(--t1);color:var(--bg);border:none;border-radius:13px;font-size:13.5px;font-weight:500;letter-spacing:.01em;cursor:pointer;transition:all .25s var(--ease);}
-.dp-cta:disabled{opacity:.3;cursor:not-allowed;}
-.dp-cta:not(:disabled):hover{background:var(--t2);}
-.dp-cta:not(:disabled):active{transform:scale(.98);}
-.dp-cta.locked{background:var(--c);color:var(--bg);}
-.dp-skip{text-align:center;font-size:10.5px;color:var(--t3);margin-top:14px;cursor:pointer;letter-spacing:.01em;text-decoration:underline;text-decoration-color:var(--b2);text-underline-offset:3px;transition:color .2s;}
-.dp-skip:hover{color:var(--t2);}
+.gp-title{text-align:center;font-size:16.5px;font-weight:400;color:var(--t1);letter-spacing:-.015em;line-height:1.3;margin:2px 0 6px;}
+.gp-sub{text-align:center;font-size:11px;color:var(--t3);line-height:1.5;margin-bottom:18px;max-width:280px;margin-left:auto;margin-right:auto;}
+
+.gp-ring-wrap{position:relative;width:64px;height:64px;margin:0 auto 16px;}
+.gp-ring-wrap.complete{animation:gpRingComplete .6s var(--ease);}
+@keyframes gpRingComplete{0%{filter:drop-shadow(0 0 0 rgba(255,255,255,0));}35%{filter:drop-shadow(0 0 10px rgba(255,255,255,.5));}100%{filter:drop-shadow(0 0 0 rgba(255,255,255,0));}}
+.gp-ring{width:64px;height:64px;transform:rotate(-90deg);}
+.gp-ring-track{fill:none;stroke:var(--s2);stroke-width:4;}
+.gp-ring-fill{fill:none;stroke:var(--t1);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .28s var(--ease);}
+.gp-ring-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.gp-ring-frac{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--t1);letter-spacing:-.02em;line-height:1;}
+.gp-ring-lbl{font-size:7px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
+
+.gp-addrow{display:flex;gap:7px;margin-bottom:12px;}
+.gp-add-input{flex:1;background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:11px 13px;font-size:11.5px;color:var(--t1);outline:none;font-family:inherit;letter-spacing:-.005em;transition:border-color .16s,background .16s,box-shadow .16s;}
+.gp-add-input::placeholder{color:var(--t3);}
+.gp-add-input:focus{border-color:var(--b2);background:var(--s2);box-shadow:0 0 0 3px rgba(255,255,255,0.03);}
+.gp-add-btn{flex-shrink:0;width:38px;height:38px;border-radius:10px;background:var(--t1);color:var(--bg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .16s,transform .18s cubic-bezier(0.34,1.56,0.64,1);}
+.gp-add-btn svg{width:14px;height:14px;}
+.gp-add-btn:hover{background:var(--t2);transform:scale(1.06);}
+.gp-add-btn:active{transform:scale(.9) rotate(90deg);}
+
+.gp-list{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;max-height:250px;overflow-y:auto;padding:2px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.07) transparent;}
+.gp-list::-webkit-scrollbar{width:3px;}
+.gp-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:99px;}
+.gp-item{position:relative;display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:10px 11px;transition:border-color .16s,background .18s;animation:gpRowIn .22s var(--ease) both;overflow:hidden;}
+@keyframes gpRowIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.gp-item.removing{opacity:0;transform:translateX(8px);transition:opacity .14s,transform .14s;}
+.gp-item:hover{border-color:var(--b2);}
+.gp-item.plan-row{cursor:default;}
+.gp-item.done-row{background:rgba(255,255,255,.035);border-color:var(--b2);}
+.gp-item.just-ticked{animation:gpRowPulse .3s var(--ease);}
+@keyframes gpRowPulse{0%{background:rgba(255,255,255,.09);}100%{background:rgba(255,255,255,.02);}}
+.gp-dot{flex-shrink:0;width:6px;height:6px;border-radius:50%;background:var(--t3);}
+.gp-check{position:relative;flex-shrink:0;width:19px;height:19px;border-radius:50%;border:1.5px solid var(--b2);display:flex;align-items:center;justify-content:center;color:var(--bg);cursor:pointer;transition:background .16s cubic-bezier(.34,1.56,.64,1),border-color .16s,transform .16s ease;background:none;padding:0;overflow:visible;}
+.gp-check svg{width:11px;height:11px;stroke-dasharray:20;stroke-dashoffset:20;transition:stroke-dashoffset .2s ease .03s;position:relative;z-index:1;}
+.gp-check.on{background:var(--t1);border-color:var(--t1);transform:scale(1.08);}
+.gp-check.on svg{stroke-dashoffset:0;}
+.gp-check.just-ticked{animation:gpCheckPop .36s cubic-bezier(.34,1.6,.64,1);}
+@keyframes gpCheckPop{0%{transform:scale(1);}45%{transform:scale(1.28);}100%{transform:scale(1.08);}}
+/* Tick moment — one expanding ring (no particles, no colour), a spring pop
+   on the checkbox itself, and the strike-through actually draws across the
+   text instead of snapping on instantly. */
+.gp-tick-ripple{position:absolute;top:50%;left:50%;width:19px;height:19px;margin:-9.5px 0 0 -9.5px;border-radius:50%;border:1.5px solid var(--t1);opacity:0;pointer-events:none;}
+.gp-tick-ripple.go{animation:gpTickRipple .5s cubic-bezier(.16,1,.3,1) forwards;}
+@keyframes gpTickRipple{0%{opacity:.55;transform:scale(1);}100%{opacity:0;transform:scale(2.6);}}
+.gp-item-txt{position:relative;flex:1;font-size:11.5px;color:var(--t1);letter-spacing:-.005em;line-height:1.4;min-width:0;word-break:break-word;transition:color .25s;}
+.gp-item-txt::after{content:'';position:absolute;left:0;top:50%;width:100%;height:1px;background:var(--t3);transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease);}
+.gp-item-txt.done{color:var(--t3);opacity:.7;}
+.gp-item-txt.done::after{transform:scaleX(1);}
+.gp-item-x{flex-shrink:0;width:19px;height:19px;border-radius:50%;background:var(--s2);border:1px solid var(--b1);color:var(--t3);font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .16s;}
+.gp-item-x:hover{background:var(--red);border-color:var(--red);color:#fff;}
+.gp-item-x.hidden-x{display:none;}
+.gp-empty{text-align:center;font-size:10.5px;color:var(--t3);padding:18px 13px;background:var(--s1);border:1px dashed var(--b2);border-radius:11px;margin-bottom:14px;line-height:1.5;}
+
+.gp-editrow{display:flex;justify-content:center;margin:9px 0 14px;}
+.gp-edit-toggle{display:flex;align-items:center;gap:4px;background:none;border:none;color:var(--t3);font-size:9.5px;letter-spacing:.02em;cursor:pointer;padding:3px 7px;transition:color .16s;}
+.gp-edit-toggle svg{width:10px;height:10px;}
+.gp-edit-toggle:hover,.gp-edit-toggle.on{color:var(--t2);}
+
+.gp-cta{position:relative;width:100%;padding:13px;background:var(--t1);color:var(--bg);border:none;border-radius:11px;font-size:12px;font-weight:500;letter-spacing:.01em;cursor:pointer;transition:background .18s,transform .16s;overflow:visible;}
+.gp-cta:disabled{opacity:.3;cursor:not-allowed;}
+.gp-cta:not(:disabled):hover{background:var(--t2);}
+.gp-cta:not(:disabled):active{transform:scale(.98);}
+.gp-cta.sealing{animation:gpCtaSeal .34s cubic-bezier(.34,1.6,.64,1);}
+@keyframes gpCtaSeal{0%{transform:scale(1);}40%{transform:scale(.95);}100%{transform:scale(1);}}
+/* Lock-in moment — one clean expanding ring pulsing outward from the
+   button's own edge, monochrome, gone almost as soon as it happens. No
+   particles, no colour — the whole "you're set for today" beat is motion. */
+.gp-cta.sealing::before{content:'';position:absolute;inset:0;border-radius:11px;border:1.5px solid var(--t1);opacity:.7;animation:gpCtaRing .55s var(--ease) forwards;pointer-events:none;}
+@keyframes gpCtaRing{0%{transform:scale(1);opacity:.7;}100%{transform:scale(1.14);opacity:0;}}
+.gp-skip{text-align:center;font-size:10px;color:var(--t3);margin-top:12px;cursor:pointer;letter-spacing:.01em;text-decoration:underline;text-decoration-color:var(--b2);text-underline-offset:2px;transition:color .16s;}
+.gp-skip:hover{color:var(--t2);}
+
+/* ── Today's Goals trigger — lives inline in the Focus tab's own flow now
+   (a little below the clock, where it's actually part of the page instead
+   of floating pinned over the very top of the screen), right-aligned.
+   Runs on the app's existing "done" green (var(--c)) rather than a new
+   colour — reads as premium/considered instead of random, since it's the
+   same accent already used for completion everywhere else in the app. ── */
+/* Circular icon-only button, matches the same minimal-circle language as
+   .settings-btn elsewhere in the header. Progress lives entirely in the
+   segmented ring below — muted grey/green, nothing bright bolted onto the
+   corner — so the button stays calm and part of the same dark, low-key
+   surface as the rest of the app instead of standing out from it. */
+.goals-fab-row{display:flex;justify-content:flex-end;align-self:flex-end;width:fit-content;margin:0 0 14px 0;margin-left:auto;}
+.goals-fab{position:relative;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--s1);border:1px solid var(--b1);color:var(--t2);cursor:pointer;transition:transform .12s ease,border-color .16s,box-shadow .16s,background .16s;-webkit-tap-highlight-color:transparent;}
+.goals-fab.has-progress{border-color:var(--b2);}
+.goals-fab.complete{background:var(--s2);box-shadow:0 0 10px 0 rgba(107,158,131,.1);}
+.goals-fab:hover{border-color:var(--b2);}
+.goals-fab:active{transform:scale(.92);}
+/* Icon fills most of the button and stays neutral (var(--t2)/var(--t1)) at
+   all times — colour lives only in the ring segments, never the icon or a
+   badge, so nothing on the button reads as a bright sticker. */
+.goals-fab-ico{position:relative;z-index:1;width:19px;height:19px;flex-shrink:0;color:var(--t2);transition:color .2s;}
+.goals-fab.has-progress .goals-fab-ico,.goals-fab.complete .goals-fab-ico{color:var(--t1);}
+/* Segmented ring — one small arc per task, built into the button's own
+   edge rather than a separate element. Muted grey pending, the app's own
+   "done" green (flat, no glow) once ticked — the count IS the ring. */
+.goals-fab-mini-ring{position:absolute;inset:-1px;width:40px;height:40px;pointer-events:none;}
+.goals-fab-seg{fill:none;stroke:rgba(255,255,255,.13);stroke-width:2;stroke-linecap:round;transition:stroke .3s var(--ease);}
+.goals-fab-seg.filled{stroke:var(--c);}
+.goals-fab-dot{position:absolute;top:1px;right:1px;width:5px;height:5px;border-radius:50%;background:var(--t2);border:1.5px solid var(--bg);flex-shrink:0;animation:goalsDotPulse 2s ease-in-out infinite;}
+@keyframes goalsDotPulse{0%,100%{opacity:.5;transform:scale(1);}50%{opacity:1;transform:scale(1.15);}}
+
 
 /* ─── TOAST ─── */
 #toast{position:fixed;bottom:24px;right:24px;background:var(--s2);border:1px solid var(--b2);border-radius:6px;padding:10px 16px;font-size:11px;font-weight:400;color:var(--t1);transform:translateY(20px);opacity:0;transition:all .3s var(--ease);pointer-events:none;z-index:9998;letter-spacing:.02em; box-shadow:0 8px 24px rgba(0,0,0,0.6);}
@@ -1508,6 +1554,20 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .test-stop-pill-ico{width:7px;height:7px;border-radius:1.5px;background:var(--t3);flex-shrink:0;transition:background .2s;}
 .test-stop-pill:hover .test-stop-pill-ico{background:var(--t2);}
 
+/* ── LOG TEST BOARD — a separate concern from the Goals panel, on purpose:
+   its own overlay, its own trigger, its own card language untouched below.
+   This wrapper only changes WHERE the setup/score card appears — fixed,
+   centered, above the whole page, like a board dropped onto the screen —
+   not what it looks like. It shows for the setup wizard the instant "Log
+   Test" is tapped, and again for the score card the instant a test ends;
+   it's invisible and click-through the rest of the time, including while
+   a test is actively counting down (that still lives inline in the main
+   clock, unchanged). No backdrop card-level animation here — the setup/
+   score card's own fadeUp keeps doing the entrance motion it always did,
+   this only fades the backdrop in behind it. */
+.tl-overlay{position:fixed;inset:0;z-index:2040;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(6,6,8,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .28s var(--ease);overflow-y:auto;}
+.tl-overlay.show{opacity:1;pointer-events:auto;}
+
 /* ── Log Test — setup flow: subjects → chapters → question count.
    Neutral OLED minimal: no red UI chrome. Subject chips use their
    own subject colours when active. Everything else is neutral white/grey.
@@ -2223,7 +2283,7 @@ function checkTargetJustMet(){
   const flagKey='fent_reviewshown_target_'+localDateKey();
   if(localStorage.getItem(flagKey)) return;
   localStorage.setItem(flagKey,'1');
-  openReviewCard('target');
+  openGoalsPanel('target');
 }
 
 function gs(s,n){const k=s+'_'+n;if(!ST[k])ST[k]={theory:false,module:false,pyq:false,revision:false};return ST[k]}
@@ -7370,6 +7430,19 @@ function renderTestLogSlot(){
   const slot=document.getElementById('testLogSlot');
   if(!slot){ renderFocus(); return; }
   slot.innerHTML=buildTestSetupHTML()+buildTestLogHTML();
+  // Full renders (testSetupStart, testLogFinish, testLogCancel, testLogSubmit)
+  // rebuild this class fresh from state anyway — this patch-path is the one
+  // that needs it explicitly, since it only touches the slot's innerHTML.
+  const ov=document.getElementById('testLogOverlay');
+  if(ov) ov.classList.toggle('show', testLogOpen||testLogScoreStep);
+}
+
+// Backdrop tap: safe to close during setup (nothing typed there is lost —
+// chapter/subject picks just get discarded, same as the ✕ button). During
+// score entry it's a no-op on purpose — numbers may already be typed in,
+// and that step already has an explicit Discard button for that reason.
+function testLogBackdropClick(){
+  if(testLogOpen) testSetupCancel();
 }
 
 function renderFocus(){
@@ -7995,6 +8068,12 @@ function renderFocus(){
   el.innerHTML=`
 <div class="focus-wrap">
 
+  <!-- Today's Goals — persistent entry point to the unified plan/tracking
+       panel. Lives at the top of the Focus section now, right-aligned,
+       so it reads as this tab's own header action rather than something
+       buried in the middle of the page. -->
+  ${goalsChipHTML()}
+
   <!-- Clock -->
   ${clockFaceHTML}
 
@@ -8041,9 +8120,12 @@ function renderFocus(){
     })()}
   </div>
 
-  <!-- Log Test — sits in the same "current primary action" zone as chapter
-       selection below, since when a score is pending that IS the current task -->
-  <div id="testLogSlot">${testLogHTML}</div>
+  <!-- Log Test board — fixed overlay, separate from the goals panel: opens
+       over the whole screen for the setup wizard and again for the score
+       card, stays invisible (and click-through) the rest of the time. -->
+  <div class="tl-overlay${(testLogOpen||testLogScoreStep)?' show':''}" id="testLogOverlay" onclick="if(event.target===this)testLogBackdropClick();">
+    <div id="testLogSlot">${testLogHTML}</div>
+  </div>
 
   <!-- Log Section -->
   <div class="focus-log-section">
@@ -8831,273 +8913,325 @@ function confirmExitInterview(){
   exitInterviewFrozen=null; // ending on purpose now — nothing to resume
   if(ctx==='focusSkip') focusSkip();
   else if(ctx==='infiniteFinish') infiniteFinish();
-  setTimeout(()=>openReviewCard('quit'),380); // idempotent — no-op if a 'target' review already opened from inside the action above
+  setTimeout(()=>openGoalsPanel('quit'),380); // idempotent — no-op if a 'target' goals-panel already opened from inside the action above
 }
 
-/* ─── REVIEW CARD (end-of-session reflection + reward) ───
-   Shows either when today's session target is first crossed, or right
-   after an early-exit is confirmed through the exit interview — always
-   idempotent (first trigger wins, the other becomes a no-op) so the two
-   paths never stack. Ticks against today's plan; anything you don't tick
-   rolls straight onto tomorrow's list, and you can add new tasks right
-   here too — they roll forward the same way. Falls back to a calm read of
-   today's real numbers if no plan was set. Ticks are stored on the
-   resolution record only, never touching the authoritative session/
-   question counters, so nothing here can double-count real data. */
-let rvExtraTasks=[]; // tasks added live inside the review card this session
-
-function openReviewCard(reason){
-  if(document.getElementById('reviewOverlay')) return; // first trigger wins, idempotent
-  rvExtraTasks=[];
-  const plan=loadTodayResolution();
-  const todaySess=parseFloat(localStorage.getItem('fent_sessions_'+localDateKey())||'0');
-  const rSess=Math.round(todaySess*10)/10;
-  const sessStr=rSess===Math.floor(rSess)?String(Math.floor(rSess)):rSess.toFixed(1);
-  const todayQues=parseInt(localStorage.getItem('fent_ques_'+localDateKey())||'0');
-  const eyebrow=reason==='target'?"today's target — met":'wrapping up';
-
-  const overlay=document.createElement('div');
-  overlay.id='reviewOverlay';
-  overlay.className='rv-overlay';
-  overlay.addEventListener('click',e=>{ if(e.target===overlay) closeReviewCard(); });
-  overlay.innerHTML=`
-    <div class="rv-card" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
-      <button class="rv-close" onclick="closeReviewCard()" aria-label="Close">×</button>
-      <div class="rv-ring-wrap">
-        <svg class="rv-ring" viewBox="0 0 64 64">
-          <circle cx="32" cy="32" r="27" class="rv-ring-track"/>
-          <circle cx="32" cy="32" r="27" class="rv-ring-fill" id="rvRingFill"/>
-        </svg>
-        <svg class="rv-ring-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12.3l3.6 3.6L17.5 8.5"/></svg>
-      </div>
-      <div class="rv-eyebrow">${eyebrow}</div>
-      <div class="rv-title" id="rvTitle">How'd today go?</div>
-      <div id="rvBody"></div>
-      <div class="rv-stats">
-        <div class="rv-stat"><div class="rv-stat-val">${sessStr}</div><div class="rv-stat-lbl">sessions today</div></div>
-        <div class="rv-stat"><div class="rv-stat-val">${todayQues}</div><div class="rv-stat-lbl">questions today</div></div>
-      </div>
-      <button class="rv-cta" onclick="confirmReviewCard()">Done</button>
-    </div>`;
-  document.body.appendChild(overlay);
-  renderReviewBody(plan);
-  requestAnimationFrame(()=>{ overlay.classList.add('show'); updateReviewRing(); });
-}
-
-function renderReviewBody(plan){
-  const body=document.getElementById('rvBody');
-  if(!body) return;
-  const items=(plan&&plan.items)?plan.items:[];
-  const rowsHtml=items.map((it,i)=>`
-    <label class="rv-item" style="animation-delay:${Math.min(i,6)*35}ms">
-      <input type="checkbox" class="rv-check" data-i="${i}" ${it.done?'checked':''} onchange="updateReviewRing()"/>
-      <span class="rv-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span>
-      <span class="rv-item-txt">${eiEscape(it.text)}</span>
-    </label>`).join('');
-  const extraHtml=rvExtraTasks.map((t,i)=>`
-    <div class="rv-item rv-item-new">
-      <span class="rv-check-box on-static"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
-      <span class="rv-item-txt">${eiEscape(t)}</span>
-      <button class="rv-item-x" onclick="rvRemoveExtra(${i})" aria-label="Remove">×</button>
-    </div>`).join('');
-
-  body.innerHTML=(items.length||rvExtraTasks.length)
-    ? `<div class="rv-checklist" id="rvChecklist">${rowsHtml}${extraHtml}</div>`
-    : `<div class="rv-empty">No plan was set today — that's fine. Here's what's actually logged.</div>`;
-
-  body.insertAdjacentHTML('beforeend',`
-    <div class="rv-addrow">
-      <input type="text" id="rvDraftInput" class="rv-add-input" maxlength="80" placeholder="add one more for tomorrow" autocomplete="off"/>
-      <button class="rv-add-btn" onclick="rvAddExtra()" aria-label="Add task">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      </button>
-    </div>`);
-  const input=document.getElementById('rvDraftInput');
-  if(input) input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); rvAddExtra(); } });
-}
-
-function rvAddExtra(){
-  const input=document.getElementById('rvDraftInput');
-  const text=input?input.value.trim():'';
-  if(!text) return;
-  rvExtraTasks.push(text);
-  renderReviewBody(loadTodayResolution());
-  updateReviewRing();
-  const newInput=document.getElementById('rvDraftInput');
-  if(newInput) newInput.focus();
-}
-function rvRemoveExtra(i){
-  rvExtraTasks.splice(i,1);
-  renderReviewBody(loadTodayResolution());
-  updateReviewRing();
-}
-
-function updateReviewRing(){
-  const ring=document.getElementById('rvRingFill');
-  if(!ring) return;
-  const boxes=document.querySelectorAll('#reviewOverlay .rv-check');
-  const total=boxes.length;
-  const done=[...boxes].filter(b=>b.checked).length;
-  const pct=total>0?done/total:1; // no checklist at all (fallback view) — read as "complete"
-  const C=2*Math.PI*27;
-  ring.style.strokeDasharray=C.toFixed(1);
-  ring.style.strokeDashoffset=(C*(1-pct)).toFixed(1);
-  const checkIcon=document.querySelector('.rv-ring-check');
-  if(checkIcon) checkIcon.classList.toggle('on',pct>=1);
-}
-
-function closeReviewCard(){
-  const overlay=document.getElementById('reviewOverlay');
-  if(!overlay) return;
-  overlay.classList.remove('show');
-  setTimeout(()=>overlay.remove(),320);
-}
-
-// Ticked items stay marked done on today's record (for later analytics).
-// Everything unticked — plus anything typed fresh into this card — rolls
-// straight onto tomorrow's plan, merged with whatever's already sitting
-// there rather than overwriting it.
-function confirmReviewCard(){
-  const plan=loadTodayResolution();
-  const carry=[];
-  if(plan&&plan.items&&plan.items.length){
-    const boxes=document.querySelectorAll('#reviewOverlay .rv-check');
-    boxes.forEach(b=>{
-      const i=parseInt(b.dataset.i,10);
-      if(plan.items[i]){
-        plan.items[i].done=b.checked;
-        if(!b.checked) carry.push(plan.items[i].text);
-      }
-    });
-    plan.reviewedAt=Date.now();
-    saveTodayResolution(plan);
-  }
-  rvExtraTasks.forEach(t=>carry.push(t));
-  if(carry.length) rollTasksToTomorrow(carry);
-  closeReviewCard();
-}
-
-function rollTasksToTomorrow(texts){
-  const tKey='fent_resolution_'+tomorrowKey();
-  let tomorrow;
-  try{ tomorrow=JSON.parse(localStorage.getItem(tKey)||'null'); }catch{ tomorrow=null; }
-  if(!tomorrow) tomorrow={items:[],locked:false,createdAt:Date.now()};
-  const existingTexts=new Set(tomorrow.items.map(it=>it.text));
-  texts.forEach(text=>{
-    if(!existingTexts.has(text)){
-      tomorrow.items.push({id:genTaskId(),text,done:false});
-      existingTexts.add(text);
-    }
-  });
-  try{ localStorage.setItem(tKey,JSON.stringify(tomorrow)); }catch{}
-}
-
-/* ─── DAILY PLAN (morning resolution) ───
-   Shown the first time the Focus tab is opened each day. Deliberately just
-   free-text tasks now — type anything ("electro 30 ques"), hit +, it's on
-   the list. No chapter picker, no task-type taxonomy — the point was
-   always "name today's tasks in twenty seconds," and a picker was more
-   friction than the idea needed. Whatever's left unticked at review time
-   rolls forward onto tomorrow's list automatically. Stored per day,
-   referenced by the exit interview and ticked off in the review card. A
-   quiet "skip today" is available — this only ever gates the Focus tab
-   itself, never the rest of the app. */
-let dpTasks=[];
-let dpDraft='';
+/* ─── GOALS PANEL (unified daily plan + tracking) ───
+   See the CSS block above for the full design rationale. One data record
+   (fent_resolution_<date> = {items:[{id,text,done}], locked, createdAt}),
+   one overlay, one open function — the `locked` flag alone decides whether
+   it renders as the planning list or the tracking checklist. Every
+   add/remove/tick writes straight to storage immediately, so there's no
+   "confirm" step to lose progress on: closing the panel any way (X,
+   backdrop, Escape) is always safe. Rollover of unticked tasks happens the
+   next time the Focus tab is opened on a new day — not at a "review
+   confirm" click, since ticking is now continuous rather than a one-time
+   end-of-day action. */
+let gpDraft='';
+let gpEditMode=false;
+let gpCurrentReason='manual';
 let suppressDailyResolutionCheck=false; // set briefly by startDriftInfiniteSession() so the one-tap auto-start isn't interrupted
 
 function genTaskId(){ return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
-function tomorrowKey(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+1); return localDateKey(d); }
+function yesterdayKey(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-1); return localDateKey(d); }
+
+function rollOverFromYesterday(){
+  const yKey='fent_resolution_'+yesterdayKey();
+  let y;
+  try{ y=JSON.parse(localStorage.getItem(yKey)||'null'); }catch{ y=null; }
+  if(!y||!Array.isArray(y.items)||y.rolledForward) return; // nothing to roll, or already processed
+  const carryTexts=y.items.filter(it=>it&&!it.done&&it.text).map(it=>it.text);
+  if(carryTexts.length){
+    let today=loadTodayResolution();
+    if(!today) today={items:[],locked:false,createdAt:Date.now()};
+    const existing=new Set(today.items.map(it=>it.text));
+    carryTexts.forEach(text=>{ if(!existing.has(text)){ today.items.push({id:genTaskId(),text,done:false}); existing.add(text); } });
+    saveTodayResolution(today);
+  }
+  y.rolledForward=true;
+  try{ localStorage.setItem(yKey,JSON.stringify(y)); }catch{}
+}
 
 function checkDailyResolution(){
   if(suppressDailyResolutionCheck) return; // drift-banner auto-start bypasses this — session starts immediately, plan can be filled in next natural visit
+  rollOverFromYesterday();
   const existing=loadTodayResolution();
-  if(existing&&existing.locked) return; // already locked in today
-  openDailyPlanOverlay(existing);
+  if(existing&&existing.locked) return; // already locked in today — nothing to prompt
+  openGoalsPanel('morning');
 }
 
-function openDailyPlanOverlay(existing){
-  if(document.getElementById('dpOverlay')) return;
-  // Pre-populate with anything rolled over from yesterday, still unlocked
-  dpTasks=(existing&&existing.items)?existing.items.map(it=>({id:it.id,text:it.text})):[];
-  dpDraft='';
+// ── The persistent chip in the Focus tab — same panel, opened on demand ──
+function goalsChipHTML(){
+  const r=loadTodayResolution();
+  const items=(r&&r.items)?r.items:[];
+  const total=items.length;
+  const doneCount=items.filter(it=>it.done).length;
+  const locked=!!(r&&r.locked);
+  const hasProgress=locked&&total>0;
+  const allDone=hasProgress&&doneCount===total;
+  const RR=18, CIRC=2*Math.PI*RR;
+  const label=locked?(total>0?(doneCount+'/'+total+' today'):"Today's goals"):"Set today's plan";
+  // Structural instead of decorative: one small arc per task, quietly
+  // filling in as each is ticked — the count IS the ring, no separate
+  // badge sitting on top of it, no saturated colour block. Muted grey for
+  // remaining, the app's existing "done" green (at rest, not neon) for
+  // finished ones, so it reads calm even mid-progress.
+  let ringSvg='';
+  if(hasProgress){
+    const gapDeg=total<=4?14:(total<=8?9:5);
+    const segAngle=360/total-gapDeg;
+    const segLen=(segAngle/360)*CIRC;
+    const restLen=CIRC-segLen;
+    let segs='';
+    for(let i=0;i<total;i++){
+      const rot=-90+i*(360/total);
+      segs+=`<circle class="goals-fab-seg${i<doneCount?' filled':''}" cx="19" cy="19" r="${RR}" stroke-dasharray="${segLen.toFixed(2)} ${restLen.toFixed(2)}" transform="rotate(${rot} 19 19)"/>`;
+    }
+    ringSvg=`<svg class="goals-fab-mini-ring" viewBox="0 0 38 38">${segs}</svg>`;
+  }
+  const dot=(!locked)?`<span class="goals-fab-dot"></span>`:'';
+  const flagIco=`<svg class="goals-fab-ico" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 2a1 1 0 0 0-1 1v19a1 1 0 1 0 2 0v-6.2l3.6-1.1a4 4 0 0 1 3 .3 6 6 0 0 0 4.9.4l2-.7A1 1 0 0 0 21 13V4.4a1 1 0 0 0-1.4-.9l-.9.4a6 6 0 0 1-4.9-.4 4 4 0 0 0-3-.3L7 4V3a1 1 0 0 0-1-1z"/></svg>`;
+  return `<div class="goals-fab-row">
+    <button class="goals-fab${hasProgress?' has-progress':''}${allDone?' complete':''}" id="goalsChip" onclick="openGoalsPanel('manual')" title="${label}" aria-label="${label}">
+      ${ringSvg}
+      ${flagIco}
+      ${dot}
+    </button>
+    
+  </div>`;
+}
+function refreshGoalsChip(){
+  const row=document.querySelector('.goals-fab-row');
+  if(!row) return;
+  const wrap=document.createElement('div');
+  wrap.innerHTML=goalsChipHTML().trim();
+  row.replaceWith(wrap.firstElementChild);
+}
+
+// Goals panel runs off one accent everywhere now (var(--c), the app's
+// existing "done" colour). It used to carry a gold/green/purple cycle
+// (GP_DOT_COLORS/GP_DOT_GLOWS, plus --ac/--acr/--bc custom props) that
+// wasn't even fully wired to CSS — removed rather than left half-dead.
+
+function openGoalsPanel(reason){
+  if(document.getElementById('gpOverlay')) return;
+  gpEditMode=false; gpDraft='';
   const overlay=document.createElement('div');
-  overlay.id='dpOverlay';
-  overlay.className='dp-overlay';
+  overlay.id='gpOverlay';
+  overlay.className='gp-overlay';
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) closeGoalsPanel(); });
   document.body.appendChild(overlay);
-  renderDailyPlanOverlay(true);
+  renderGoalsPanel(reason,true);
   requestAnimationFrame(()=>overlay.classList.add('show'));
 }
 
-function renderDailyPlanOverlay(isFirstRender){
-  const overlay=document.getElementById('dpOverlay');
+function renderGoalsPanel(reason,isFirstRender){
+  const overlay=document.getElementById('gpOverlay');
   if(!overlay) return;
-  const tasksHtml=dpTasks.map((t,i)=>`
-    <div class="dp-task-row" data-id="${t.id}" style="animation-delay:${Math.min(i,6)*35}ms">
-      <span class="dp-task-dot"></span>
-      <span class="dp-task-txt">${eiEscape(t.text)}</span>
-      <button class="dp-task-x" onclick="dpRemoveTask('${t.id}')" aria-label="Remove">×</button>
-    </div>`).join('');
+  let r=loadTodayResolution();
+  if(!r) r={items:[],locked:false,createdAt:Date.now()};
+  const locked=!!r.locked;
+  gpCurrentReason=reason;
 
-  overlay.innerHTML=`
-    <div class="dp-card">
-      <div class="dp-eyebrow">${MONTHS[new Date().getMonth()]} ${new Date().getDate()} · today's plan</div>
-      <div class="dp-title">What's the plan?</div>
-      <div class="dp-sub">Name today's tasks. Anything left unticked tonight carries straight to tomorrow.</div>
+  const doneCount=r.items.filter(it=>it.done).length;
+  const total=r.items.length;
+  const allDone=locked&&total>0&&doneCount===total;
 
-      <div class="dp-addrow">
-        <input type="text" id="dpDraftInput" class="dp-add-input" maxlength="80" placeholder="e.g. electro — 30 ques" value="${eiEscape(dpDraft)}" autocomplete="off"/>
-        <button class="dp-add-btn" id="dpAddBtn" onclick="dpAddTask()" aria-label="Add task">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  // Real ring, every render — pre-lock it just reflects "how many tasks
+  // are drafted" at zero fill (nothing's done yet by definition); once
+  // locked it's the live done/total fraction. No step-wizard framing.
+  const RING_R=28, RING_CIRC=2*Math.PI*RING_R;
+  const ringFrac=locked?(total>0?doneCount/total:0):0;
+  const ringOffset=(RING_CIRC*(1-ringFrac)).toFixed(2);
+  const ringFrac_=locked?(doneCount+'/'+total):String(total);
+  const ringLbl=locked?'DONE':(total===1?'TASK':'TASKS');
+  const ringHTML=`<div class="gp-ring-wrap${allDone?' complete':''}">
+    <svg class="gp-ring" viewBox="0 0 64 64">
+      <circle class="gp-ring-track" cx="32" cy="32" r="${RING_R}"/>
+      <circle class="gp-ring-fill" id="gpRingFill" cx="32" cy="32" r="${RING_R}" stroke-dasharray="${RING_CIRC.toFixed(2)}" stroke-dashoffset="${ringOffset}" data-final-offset="${ringOffset}" data-circ="${RING_CIRC.toFixed(2)}"/>
+    </svg>
+    <div class="gp-ring-txt"><span class="gp-ring-frac">${total?ringFrac_:'—'}</span><span class="gp-ring-lbl">${ringLbl}</span></div>
+  </div>`;
+
+  let title,sub;
+  if(!locked){
+    title="What's the plan?";
+    sub="Name today's tasks. Anything left unticked tonight carries to tomorrow.";
+  } else if(reason==='target'){
+    title=allDone?'Nice work today.':'Keep going.';
+    sub="Tick what's done — target's already met.";
+  } else if(reason==='quit'){
+    title="How'd it go?";
+    sub="Tick what's done before you head out.";
+  } else {
+    title=allDone?'All done today.':"Today's goals";
+    sub="Tick what's done. Anything left carries to tomorrow.";
+  }
+
+  let bodyHtml;
+  if(!locked){
+    const rows=r.items.map((it,i)=>`
+      <div class="gp-item plan-row" data-id="${it.id}" style="animation-delay:${Math.min(i,6)*30}ms">
+        <span class="gp-dot"></span>
+        <span class="gp-item-txt">${eiEscape(it.text)}</span>
+        <button class="gp-item-x" onclick="gpRemoveTask('${it.id}')" aria-label="Remove">×</button>
+      </div>`).join('');
+    bodyHtml=`
+      <div class="gp-addrow">
+        <input type="text" id="gpDraftInput" class="gp-add-input" maxlength="80" placeholder="e.g. electro — 30 ques" value="${eiEscape(gpDraft)}" autocomplete="off"/>
+        <button class="gp-add-btn" onclick="gpAddTask()" aria-label="Add task"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+      ${r.items.length?`<div class="gp-list">${rows}</div>`:`<div class="gp-empty">Nothing yet — add your first task above.</div>`}
+      <button class="gp-cta" id="gpCta" ${r.items.length===0?'disabled':''} onclick="gpLockIn()">
+        <span id="gpCtaLabel">Lock it in${r.items.length?' — '+r.items.length+' task'+(r.items.length===1?'':'s'):''}</span><svg id="gpCtaCheck" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;margin-left:5px;vertical-align:-1px;opacity:0;transform:scale(.4);transition:all .3s cubic-bezier(0.34,1.56,0.64,1);"><path d="M4 12l5 5L20 6"/></svg>
+      </button>
+      ${reason==='morning'?`<div class="gp-skip" onclick="closeGoalsPanel()">skip for today</div>`:''}
+    `;
+  } else {
+    const rows=r.items.map((it,i)=>`
+      <div class="gp-item${it.done?' done-row':''}" data-id="${it.id}" style="animation-delay:${Math.min(i,6)*28}ms">
+        <button class="gp-check${it.done?' on':''}" onclick="gpToggleTick('${it.id}')" aria-label="Toggle done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></button>
+        <span class="gp-item-txt${it.done?' done':''}">${eiEscape(it.text)}</span>
+        <button class="gp-item-x${gpEditMode?'':' hidden-x'}" onclick="gpRemoveTask('${it.id}')" aria-label="Remove">×</button>
+      </div>`).join('');
+    bodyHtml=`
+      ${total?`<div class="gp-list" id="gpList">${rows}</div>`:`<div class="gp-empty">No tasks yet — add one below.</div>`}
+      <div class="gp-editrow">
+        <button class="gp-edit-toggle${gpEditMode?' on':''}" onclick="gpToggleEditMode()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+          ${gpEditMode?'done editing':'edit list'}
         </button>
       </div>
+      <div class="gp-addrow">
+        <input type="text" id="gpDraftInput" class="gp-add-input" maxlength="80" placeholder="add one more" value="${eiEscape(gpDraft)}" autocomplete="off"/>
+        <button class="gp-add-btn" onclick="gpAddTask()" aria-label="Add task"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
+    `;
+  }
 
-      ${dpTasks.length?`<div class="dp-tasklist">${tasksHtml}</div>`:`<div class="dp-empty">Nothing yet — add your first task above.</div>`}
-
-      <button class="dp-cta" id="dpCta" ${dpTasks.length===0?'disabled':''} onclick="dpSubmit()">Lock it in${dpTasks.length?' — '+dpTasks.length+' task'+(dpTasks.length===1?'':'s'):''}</button>
-      <div class="dp-skip" onclick="dpSkip()">Skip for today</div>
+  overlay.innerHTML=`
+    <div class="gp-card" role="dialog" aria-modal="true" aria-labelledby="gpTitle">
+      <div class="gp-head">
+        <button class="gp-close" onclick="closeGoalsPanel()" aria-label="Close">✕</button>
+      </div>
+      ${ringHTML}
+      <div class="gp-title" id="gpTitle">${title}</div>
+      <div class="gp-sub">${sub}</div>
+      ${bodyHtml}
     </div>`;
 
-  const input=document.getElementById('dpDraftInput');
-  input.addEventListener('input',()=>{ dpDraft=input.value; });
-  input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); dpAddTask(); } });
-  if(isFirstRender) setTimeout(()=>input.focus(),400);
-}
+  const input=document.getElementById('gpDraftInput');
+  if(input){
+    input.addEventListener('input',()=>{ gpDraft=input.value; });
+    input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); gpAddTask(); } });
+    if(isFirstRender&&!locked) setTimeout(()=>input.focus(),350);
+  }
 
-function dpAddTask(){
-  const input=document.getElementById('dpDraftInput');
-  const text=(input?input.value:dpDraft).trim();
-  if(!text) return;
-  dpTasks.push({id:genTaskId(),text});
-  dpDraft='';
-  renderDailyPlanOverlay(false);
-  const newInput=document.getElementById('dpDraftInput');
-  if(newInput) newInput.focus();
-}
-function dpRemoveTask(id){
-  const row=document.querySelector(`.dp-task-row[data-id="${id}"]`);
-  if(row){
-    row.classList.add('removing');
-    setTimeout(()=>{ dpTasks=dpTasks.filter(t=>t.id!==id); renderDailyPlanOverlay(false); },180);
-  } else {
-    dpTasks=dpTasks.filter(t=>t.id!==id);
-    renderDailyPlanOverlay(false);
+  // The ring is a brand-new DOM node every render, so it never gets to
+  // transition from its old value on its own — snap it to fully-empty
+  // first, then release it to its real value a frame later so it always
+  // sweeps into place instead of just appearing pre-filled.
+  const ringFill=document.getElementById('gpRingFill');
+  if(ringFill){
+    const finalOffset=ringFill.getAttribute('data-final-offset');
+    const circ=ringFill.getAttribute('data-circ');
+    ringFill.style.strokeDashoffset=circ;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ ringFill.style.strokeDashoffset=finalOffset; }));
   }
 }
 
-function dpSubmit(){
-  if(dpTasks.length===0) return;
-  saveTodayResolution({items:dpTasks.map(t=>({id:t.id,text:t.text,done:false})),locked:true,createdAt:Date.now()});
-  const cta=document.getElementById('dpCta');
-  if(cta){ cta.classList.add('locked'); cta.textContent='Locked in'; }
-  setTimeout(closeDailyPlanOverlay,340);
+function gpAddTask(){
+  const input=document.getElementById('gpDraftInput');
+  const text=(input?input.value:gpDraft).trim();
+  if(!text) return;
+  let r=loadTodayResolution();
+  if(!r) r={items:[],locked:false,createdAt:Date.now()};
+  r.items.push({id:genTaskId(),text,done:false});
+  saveTodayResolution(r);
+  gpDraft='';
+  renderGoalsPanel(gpCurrentReason,false);
+  refreshGoalsChip();
+  const newInput=document.getElementById('gpDraftInput');
+  if(newInput) newInput.focus();
 }
-function dpSkip(){ closeDailyPlanOverlay(); } // no save — will ask again next time Focus is opened today
-function closeDailyPlanOverlay(){
-  const overlay=document.getElementById('dpOverlay');
+
+function gpRemoveTask(id){
+  const row=document.querySelector(`.gp-card [data-id="${id}"]`);
+  const doRemove=()=>{
+    let r=loadTodayResolution();
+    if(!r) return;
+    r.items=r.items.filter(it=>it.id!==id);
+    saveTodayResolution(r);
+    renderGoalsPanel(gpCurrentReason,false);
+    refreshGoalsChip();
+  };
+  if(row){ row.classList.add('removing'); setTimeout(doRemove,180); }
+  else doRemove();
+}
+
+// Ticking on plays one expanding ripple ring + a spring pop on the checkbox
+// + the strike-through drawing across the text (pure CSS, via the .done
+// class already added below) — no colour, no particles. Ticking off needs
+// no ceremony — it re-renders straight away.
+function gpToggleTick(id){
+  let r=loadTodayResolution();
+  if(!r) return;
+  const it=r.items.find(x=>x.id===id);
+  if(!it) return;
+  const turningOn=!it.done;
+  it.done=!it.done;
+  saveTodayResolution(r);
+  refreshGoalsChip();
+
+  if(!turningOn){ renderGoalsPanel(gpCurrentReason,false); return; }
+
+  const row=document.querySelector(`.gp-card [data-id="${id}"]`);
+  const check=row?row.querySelector('.gp-check'):null;
+  if(check){
+    check.classList.add('on','just-ticked');
+    const txt=row.querySelector('.gp-item-txt');
+    if(txt) txt.classList.add('done');
+    row.classList.add('done-row','just-ticked');
+    const ripple=document.createElement('span');
+    ripple.className='gp-tick-ripple';
+    check.appendChild(ripple);
+    requestAnimationFrame(()=>ripple.classList.add('go'));
+  }
+  setTimeout(()=>renderGoalsPanel(gpCurrentReason,false),300);
+}
+
+function gpToggleEditMode(){
+  gpEditMode=!gpEditMode;
+  renderGoalsPanel(gpCurrentReason,false);
+}
+
+// The one deliberate "you're set for today" moment — a spring-scale bounce
+// on the button plus one clean expanding ring pulsing out from its own
+// edge (pure CSS via .sealing, no JS particle loop, no colour), then the
+// same overlay cross-fades from planning into the tracking checklist
+// without closing and reopening.
+function gpLockIn(){
+  let r=loadTodayResolution();
+  if(!r||r.items.length===0) return;
+  const cta=document.getElementById('gpCta');
+  const label=document.getElementById('gpCtaLabel');
+  const check=document.getElementById('gpCtaCheck');
+  if(cta) cta.disabled=true;
+  if(cta) cta.classList.add('sealing');
+  if(label) label.textContent='Locked in';
+  if(check){ check.style.opacity='1'; check.style.transform='scale(1)'; }
+  r.locked=true;
+  r.lockedAt=Date.now();
+  saveTodayResolution(r);
+  refreshGoalsChip();
+  setTimeout(()=>{ renderGoalsPanel(gpCurrentReason,false); },380);
+}
+
+function closeGoalsPanel(){
+  const overlay=document.getElementById('gpOverlay');
   if(!overlay) return;
   overlay.classList.remove('show');
-  setTimeout(()=>overlay.remove(),320);
+  setTimeout(()=>overlay.remove(),240);
 }
 
 /* ─── DRIFT BANNER (re-entry check-in) ───
