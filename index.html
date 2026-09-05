@@ -8946,11 +8946,29 @@ function genTaskId(){ return 't'+Date.now().toString(36)+Math.random().toString(
 function yesterdayKey(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-1); return localDateKey(d); }
 
 function rollOverFromYesterday(){
-  const yKey='fent_resolution_'+yesterdayKey();
-  let y;
-  try{ y=JSON.parse(localStorage.getItem(yKey)||'null'); }catch{ y=null; }
-  if(!y||!Array.isArray(y.items)||y.rolledForward) return; // nothing to roll, or already processed
-  const carryTexts=y.items.filter(it=>it&&!it.done&&it.text).map(it=>it.text);
+  // Walk backward day by day (not just "yesterday") so an incomplete task
+  // still carries forward correctly even if the app wasn't opened for a
+  // few days in between — a gap with no resolution record just gets
+  // skipped over, it doesn't break the chain. Stops as soon as it hits a
+  // day that was already processed, since everything before that point
+  // was already carried forward when that day ran this same check.
+  const MAX_LOOKBACK=30; // safety cap — don't scan forever on a long-dormant tracker
+  const carryTexts=[];
+  const seen=new Set();
+  let cursor=new Date(); cursor.setHours(0,0,0,0);
+  for(let i=0;i<MAX_LOOKBACK;i++){
+    cursor.setDate(cursor.getDate()-1);
+    const key='fent_resolution_'+localDateKey(cursor);
+    let y;
+    try{ y=JSON.parse(localStorage.getItem(key)||'null'); }catch{ y=null; }
+    if(!y) continue; // that day was never opened — nothing recorded, keep scanning further back
+    if(y.rolledForward) break; // this day (and everything before it) was already carried forward
+    if(Array.isArray(y.items)){
+      y.items.forEach(it=>{ if(it&&!it.done&&it.text&&!seen.has(it.text)){ carryTexts.push(it.text); seen.add(it.text); } });
+    }
+    y.rolledForward=true;
+    try{ localStorage.setItem(key,JSON.stringify(y)); }catch{}
+  }
   if(carryTexts.length){
     let today=loadTodayResolution();
     if(!today) today={items:[],locked:false,createdAt:Date.now()};
@@ -8958,8 +8976,6 @@ function rollOverFromYesterday(){
     carryTexts.forEach(text=>{ if(!existing.has(text)){ today.items.push({id:genTaskId(),text,done:false}); existing.add(text); } });
     saveTodayResolution(today);
   }
-  y.rolledForward=true;
-  try{ localStorage.setItem(yKey,JSON.stringify(y)); }catch{}
 }
 
 function gpDismissedTodayKey(){ return 'fent_gp_dismissed_'+localDateKey(); }
