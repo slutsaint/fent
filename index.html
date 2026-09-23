@@ -6631,12 +6631,17 @@ function recoverFromInfiniteCrash(){
 
   if(snap.segStart&&snap.currentChap&&snap.currentTask){
     try{
-      const secs=Math.floor(uncommittedSecs);
+      // Chapter time is only the OPEN segment (segStart → last alive save).
+      // uncommittedSecs spans the whole run since the last pause, which
+      // over-credits the current chapter if the chapter was switched mid-run.
+      const secs=Math.min(Math.floor(uncommittedSecs),Math.max(0,Math.floor(((snap.savedAt||snap.segStart)-snap.segStart)/1000)));
+      if(secs>5){
       const log=getTodayLog();
       const idx=log.findIndex(e=>e.subj===snap.currentChap.subj&&e.chapN===snap.currentChap.n&&e.task===snap.currentTask);
       if(idx>=0) log[idx].durationSecs+=secs;
       else log.push({chapName:snap.currentChap.name,subj:snap.currentChap.subj,chapN:snap.currentChap.n,task:snap.currentTask,durationSecs:secs});
       saveTodayLog(log);
+      }
     }catch(e){}
   }
 
@@ -7515,6 +7520,51 @@ function testLogBackdropClick(){
   if(testLogOpen) testSetupCancel();
 }
 
+// Today's log rows — chapter/task entries + test entries. Global so both
+// renderFocus() and Infinite Mode's in-place refresh share one implementation.
+function buildFocusLogRowsHTML(){
+  const chapDotColors={math:'var(--m)',chem:'var(--c)',phys:'var(--p)'};
+  const todayLog=getTodayLog();
+  let logRowsHTML='';
+  if(todayLog.length>0){
+    logRowsHTML=todayLog.slice().reverse().slice(0,8).map(function(e,ei){
+      const dm=Math.floor(e.durationSecs/60);
+      const ds=e.durationSecs%60;
+      const durStr=dm>0?(dm+'m '+ds+'s'):(ds+'s');
+      const dotCol=chapDotColors[e.subj]||'var(--t3)';
+      return '<div class="focus-log-entry" style="animation-delay:'+(ei*30)+'ms">'
+        +'<div style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:'+dotCol+';"></div>'
+        +'<span class="focus-log-entry-chap">'+e.chapName+' \xb7 <span style="color:var(--t3);font-size:9px;">'+e.task+'</span></span>'
+        +'<span class="focus-log-entry-dur">'+durStr+'</span>'
+        +'</div>';
+    }).join('');
+  }
+  let testRowsHTML='';
+  const todayTests=getTodayTestLog();
+  if(todayTests.length>0){
+    testRowsHTML=todayTests.slice().reverse().map(function(t,ti){
+      const dm=Math.floor(t.durationSecs/60);
+      const ds=t.durationSecs%60;
+      const durStr=dm>0?(dm+'m '+ds+'s'):(ds+'s');
+      const scoreStr=t.normalizedTotal!=null?(t.normalizedTotal+'/'+t.targetTotal):'—';
+      const typeLbl=t.testType==='mains'?'Mains':'Advanced';
+      return '<div class="focus-log-entry" style="animation-delay:'+(ti*30)+'ms;border-color:rgba(196,100,100,0.1);">'
+        +'<div style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:var(--red);"></div>'
+        +'<span class="focus-log-entry-chap">'+t.testName+' \xb7 <span style="color:var(--red);opacity:.8;font-size:9px;">'+typeLbl+' \xb7 '+scoreStr+'</span></span>'
+        +'<span class="focus-log-entry-dur">'+durStr+'</span>'
+        +'</div>';
+    }).join('');
+  }
+  return testRowsHTML+logRowsHTML;
+}
+// Repaints only the log list — used by Infinite Mode after a segment is
+// committed (pause / break / chapter change), so the new entry shows up
+// immediately exactly like it does in Pomodoro, with no full re-render.
+function refreshFocusLogRows(){
+  const el=document.getElementById('focusLogRows');
+  if(el) el.innerHTML=buildFocusLogRowsHTML();
+}
+
 function renderFocus(){
   const el=document.getElementById('focusContent');
   if(!el) return;
@@ -7933,7 +7983,8 @@ function renderFocus(){
   // Current log display
   let selectorHTML='';
   if(logActive){
-    const elapsed=T.segStart?Math.floor((Date.now()-T.segStart)/1000):0;
+    const _segStartNow=infiniteMode?infiniteTimer.segStart:T.segStart;
+    const elapsed=_segStartNow?Math.floor((Date.now()-_segStartNow)/1000):0;
     const em=Math.floor(elapsed/60);
     const es=elapsed%60;
     selectorHTML=`<div class="focus-selector-wrap active-log">
@@ -8068,42 +8119,11 @@ function renderFocus(){
 
   const manualLogHTML=buildManualLogHTML();
 
-  // Today's log entries
-  // Today's log entries — computed outside template literal to avoid nested template parsing issues
-  let logRowsHTML='';
-  if(todayLog.length>0){
-    logRowsHTML=todayLog.slice().reverse().slice(0,8).map(function(e,ei){
-      const dm=Math.floor(e.durationSecs/60);
-      const ds=e.durationSecs%60;
-      const durStr=dm>0?(dm+'m '+ds+'s'):(ds+'s');
-      const dotCol=chapDotColors[e.subj]||'var(--t3)';
-      return '<div class="focus-log-entry" style="animation-delay:'+(ei*30)+'ms">'
-        +'<div style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:'+dotCol+';"></div>'
-        +'<span class="focus-log-entry-chap">'+e.chapName+' \xb7 <span style="color:var(--t3);font-size:9px;">'+e.task+'</span></span>'
-        +'<span class="focus-log-entry-dur">'+durStr+'</span>'
-        +'</div>';
-    }).join('');
-  }
-
-  // Today's tests — shown above the regular log rows in a distinct red tint
-  let testRowsHTML='';
-  const todayTests=getTodayTestLog();
-  if(todayTests.length>0){
-    testRowsHTML=todayTests.slice().reverse().map(function(t,ti){
-      const dm=Math.floor(t.durationSecs/60);
-      const ds=t.durationSecs%60;
-      const durStr=dm>0?(dm+'m '+ds+'s'):(ds+'s');
-      const scoreStr=t.normalizedTotal!=null?(t.normalizedTotal+'/'+t.targetTotal):'—';
-      const typeLbl=t.testType==='mains'?'Mains':'Advanced';
-      return '<div class="focus-log-entry" style="animation-delay:'+(ti*30)+'ms;border-color:rgba(196,100,100,0.1);">'
-        +'<div style="width:5px;height:5px;border-radius:50%;flex-shrink:0;background:var(--red);"></div>'
-        +'<span class="focus-log-entry-chap">'+t.testName+' \xb7 <span style="color:var(--red);opacity:.8;font-size:9px;">'+typeLbl+' \xb7 '+scoreStr+'</span></span>'
-        +'<span class="focus-log-entry-dur">'+durStr+'</span>'
-        +'</div>';
-    }).join('');
-  }
-
-  const todayLogHTML='<div class="focus-today-log">'+manualLogHTML+testRowsHTML+logRowsHTML+'</div>';
+  // Today's log rows (tests + chapter entries) — built by a global helper so
+  // Infinite Mode can refresh just this list in place on pause/break/finish
+  // without rebuilding the synth face (see refreshFocusLogRows).
+  const logRowsAll=buildFocusLogRowsHTML();
+  const todayLogHTML='<div class="focus-today-log">'+manualLogHTML+'<div id="focusLogRows">'+logRowsAll+'</div></div>';
 
   // Questions box — only during break (short or long), minimal and clean
   const isBreak=T.mode==='short'||T.mode==='long';
@@ -8589,6 +8609,7 @@ function patchInfiniteRunState(){
     resetBtn.style.opacity=enable?'':'0.3';
     resetBtn.style.cursor=enable?'':'not-allowed';
   }
+  refreshFocusLogRows(); // a pause/break just committed a segment — show it now
   if(IB.active) updateInfiniteBreakTick(); else updateInfiniteClockFast();
 }
 
@@ -8736,6 +8757,15 @@ function updateInfiniteClockFast(){
   const focusTimeEl=document.getElementById('focusStatFocusTime');
   if(focusTimeEl) focusTimeEl.textContent=liveFocusH>0?`${liveFocusH}h ${liveFocusM}m`:`${liveFocusM}m`;
 
+  // Live chapter/task timer in the "What are you working on?" bar — same
+  // element Focus mode ticks, driven by the infinite segment clock.
+  const segTimerEl=document.querySelector('.focus-active-timer');
+  if(segTimerEl){
+    const segSecs=infiniteTimer.segStart?Math.floor((Date.now()-infiniteTimer.segStart)/1000):0;
+    const segStr=String(Math.floor(segSecs/60)).padStart(2,'0')+':'+String(segSecs%60).padStart(2,'0');
+    if(segTimerEl.textContent!==segStr) segTimerEl.textContent=segStr;
+  }
+
   // Focus tab badge — same instant-sync rule the Pomodoro path already follows
   const fbadge=document.getElementById('bFocus');
   if(fbadge) fbadge.textContent=liveSessions>0?fmtSess(liveSessions)+'✓':'—';
@@ -8863,6 +8893,10 @@ function infiniteFreezeForExit(){
   const T=infiniteTimer;
   const wasRunning=T.running;
   if(wasRunning){
+    // Bank the chapter/task segment NOW (same as a normal pause). Previously
+    // it was dropped here, so ending via the exit interview lost all chapter
+    // time since the last pause — only the raw session credit survived.
+    commitInfiniteSegment();
     T.elapsedSecs+=Math.floor((Date.now()-T.startedAt)/1000);
     T.startedAt=null;
     T.running=false;
@@ -9876,6 +9910,7 @@ document.addEventListener('visibilitychange',()=>{
       updateFocusClockFast(); // just refresh display
     }
   }
+  if(infiniteMode&&infiniteTimer.running) updateInfiniteClockFast(); // repaint stopwatch + chapter timer on return
   // Same catch-up for Infinite Mode's break countdown — it uses the same
   // absolute-endAt pattern, so a throttled/suspended background tab can
   // never leave it silently running past its 15 minutes.
@@ -9887,6 +9922,7 @@ document.addEventListener('visibilitychange',()=>{
 
 // Also handle bfcache restore (Safari/mobile — page unfreezes without visibilitychange)
 window.addEventListener('pageshow',(e)=>{
+  if(infiniteMode&&infiniteTimer.running){ infiniteStartInterval(); updateInfiniteClockFast(); } // bfcache kills the interval
   if(focusTimer.running){
     if(focusTimer.endAt&&Date.now()>=focusTimer.endAt){
       focusOnModeEnd();
