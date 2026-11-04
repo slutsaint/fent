@@ -2323,7 +2323,7 @@ function go(tab,btn){
 
   if(tab==='overview'){pulseOffset=0;ovwWeekOffset=0;renderPulse();renderOverviewSummary();}
   if(tab==='focus'){renderFocus(); startDoneByTick(); checkDailyResolution();}
-  if(tab==='ana'){stopDoneByTick(); renderAnalytics(); renderDeckAndLog();}
+  if(tab==='ana'){stopDoneByTick(); anaHmMonth=null; anaHmYear=null; anaHmSelectedDay=null; renderAnalytics(); renderDeckAndLog();} // opening Analytics always lands on the current month
   if(tab!=='focus') stopDoneByTick();
 }
 
@@ -3672,6 +3672,8 @@ ${chartTestsAdv.length>0?buildScoreChart(chartTestsAdv,'Advanced Score Trend'):`
   html+=buildChapterTimeBreakdown();
 
   el.innerHTML=html;
+  // Study Heatmap now grows over time — keep the newest weeks in view when it overflows.
+  el.querySelectorAll('.heatmap-scroll-wrap').forEach(w=>{ w.scrollLeft=w.scrollWidth; });
 
   /* Animate bars + ring legend fills after paint */
   requestAnimationFrame(()=>{
@@ -3921,7 +3923,14 @@ function buildHeatmap(weeks,today){
   });
 
   // Date range: derived from actual chapter dates
-  const {start: startDate, end: endDate} = getTrackerRange();
+  // Start = first chapter start. End = whichever is later: the schedule's last
+  // chapter end OR the end of the current calendar month — so the heatmap keeps
+  // growing one month at a time forever instead of stopping at the old deadline.
+  const {start: startDate, end: trkEnd} = getTrackerRange();
+  const curMonthEnd = new Date(today.getFullYear(), today.getMonth()+1, 0); curMonthEnd.setHours(0,0,0,0);
+  const endDate = new Date(Math.max(trkEnd.getTime(), curMonthEnd.getTime()));
+  const multiYear = startDate.getFullYear() !== endDate.getFullYear();
+  const yy = d => "'" + String(d.getFullYear()).slice(2);
 
   // Build weeks grid starting from Sunday before startDate
   const gridStart=new Date(startDate);
@@ -3938,7 +3947,7 @@ function buildHeatmap(weeks,today){
     const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const dayData=dayMap[key]||{done:0,chaps:{}};
     const chapters=Object.values(dayData.chaps);
-    allDays.push({d,inRange,isPast,isToday,key,done:dayData.done,chapters,month:d.getMonth()});
+    allDays.push({d,inRange,isPast,isToday,key,done:dayData.done,chapters,month:d.getMonth(),mkey:d.getFullYear()*12+d.getMonth()});
     ptr.setDate(ptr.getDate()+1);
   }
 
@@ -3953,7 +3962,7 @@ function buildHeatmap(weeks,today){
   const monthsInRange=[];
   const seenM=new Set();
   allDays.filter(d=>d.inRange).forEach(d=>{
-    if(!seenM.has(d.month)){seenM.add(d.month);monthsInRange.push({m:d.month,label:MONTHS[d.month]});}
+    if(!seenM.has(d.mkey)){seenM.add(d.mkey);monthsInRange.push({m:d.mkey,label:MONTHS[d.month]+(multiYear?' '+yy(d.d):'')});}
   });
 
   const CELL=13, GAP=3;
@@ -3978,9 +3987,9 @@ function buildHeatmap(weeks,today){
   let monthPos=[];
   let lastMon=-1;
   cols.forEach((col,ci)=>{
-    const mon=col[0]?.month;
+    const mon=col[0]?.mkey;
     if(mon!==undefined && mon!==lastMon && col.some(d=>d.inRange)){
-      if(monthsInRange.find(m=>m.m===mon)) monthPos.push({ci,label:MONTHS[mon],m:mon});
+      if(monthsInRange.find(m=>m.m===mon)) monthPos.push({ci,label:MONTHS[col[0].month]+(multiYear&&col[0].month===0?' '+yy(col[0].d):''),m:mon});
       lastMon=mon;
     }
   });
@@ -4014,10 +4023,10 @@ function buildHeatmap(weeks,today){
           <div style="display:flex;flex-direction:column;gap:${GAP}px;">
             ${col.map((day,ri)=>{
               const tip=day.inRange?
-                (MONTHS[day.month]+' '+day.d.getDate()+': '+(day.done>0?(day.done+' task'+(day.done!==1?'s':'')+' done'+(day.chapters.length?' — '+day.chapters.map(c=>c.name).join(', '):'')):'nothing recorded'))
+                (MONTHS[day.month]+' '+day.d.getDate()+(multiYear?' '+day.d.getFullYear():'')+': '+(day.done>0?(day.done+' task'+(day.done!==1?'s':'')+' done'+(day.chapters.length?' — '+day.chapters.map(c=>c.name).join(', '):'')):'nothing recorded'))
                 :'';
               const border=day.isToday?'1px solid rgba(255,255,255,0.5)':'1px solid transparent';
-              return `<div class="hm-cell" data-month="${day.month}" data-inrange="${day.inRange?1:0}"
+              return `<div class="hm-cell" data-month="${day.mkey}" data-inrange="${day.inRange?1:0}"
                 style="width:${CELL}px;height:${CELL}px;background:${cellColor(day)};border:${border};border-radius:3px;cursor:${day.inRange&&day.done>0?'pointer':'default'};"
                 title="${tip}"
                 onclick="hmDayClick(this,'${day.key}',${JSON.stringify(day.chapters).replace(/"/g,'&quot;')})"></div>`;
@@ -4037,7 +4046,7 @@ function buildHeatmap(weeks,today){
       <span style="font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;font-weight:300;margin-right:2px;">Less</span>
       ${['rgba(255,255,255,0.04)','rgba(194,163,89,0.3)','rgba(194,163,89,0.55)','rgba(107,158,131,0.75)','rgba(107,158,131,0.95)'].map(c=>`<div style="width:${CELL}px;height:${CELL}px;background:${c};border-radius:3px;flex-shrink:0;"></div>`).join('')}
       <span style="font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;font-weight:300;margin-left:2px;">More</span>
-      <span style="margin-left:auto;font-size:9px;color:var(--t3);opacity:.4;font-family:'JetBrains Mono',monospace;">${MONTHS[startDate.getMonth()]} – ${MONTHS[endDate.getMonth()]} ${endDate.getFullYear()}</span>
+      <span style="margin-left:auto;font-size:9px;color:var(--t3);opacity:.4;font-family:'JetBrains Mono',monospace;">${multiYear?MONTHS[startDate.getMonth()]+' '+startDate.getFullYear():MONTHS[startDate.getMonth()]} – ${MONTHS[endDate.getMonth()]} ${endDate.getFullYear()}</span>
     </div>
   </div>
 </div>`;
@@ -5017,6 +5026,7 @@ function scHideTip(uid){
 /* ─── Focus & Activity Analytics Sections ─── */
 // State for month heatmap navigation
 let anaHmMonth = null; // null = current month
+let anaHmYear  = null; // null = current year (month heatmap has no start/end limit)
 
 /* ─── Reusable donut/pie chart (thick ring, per-segment sweep-in reveal) ───
    items: [{key,label,hex,rgb,value,valueLabel}] — value drives proportion,
@@ -5191,8 +5201,10 @@ function buildFocusActivitySections(today){
   // ── Month Heatmap ──
   // Which month to show
   if(anaHmMonth===null) anaHmMonth=today.getMonth(); // default = current month
-  const hmYear=2026;
+  if(anaHmYear===null)  anaHmYear=today.getFullYear(); // default = current year
+  const hmYear=anaHmYear;
   const hmMonth=anaHmMonth;
+  const hmIsCurrent=(hmMonth===today.getMonth()&&hmYear===today.getFullYear());
   const {start:trackerStart,end:trackerEnd}=getTrackerRange();
 
   // First/last day of month
@@ -5452,14 +5464,16 @@ function buildFocusActivitySections(today){
   }).join('');
 
   // Month nav
-  const canPrev=hmMonth>trackerStart.getMonth()||(hmYear>trackerStart.getFullYear());
-  const canNext=hmMonth<trackerEnd.getMonth()||(hmYear<trackerEnd.getFullYear());
+  // Month heatmap is unbounded — browse any month of any year, forever.
+  const canPrev=true;
+  const canNext=true;
   const hmHTML=`<div class="ana-section" style="padding:14px 16px;">
   <div class="month-hm-wrap">
     <div class="month-hm-nav">
       <button class="month-hm-btn" onclick="anaHmNav(-1)" ${!canPrev?'disabled style="opacity:.3;cursor:default"':''}>‹</button>
       <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
         <span class="month-hm-title">${MONTHS[hmMonth]} ${hmYear}</span>
+        ${!hmIsCurrent?`<span onclick="anaHmToday()" style="font-size:8px;font-family:'JetBrains Mono',monospace;color:var(--t3);cursor:pointer;letter-spacing:.06em;text-transform:uppercase;">↺ today</span>`:''}
       </div>
       <button class="month-hm-btn" onclick="anaHmNav(1)" ${!canNext?'disabled style="opacity:.3;cursor:default"':''}>›</button>
     </div>
@@ -6103,13 +6117,17 @@ function buildChapterTimeBreakdown(){
 // Month heatmap navigation
 let anaHmSelectedDay=null;
 function anaHmNav(dir){
-  const {start:ts,end:te}=getTrackerRange();
-  const cur=anaHmMonth!==null?anaHmMonth:new Date().getMonth();
-  let next=cur+dir;
-  const minM=ts.getMonth(),maxM=te.getMonth();
-  next=Math.max(minM,Math.min(maxM,next));
-  anaHmMonth=next;
+  const now=new Date();
+  const curM=anaHmMonth!==null?anaHmMonth:now.getMonth();
+  const curY=anaHmYear!==null?anaHmYear:now.getFullYear();
+  const t=new Date(curY,curM+dir,1); // Date handles Dec→Jan / Jan→Dec year rollover
+  anaHmMonth=t.getMonth();
+  anaHmYear=t.getFullYear();
   anaHmSelectedDay=null;
+  if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
+}
+function anaHmToday(){
+  anaHmMonth=null; anaHmYear=null; anaHmSelectedDay=null;
   if(document.getElementById('p-ana').classList.contains('on')){renderAnalytics();renderDeckAndLog();}
 }
 function anaHmClick(dateKey){
