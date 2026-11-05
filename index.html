@@ -73,7 +73,7 @@ nav button.on{color:var(--acc);border-color:var(--acc2);font-weight:700}
 /* ---- chapter menu (right-click / long-press in Syllabus): small title-bar window, wipes open in steps ---- */
 #ctx{position:fixed;left:0;top:0;z-index:70;width:188px;max-width:calc(100vw - 8px);background:var(--win);border:1px solid var(--hi);border-left:4px solid var(--acc2);box-shadow:3px 3px 0 #000;font-size:13px;color:var(--ink);visibility:hidden;-webkit-user-select:none;user-select:none}
 #ctx.on{visibility:visible}
-#ctx.on{animation:cunroll .1s steps(4)}
+#ctx.on{animation:cunroll .08s steps(6)}
 @keyframes cunroll{from{clip-path:inset(0 -4px 100% -4px)}to{clip-path:inset(0 -4px -4px -4px)}}
 #ctx .ct{display:flex;align-items:center;gap:6px;padding:2px 3px 2px 7px;background:#111;border-bottom:1px solid var(--hi);font:700 11px Verdana,Tahoma,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#d0d0d0}
 #ctx .ct i{width:5px;height:5px;flex:none;background:var(--acc)}
