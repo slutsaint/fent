@@ -70,6 +70,34 @@ nav button.on{color:var(--acc);border-color:var(--acc2);font-weight:700}
 @keyframes mq{to{transform:translateX(-100%)}}
 #sb{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-between;gap:12px;padding:3px 10px calc(3px + env(safe-area-inset-bottom));
   background:#111;border-top:1px solid var(--hi);font-size:12px;color:var(--ink);z-index:9}
+/* ---- chapter menu (right-click / long-press in Syllabus): small title-bar window, wipes open in steps ---- */
+#ctx{position:fixed;left:0;top:0;z-index:70;width:188px;max-width:calc(100vw - 8px);background:var(--win);border:1px solid var(--hi);border-left:4px solid var(--acc2);box-shadow:3px 3px 0 #000;font-size:13px;color:var(--ink);visibility:hidden;-webkit-user-select:none;user-select:none}
+#ctx.on{visibility:visible}
+#ctx.on{animation:cunroll .1s steps(4)}
+@keyframes cunroll{from{clip-path:inset(0 -4px 100% -4px)}to{clip-path:inset(0 -4px -4px -4px)}}
+#ctx .ct{display:flex;align-items:center;gap:6px;padding:2px 3px 2px 7px;background:#111;border-bottom:1px solid var(--hi);font:700 11px Verdana,Tahoma,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#d0d0d0}
+#ctx .ct i{width:5px;height:5px;flex:none;background:var(--acc)}
+#ctx .ct b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ctx .ct button{flex:none;width:17px;height:15px;padding:0;font:11px/1 'Courier New',monospace;color:var(--dim);background:var(--lo);border:1px solid var(--hi);cursor:pointer}
+#ctx .ct button:hover{color:#fff;background:var(--acc2);border-color:var(--acc2)}
+#ctx .ci{display:flex;align-items:center;gap:6px;width:100%;text-align:left;padding:5px 8px;background:none;border:0;color:var(--ink);font:inherit;cursor:pointer}
+#ctx .ci::before{content:'>';width:8px;flex:none;font:700 12px 'Courier New',monospace;color:var(--acc2)}
+#ctx .ci em{margin-left:auto;font-style:normal;font-size:10px;color:var(--dim)}
+#ctx .ci:hover,#ctx .ci:focus{background:var(--acc2);color:#fff;outline:none}
+#ctx .ci:hover::before,#ctx .ci:focus::before{color:#fff}
+#ctx .ci:hover em,#ctx .ci:focus em{color:#fff}
+#ctx .tk{display:flex;align-items:center;gap:8px;padding:3px 8px;cursor:pointer;border-bottom:1px dotted var(--rule)}
+#ctx .tk:hover{background:var(--lo)}
+#ctx .tk:has(input:checked){color:#fff;background:#181b24}
+#ctx .tk small{margin-left:auto;font:11px 'Courier New',monospace}
+#ctx .tk.off{color:var(--dim);cursor:default}#ctx .tk.off:hover{background:none}
+#ctx .tk.off input{border-color:var(--hi);cursor:default}
+#ctx .tk.off small{color:var(--acc2)}
+#ctx .ca{display:flex;gap:6px;padding:6px 8px 7px}
+#ctx .ca .b{min-width:0;flex:1;padding:2px 6px}
+#ctx .msg{min-height:0;margin:0;padding:0 8px 7px}#ctx .msg:empty{display:none}
+#lst .row.ctxon{outline:1px dotted var(--acc);outline-offset:-1px}
+#lst .row{-webkit-touch-callout:none}
 #sb span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#sbr{color:var(--acc);flex:none;font-family:'Courier New',monospace}
 .ldb{display:inline-block;width:60px;height:9px;border:1px solid var(--acc2);margin-left:8px;vertical-align:middle;
   background:repeating-linear-gradient(90deg,var(--acc2) 0 5px,transparent 5px 7px);clip-path:inset(0 100% 0 0);animation:ld .4s steps(8) forwards}
@@ -528,8 +556,8 @@ function prioHdr(){SUBJ.forEach(([s])=>{const st=sstat(s),h=$('#sh-'+s),tb=$('#s
 let V='home',wk=0,hmY=0,hmM=0,hmSel=null;const AF={f:'all',s:'phys',q:''};
 const VIEWS=[['home','Home'],['syl','Syllabus'],['focus','Focus'],['stats','Stats'],['set','Settings']];
 const mount=h=>{$('#main').innerHTML=((V==='home'||V==='focus')?drift():'')+h};
-function nav(v){if(v===V&&v!=='home')return;if(T.seg){seg();snap()}V=v;if(v==='home')wk=0;const sl=$('#sbl');sl.innerHTML='Opening page...<span class="ldb"></span>';clearTimeout(toast.h);toast.h=setTimeout(()=>{sl.textContent='Done'},450);if(v==='stats'){const n=new Date();hmY=n.getFullYear();hmM=n.getMonth();hmSel=null}render()}
-function render(){$('#nav').innerHTML=VIEWS.map(([k,l])=>`<button class="l ${V===k?'on':''}" onclick="nav('${k}')">${l}</button>`).join('');
+function nav(v){ctxClose();if(v===V&&v!=='home')return;if(T.seg){seg();snap()}V=v;if(v==='home')wk=0;const sl=$('#sbl');sl.innerHTML='Opening page...<span class="ldb"></span>';clearTimeout(toast.h);toast.h=setTimeout(()=>{sl.textContent='Done'},450);if(v==='stats'){const n=new Date();hmY=n.getFullYear();hmM=n.getMonth();hmSel=null}render()}
+function render(){rollPlan();$('#nav').innerHTML=VIEWS.map(([k,l])=>`<button class="l ${V===k?'on':''}" onclick="nav('${k}')">${l}</button>`).join('');
   ({home:renderHome,syl:renderSyl,focus:renderFocus,stats:renderStats,set:renderSet})[V]();lastTxt='';paint();ticker()}
 function ticker(){const d=Math.max(0,Math.ceil((JEE-new Date())/864e5));$('#mq').textContent='welcome to fent  ***  '+d+' days until JEE  ***  today '+Math.round(F('fent_sessions_'+dk())*10)/10+' of '+FS.dailyTarget+' sessions  ***  syllabus '+overall()+'% ticked  ***  keep going  ***';statusR()}
 function counter(){const d=Math.max(0,Math.ceil((JEE-new Date())/864e5)),s=String(d).padStart(3,'0');$('#days').innerHTML=s.split('').map(c=>`<i>${c}</i>`).join('')}
@@ -562,8 +590,14 @@ const isKey=k=>typeof k==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(k);
 const dshort=k=>{const[y,m,d]=k.split('-').map(Number);return d+' '+MONTHS[m-1]+(y!==new Date().getFullYear()?' '+y:'')};
 function dueKey(s,n){let m='';PL.forEach(x=>{if(x.s===s&&x.n===n&&x.d>m)m=x.d});return m}
 function doneKey(s,n){let m='';MAIN.forEach(k=>{const v=ST['ts_'+s+'_'+n+'_'+k];if(isKey(v)&&v>m)m=v});return m}
-function dueHTML(s,n){if(mainDone(s,n)){const k=doneKey(s,n);return '<span class="dd">done'+(k?' '+dshort(k):'')+'</span> · '}
-  const k=dueKey(s,n);return k?'<span class="'+(k<dk()?'late':'')+'">due '+dshort(k)+'</span> · ':''}
+/* side date in the Syllabus list = the LATEST touched task of the chapter: a done task counts on the day it was ticked, a planned-but-not-done task counts on its plan date ("due"). Oldest dates never override a newer one; on a same-day tie a pending task wins, otherwise the later task in the list. */
+function dueHTML(s,n){const t=gs(s,n);let best=null;
+  TASKS.forEach(([k,l])=>{let d='',st='';
+    if(t[k]){const v=ST['ts_'+s+'_'+n+'_'+k];if(isKey(v)){d=v;st='done'}}
+    else PL.forEach(x=>{if(x.s===s&&x.n===n&&x.k===k&&x.d>d){d=x.d;st='due'}});
+    if(d&&(!best||d>best.d||(d===best.d&&!(st==='done'&&best.st==='due'))))best={d,st,l}});
+  if(!best)return mainDone(s,n)?'<span class="dd">done</span> · ':'';
+  return best.st==='done'?'<span class="dd">'+best.l+' done '+dshort(best.d)+'</span> · ':'<span class="'+(best.d<dk()?'late':'')+'">'+best.l+' due '+dshort(best.d)+'</span> · '}
 const od=t=>{const d=pd(t);return d.getDate()+' '+MONTHS[d.getMonth()]};
 function histItems(){const keys=weekDays().map(dk),out=[];allChaps().forEach(c=>{const e=pd(c.e);if(isNaN(e))return;const k=dk(e);if(keys.includes(k))out.push({c,k})});return out}
 function oldTag(c){const on=mainDone(c.s,c.n),k=on?doneKey(c.s,c.n):'';
@@ -580,10 +614,58 @@ function planHTML(){const days=weekDays(),td=dk(),ti=days.findIndex(d=>dk(d)===t
   <div class="wr"><div class="wat" id="pa-tk">${tks}</div><button class="b go" onclick="planAdd()">Add</button></div><div class="msg" id="pa-msg"></div></div>
   <section class="pw"><div class="pwt"><span>Week plan</span><span id="pl-prog"></span></div><div class="bar"><b id="pl-bar" style="width:0"></b></div>
   <div class="wg" id="pl" onpointerdown="planDown(event)" onkeydown="planKey(event)" oncontextmenu="if(PLD)return false"></div>
-  <small class="dim">Drag a row to another day (phone: use the dots) · arrow keys move a selected row · tick or untick any time · rows without dots are the old schedule</small></section>`}
+  <small class="dim">Drag a row to another day (phone: use the dots) · arrow keys move a selected row · tick or untick any time · rows without dots are the old schedule · tasks left undone carry over to Monday</small></section>`}
 function planToggle(){PLO=!PLO;const w=$('#wadd'),b=$('#pa-btn');if(w)w.classList.toggle('open',PLO);if(b)b.textContent=PLO?'- Close':'+ Add to plan'}
 function cardHTML(x){const c=chapOf(x.s,x.n),on=!!gs(x.s,x.n)[x.k],sn=SUBJ.find(t=>t[0]===x.s)[1];
-  return `<div class="wc${on?' d':''}${PLN.includes(x.id)?' in':''}${PLM===x.id?' mv':''}" data-id="${x.id}" tabindex="0" role="group" aria-label="${esc(c.name)}, ${tlab(x.k)}" title="${esc(c.name)} (${esc(sn)})" style="--c:${SCOL[x.s]};--t:${TCOL[x.k]}"><span class="wcg" title="drag to another day"></span><label class="wck" title="tick / untick"><input type="checkbox" ${on?'checked':''} aria-label="done" onchange="planTick('${x.id}',this.checked)"></label><span class="wcn">${esc(c.name)}</span><span class="wct"><i></i><b>${esc(sn)}</b> · ${tlab(x.k)}</span><button class="wcx" title="remove from plan" aria-label="remove ${esc(c.name)} from plan" onclick="planDel('${x.id}')">&times;</button></div>`}
+  return `<div class="wc${on?' d':''}${PLN.includes(x.id)?' in':''}${PLM===x.id?' mv':''}" data-id="${x.id}" tabindex="0" role="group" aria-label="${esc(c.name)}, ${tlab(x.k)}" title="${esc(c.name)} (${esc(sn)})" style="--c:${SCOL[x.s]};--t:${TCOL[x.k]}"><span class="wcg" title="drag to another day"></span><label class="wck" title="tick / untick"><input type="checkbox" ${on?'checked':''} aria-label="done" onchange="planTick('${x.id}',this.checked)"></label><span class="wcn">${esc(c.name)}</span><span class="wct"><i></i><b>${esc(sn)}</b> · ${tlab(x.k)}${isKey(x.cf)?' · <span class="late">from '+dshort(x.cf)+'</span>':''}</span><button class="wcx" title="remove from plan" aria-label="remove ${esc(c.name)} from plan" onclick="planDel('${x.id}')">&times;</button></div>`}
+/* a new week starts: every planned task from an earlier week that is still NOT done moves to this week's Monday (x.cf remembers the day it was first planned for). A copy of a task that is already planned this week is simply dropped. Done tasks stay where they were. */
+function curWeek(){const t=new Date();t.setHours(0,0,0,0);t.setDate(t.getDate()-((t.getDay()+6)%7));return Array.from({length:7},(_,i)=>{const d=new Date(t);d.setDate(t.getDate()+i);return d})}
+function rollPlan(){const mon=dk(curWeek()[0]),seen=new Set(PL.filter(x=>x.d>=mon).map(x=>x.s+':'+x.n+':'+x.k));let ch=false;
+  for(let i=PL.length-1;i>=0;i--){const x=PL[i];if(x.d>=mon||!chapOf(x.s,x.n)||gs(x.s,x.n)[x.k])continue;
+    const id=x.s+':'+x.n+':'+x.k;if(seen.has(id)){PL.splice(i,1);ch=true;continue}
+    seen.add(id);if(!isKey(x.cf))x.cf=x.d;x.d=mon;ch=true}
+  if(ch)savePL()}
+/* right-click (phone: press and hold) a chapter in the Syllabus -> small menu -> "Add to schedule" -> tick tasks, pick a day (today is preselected) -> it lands on that day of the CURRENT week in the Week plan */
+let CX=null,LP=0;
+function ctxClr(){document.querySelectorAll('#lst .row.ctxon').forEach(r=>r.classList.remove('ctxon'))}
+/* close: instant; CX is cleared at once so a new menu can open straight away */
+function ctxClose(){const e=$('#ctx');ctxClr();CX=null;if(!e)return;e.remove()}
+/* place next to the pointer; flips left/up when there is no room; `keep` = pane swap, only nudge back on screen (no jump) */
+function ctxPlace(e,keep){const w=e.offsetWidth,h=e.offsetHeight,maxX=innerWidth-w-4,maxY=innerHeight-h-36;let x,y;
+  if(keep){x=parseFloat(e.style.left)||4;y=parseFloat(e.style.top)||4}
+  else{x=CX.x+2;y=CX.y+2;if(x>maxX)x=CX.x-w-2;if(y>maxY)y=CX.y-h-2}
+  e.style.left=Math.max(4,Math.min(x,maxX))+'px';e.style.top=Math.max(4,Math.min(y,maxY))+'px'}
+function ctxOpen(s,n,x,y){const c=chapOf(s,n);if(!c)return;
+  x=Number.isFinite(x)?x:innerWidth/2;y=Number.isFinite(y)?y:innerHeight/2;
+  if(CX&&CX.s===s&&CX.n===n&&Date.now()-CX.t<900)return;   /* phones fire contextmenu AND our long-press: ignore the twin */
+  const old=$('#ctx');if(old)old.remove();document.querySelectorAll('#ctxo').forEach(q=>q.remove());ctxClr();
+  CX={s,n,x,y,t:Date.now(),di:-1};const row=document.getElementById('r-'+s+'-'+n);if(row)row.classList.add('ctxon');
+  const e=document.createElement('div');e.id='ctx';e.setAttribute('role','menu');e.setAttribute('aria-label','chapter menu');
+  e.innerHTML=`<div class="ct"><i></i><b title="${esc(c.name)}">${esc(c.name)}</b><button type="button" aria-label="close" onclick="ctxClose()">x</button></div><div class="cb"><button class="ci" role="menuitem" onclick="ctxTasks()"><span>Add to schedule</span><em>&#9656;</em></button></div>`;
+  e.addEventListener('keydown',ctxKey);
+  document.body.appendChild(e);ctxPlace(e);e.classList.add('on');e.querySelector('.ci').focus({preventScroll:true})}
+function ctxPane(html){const e=$('#ctx');if(!e)return;const o=e.querySelector('.cb'),b=document.createElement('div');b.className='cb';b.innerHTML=html;o.replaceWith(b);e.setAttribute('role','dialog');ctxPlace(e,true)}
+function ctxTasks(){const e=$('#ctx');if(!e||!CX||Date.now()-CX.t<200)return;const{s,n}=CX,days=curWeek(),keys=days.map(dk),td=dk(),g=gs(s,n);
+  const rows=TASKS.map(([k,l])=>{const pl=PL.find(x=>x.s===s&&x.n===n&&x.k===k&&keys.includes(x.d)),off=g[k]||pl;
+    return `<label class="tk${off?' off':''}"><input type="checkbox" value="${k}" ${off?'disabled':''} onchange="ctxCount()"> ${l}<small>${g[k]?'done':pl?'plan '+DAYN[new Date(pl.d+'T00:00:00').getDay()]:''}</small></label>`}).join('');
+  const free=TASKS.some(([k])=>!g[k]&&!PL.find(x=>x.s===s&&x.n===n&&x.k===k&&keys.includes(x.d)));
+  ctxPane(rows+`<div class="ca"><button class="b go" id="cx-go" onclick="ctxAdd()" disabled>Add</button><button class="b" onclick="ctxClose()">Cancel</button></div><div class="msg bad" id="cx-msg">${free?'':'All done or planned.'}</div>`);
+  const f=e.querySelector('input:not(:disabled)');(f||e.querySelector('.go')).focus({preventScroll:true})}
+function ctxCount(){const e=$('#ctx');if(!e)return;const n=e.querySelectorAll('input:checked').length,b=$('#cx-go');if(b){b.disabled=!n;b.textContent=n?'Add '+n:'Add'}const m=$('#cx-msg');if(m&&n)m.textContent=''}
+function ctxKey(ev){if(ev.key==='Enter'&&ev.target.type==='checkbox'){ev.preventDefault();ctxAdd()}}
+function ctxAdd(){const e=$('#ctx');if(!e||!CX)return;const{s,n}=CX,days=curWeek(),day=days.find(d=>dk(d)===dk()),ks=[...e.querySelectorAll('input:checked')].map(i=>i.value);
+  if(!ks.length){const m=$('#cx-msg');if(m)m.textContent='Tick at least one task.';return}
+  if(!chapOf(s,n)||!day){ctxClose();return}
+  const keys=days.map(dk),ids=[];ks.forEach(k=>{if(!PL.some(x=>x.s===s&&x.n===n&&x.k===k&&keys.includes(x.d))){const it={id:newId(),s,n,k,d:dk(day)};PL.push(it);ids.push(it.id)}});
+  if(ids.length){savePL();PLN=ids}
+  const row=document.getElementById('r-'+s+'-'+n),dx=row&&row.querySelector('.dtx');if(dx)dx.innerHTML=dueHTML(s,n);
+  ctxClose();const sl=$('#sbl');if(sl){sl.textContent='Added '+ids.length+' task'+(ids.length===1?'':'s')+' to '+FULLD[day.getDay()]+'.';clearTimeout(toast.h);toast.h=setTimeout(()=>{sl.textContent='Done'},2200)}}
+document.addEventListener('contextmenu',e=>{const r=e.target.closest&&e.target.closest('#lst .row[id^="r-"]');if(!r)return;const a=r.id.split('-');e.preventDefault();ctxOpen(a[1],+a[2],e.clientX,e.clientY)});
+document.addEventListener('mousedown',e=>{if(CX&&Date.now()-CX.t>400&&!e.target.closest('#ctx'))ctxClose()},true);
+document.addEventListener('keydown',e=>{if(CX&&e.key==='Escape'){e.preventDefault();ctxClose()}});
+addEventListener('scroll',e=>{if(CX&&Date.now()-CX.t>400&&!(e.target.closest&&e.target.closest('#ctx')))ctxClose()},true);addEventListener('resize',ctxClose);
+document.addEventListener('touchstart',e=>{clearTimeout(LP);const r=e.target.closest&&e.target.closest('#lst .row[id^="r-"]');if(!r||e.target.closest('label,input,button'))return;const t=e.touches[0],a=r.id.split('-');LP=setTimeout(()=>ctxOpen(a[1],+a[2],t.clientX,t.clientY),600)},{passive:true});
+['touchend','touchmove','touchcancel'].forEach(v=>document.addEventListener(v,()=>clearTimeout(LP),{passive:true}));
 function planItems(){const keys=weekDays().map(dk);return PL.filter(x=>keys.includes(x.d)&&chapOf(x.s,x.n))}
 function planRender(ent){const box=$('#pl');if(!box)return;const days=weekDays(),td=dk(),items=planItems(),hist=histItems();
   box.innerHTML=days.map((d,i)=>{const k=dk(d);return `<div class="wd${k===td?' td':''}${ent?' ent':''}" data-d="${k}" style="--i:${i}"><div class="wdh"><b>${DAYN[d.getDay()]}</b><span>${d.getDate()} ${MONTHS[d.getMonth()]}</span><em></em></div><div class="wdb">${hist.filter(h=>h.k===k).map(h=>oldHTML(h.c)).join('')}${items.filter(x=>x.d===k).map(cardHTML).join('')}</div></div>`}).join('');
@@ -605,7 +687,7 @@ function planTick(id,on){const x=PL.find(y=>y.id===id);if(!x)return;tick(x.s,x.n
   const row=document.getElementById('r-'+x.s+'-'+x.n);if(row){const i=row.querySelectorAll('.tk input')[TASKS.findIndex(t=>t[0]===x.k)];if(i)i.checked=on}}
 function planDel(id){const el=document.querySelector(`.wc[data-id="${id}"]`),go=()=>{const i=PL.findIndex(x=>x.id===id);if(i>=0){PL.splice(i,1);savePL()}planRender()};
   if(!el)return go();if(!el.classList.contains('out')){el.classList.add('out');setTimeout(go,210)}}
-function planMove(id,d,beforeId){const i=PL.findIndex(x=>x.id===id);if(i<0)return;const it=PL.splice(i,1)[0];it.d=d;
+function planMove(id,d,beforeId){const i=PL.findIndex(x=>x.id===id);if(i<0)return;const it=PL.splice(i,1)[0];if(it.d!==d)delete it.cf;it.d=d;
   const j=beforeId?PL.findIndex(x=>x.id===beforeId):-1;if(j>=0)PL.splice(j,0,it);else PL.push(it);savePL();PLM=id;planRender()}
 /* keyboard: up/down = move through the list (past the top or bottom of a day = into the previous/next day), left/right = same spot in another day */
 function planKey(e){const c=e.target;if(!c.classList||!c.classList.contains('wc')||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();
@@ -652,7 +734,7 @@ function renderSyl(){const rd=(nm,key,arr)=>arr.map(([k,l])=>`<label><input type
   mount(`<h2>Syllabus <span>by subject, then priority</span></h2><div class="filt">${rd('f','f',[['all','All'],['wip','In progress'],['done','Finished']])}</div>
   <div class="stabs">${[['phys','Physics'],['chem','Chemistry'],['math','Maths']].map(([k,l])=>`<button class="${AF.s===k?'on':''}" onclick="AF.s='${k}';renderSyl()">${l}<small id="st-${k}">${sstat(k).pct}%</small></button>`).join('')}</div>
   <div class="filt"><input id="q" placeholder="search chapters" value="${esc(AF.q)}" oninput="AF.q=this.value;synList()"></div>
-  <small>A chapter counts as finished once Theory and PYQ are both ticked (the tick count x/4 still shows all four).</small><div class="pleg">${['A','B','C'].map(p=>`<div><span class="pbadge">${p}</span><b>${PINFO[p]}.</b> ${PDESC[p]}</div>`).join('')}</div><div id="lst"></div>`);synList()}
+  <small>A chapter counts as finished once Theory and PYQ are both ticked (the tick count x/4 still shows all four). Right-click a chapter (phone: press and hold) to add it to this week's plan.</small><div class="pleg">${['A','B','C'].map(p=>`<div><span class="pbadge">${p}</span><b>${PINFO[p]}.</b> ${PDESC[p]}</div>`).join('')}</div><div id="lst"></div>`);synList()}
 function renderFocus(){lastCol='';const pend=tmsgPending;tmsgPending='';const d0=dk(),ses=F('fent_sessions_'+d0),qs=F('fent_ques_'+d0),inf=I.on,fl=flipNext,jd=justDone;flipNext=justDone=false;
   const opts=SUBJ.map(([s,l])=>`<optgroup label="${l}">${SYL[s].map(c=>`<option value="${s}:${c.n}" ${T.chap&&T.chap.s===s&&T.chap.n===c.n?'selected':''}>${pad(c.n)} ${c.name}</option>`).join('')}</optgroup>`).join('');
   const log=getLog(),lt=log.reduce((a,e)=>a+e.durationSecs,0),tl=J('fent_testlog_'+d0,[]);
