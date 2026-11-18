@@ -449,18 +449,49 @@ function etaToday(){const ss=FS.sessionMins*60,per=Math.max(1,FS.sessionsPerCycl
   while(rem>0){const s=Math.min(1,rem);secs+=s*ss;rem-=s;if(rem>0){pos=(pos+1)%per;secs+=brk(pos)}}return new Date(Date.now()+secs*1000)}
 const fmtT=d=>{const h=d.getHours();return (h%12||12)+':'+pad(d.getMinutes())+' '+(h>=12?'PM':'AM')};
 let lastTxt='';
-setInterval(()=>{if(document.hidden)return;if(T.run&&!I.on){T.left=Math.max(0,Math.ceil((T.endAt-Date.now())/1000));if(!T.left)return pEnd(false)}if(I.brk&&!exitCtx&&Date.now()>=I.brk.end)return iBreakEnd();if(T.run||I.run||I.brk){paint();if((Date.now()/1000|0)%5===0)snap()}},500);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)snap();else if(T.run&&!I.on&&Date.now()>=T.endAt)pEnd(false);else if(I.brk&&!exitCtx&&Date.now()>=I.brk.end)iBreakEnd()});
+/* ===== LIVE SYNC =====
+   Stored totals (sessions, real seconds, chapter log) are only written when a session ends / pauses / is credited.
+   Everything shown on screen is "stored + what is running right now" (liveD), so Focus, status bar, ticker and Stats always agree.
+   liveD() is an overlay only: it is never written to storage, so nothing can be double counted when the real credit happens. */
+const pLeft=()=>T.run&&!I.on?Math.max(0,Math.ceil((T.endAt-Date.now())/1000)):T.left;
+function liveD(){let secs=0,ses=0,sg=null;
+  if(I.on){secs=Math.max(0,infSecs()-I.done);ses=secs/(FS.sessionMins*60)}
+  else if(T.mode==='session'){secs=Math.max(0,T.total-pLeft());ses=T.total?secs/T.total:0}
+  if(T.seg&&T.chap&&T.task){const now=Date.now(),cap=T.run&&!I.on?Math.min(now,T.endAt):now,s=Math.floor((cap-T.seg)/1000);if(s>5)sg={chap:T.chap,task:T.task,secs:s}}
+  return{secs,ses,sg}}
+const todaySes=()=>F('fent_sessions_'+dk())+liveD().ses;
+function liveLog(){const l=getLog().map(e=>({...e})),L=liveD();
+  if(L.sg){const{chap,task,secs}=L.sg,e=l.find(x=>x.subj===chap.s&&x.chapN===chap.n&&x.task===task);if(e)e.durationSecs+=secs;else l.push({chapName:chap.name,subj:chap.s,chapN:chap.n,task,durationSecs:secs})}return l}
+const logRows=l=>l.length?l.map(e=>`<div class="pt"><span style="flex:1">${e.chapName} <small>${e.task}</small></span><span>${fm(e.durationSecs/60)}</span></div>`).join(''):'<p class="dim">Nothing logged yet today.</p>';
+function logHTML(){const log=liveLog(),lt=log.reduce((a,e)=>a+e.durationSecs,0),tl=J('fent_testlog_'+dk(),[]);
+  return `<h2>Today's log (${fm(lt/60)})</h2>${logRows(log)}
+  ${tl.map(t=>`<div class="pt"><span style="flex:1">${t.testName} <small>test</small></span><span>${t.normalizedTotal}/${t.targetTotal}</span></div>`).join('')}`}
+const tdyText=()=>'Today: '+todaySes().toFixed(1)+' of '+FS.dailyTarget+' sessions · '+F('fent_ques_'+dk())+' of '+FS.dailyQuesTarget+' questions';
+const setTxt=(e,t)=>{if(e&&e.textContent!==t)e.textContent=t};
+let lastTk='',lastStatsSig='';
+const statsSig=()=>{const L=liveD();return Math.floor(L.secs/60)+':'+(L.sg?Math.floor(L.sg.secs/60):'-')+':'+dk()};
+function statsRefresh(){const y=window.scrollY,op=[...document.querySelectorAll('#main details')].map(d=>d.open);renderStats();document.querySelectorAll('#main details').forEach((d,i)=>{if(op[i])d.open=true});window.scrollTo(0,y)}
+function syncLive(){
+  setTxt($('#tdy'),tdyText());
+  const e=$('#eta');if(e){const d=etaToday();setTxt(e,d?'target done by '+fmtT(d):'daily target met')}
+  const tl=$('#tlog');if(tl){const h=logHTML();if(h!==tl.dataset.h){tl.dataset.h=h;tl.innerHTML=h}}
+  const k=Math.round(todaySes()*10)/10;if(k!==lastTk&&$('#mq'))ticker();else statusR();
+  if(V==='stats'&&statsSig()!==lastStatsSig)statsRefresh()}
+/* 250 ms tick (was 500): the clock itself is computed from wall-clock endAt/start, so this only sets how quickly the screen catches up. It also runs while paused so the "target done by" time keeps moving. */
+function clockTick(){const hid=document.hidden;if(T.run&&!I.on){T.left=Math.max(0,Math.ceil((T.endAt-Date.now())/1000));if(!T.left)return pEnd(false)}if(I.brk&&!exitCtx&&Date.now()>=I.brk.end)return iBreakEnd();if(T.run||I.run||I.brk){if(!hid)paint();if((Date.now()/1000|0)%5===0)snap()}if(!hid)syncLive()}
+/* The tick comes from a Web Worker: browsers slow or pause page timers in background tabs (1/sec, then 1/min after ~5 min hidden), but a worker's timer keeps its pace. So session ends, chimes, auto-start of the next phase and crash snapshots still happen on time while you are in another tab. Falls back to a normal page timer if workers are blocked. */
+(function(){let fb=0;const fall=()=>{if(!fb)fb=setInterval(clockTick,250)};
+  try{const w=new Worker(URL.createObjectURL(new Blob(['setInterval(function(){postMessage(0)},250)'],{type:'text/javascript'})));w.onmessage=clockTick;w.onerror=fall}catch(e){fall()}})();
+document.addEventListener('visibilitychange',()=>{if(document.hidden)snap();else{if(T.run&&!I.on&&Date.now()>=T.endAt)pEnd(false);else if(I.brk&&!exitCtx&&Date.now()>=I.brk.end)iBreakEnd();paint();syncLive()}});
 addEventListener('pagehide',snap);addEventListener('beforeunload',snap);
 /* hourglass */
 const TOPP='20,12 100,12 62,100 58,100',BOTP='58,100 62,100 100,188 20,188';
 const brkLeft=()=>I.brk?Math.max(0,Math.ceil((I.brk.end-Date.now())/1000)):0;
-function statusR(){const r=$('#sbr');if(!r)return;const live=T.run||I.run||!!I.brk;r.textContent='today '+Math.round(F('fent_sessions_'+dk())*10)/10+'/'+FS.dailyTarget+(live?'  |  '+(I.brk?mmss(brkLeft()):I.on?hms(infSecs()):mmss(T.left)):'')}
+function statusR(){const r=$('#sbr');if(!r)return;const live=T.run||I.run||!!I.brk;setTxt(r,'today '+Math.round(todaySes()*10)/10+'/'+FS.dailyTarget+(live?'  |  '+(I.brk?mmss(brkLeft()):I.on?hms(infSecs()):mmss(pLeft())):''))}
 function paint(){const el=$('#clk');if(!el)return;const pc=phaseCol();if(pc!==lastCol){lastCol=pc;const fc=$('.focus');if(fc)fc.style.setProperty('--sand',pc)}let f,txt;
   if(I.on&&I.brk){txt=mmss(brkLeft());f=I.brk.total?brkLeft()/I.brk.total:1}else if(I.on){const s=infSecs();txt=hms(s);f=1-((s%(FS.sessionMins*60))/(FS.sessionMins*60))}else{txt=mmss(T.left);f=T.total?T.left/T.total:1}
   if(txt!==lastTxt){lastTxt=txt;el.textContent=txt;
-    const r=$('#sandT'),b=$('#sandB');r.setAttribute('y',12+88*(1-f));r.setAttribute('height',88*f);b.setAttribute('y',188-88*(1-f));b.setAttribute('height',88*(1-f));
-    const e=$('#eta');if(e){const d=etaToday();e.textContent=d?'target done by '+fmtT(d):'daily target met'}}
+    const r=$('#sandT'),b=$('#sandB');r.setAttribute('y',12+88*(1-f));r.setAttribute('height',88*f);b.setAttribute('y',188-88*(1-f));b.setAttribute('height',88*(1-f))}
   const live=T.run||I.run||!!I.brk;const rs=$('#rs');if(rs){rs.textContent=I.brk?'short break - resumes by itself':live?'running':(I.on?I.acc:T.left<T.total)?'paused':'ready';rs.className=live?'dots':''}statusR();$('#stream').style.display=live&&f>.01&&f<.995?'block':'none';document.title=(live?txt+' · ':'')+'fent'}
 /* ===== TEST LOG ===== */
 let testOpen=false,tmsgPending='';
@@ -559,7 +590,7 @@ const mount=h=>{$('#main').innerHTML=((V==='home'||V==='focus')?drift():'')+h};
 function nav(v){ctxClose();if(v===V&&v!=='home')return;if(T.seg){seg();snap()}V=v;if(v==='home')wk=0;const sl=$('#sbl');sl.innerHTML='Opening page...<span class="ldb"></span>';clearTimeout(toast.h);toast.h=setTimeout(()=>{sl.textContent='Done'},450);if(v==='stats'){const n=new Date();hmY=n.getFullYear();hmM=n.getMonth();hmSel=null}render()}
 function render(){rollPlan();$('#nav').innerHTML=VIEWS.map(([k,l])=>`<button class="l ${V===k?'on':''}" onclick="nav('${k}')">${l}</button>`).join('');
   ({home:renderHome,syl:renderSyl,focus:renderFocus,stats:renderStats,set:renderSet})[V]();lastTxt='';paint();ticker()}
-function ticker(){const d=Math.max(0,Math.ceil((JEE-new Date())/864e5));$('#mq').textContent='welcome to fent  ***  '+d+' days until JEE  ***  today '+Math.round(F('fent_sessions_'+dk())*10)/10+' of '+FS.dailyTarget+' sessions  ***  syllabus '+overall()+'% ticked  ***  keep going  ***';statusR()}
+function ticker(){const d=Math.max(0,Math.ceil((JEE-new Date())/864e5));$('#mq').textContent='welcome to fent  ***  '+d+' days until JEE  ***  today '+(lastTk=Math.round(todaySes()*10)/10)+' of '+FS.dailyTarget+' sessions  ***  syllabus '+overall()+'% ticked  ***  keep going  ***';statusR()}
 function counter(){const d=Math.max(0,Math.ceil((JEE-new Date())/864e5)),s=String(d).padStart(3,'0');$('#days').innerHTML=s.split('').map(c=>`<i>${c}</i>`).join('')}
 const overall=()=>{const a=allChaps();return Math.round(a.reduce((x,c)=>x+tc(c.s,c.n),0)/(a.length*4)*100)};
 function chRow(c,pre,x,why){const t=gs(c.s,c.n),n=tc(c.s,c.n);return `<div class="row ${mainDone(c.s,c.n)?'d':''}" id="r-${c.s}-${c.n}"><span class="dim">${pad(c.n)}</span><span class="nm">${c.name}</span><small>${pre||''}<span class="ct">${n}/4</span>${x||''}</small>
@@ -737,7 +768,6 @@ function renderSyl(){const rd=(nm,key,arr)=>arr.map(([k,l])=>`<label><input type
   <small>A chapter counts as finished once Theory and PYQ are both ticked (the tick count x/4 still shows all four). Right-click a chapter (phone: press and hold) to add it to this week's plan.</small><div class="pleg">${['A','B','C'].map(p=>`<div><span class="pbadge">${p}</span><b>${PINFO[p]}.</b> ${PDESC[p]}</div>`).join('')}</div><div id="lst"></div>`);synList()}
 function renderFocus(){lastCol='';const pend=tmsgPending;tmsgPending='';const d0=dk(),ses=F('fent_sessions_'+d0),qs=F('fent_ques_'+d0),inf=I.on,fl=flipNext,jd=justDone;flipNext=justDone=false;
   const opts=SUBJ.map(([s,l])=>`<optgroup label="${l}">${SYL[s].map(c=>`<option value="${s}:${c.n}" ${T.chap&&T.chap.s===s&&T.chap.n===c.n?'selected':''}>${pad(c.n)} ${c.name}</option>`).join('')}</optgroup>`).join('');
-  const log=getLog(),lt=log.reduce((a,e)=>a+e.durationSecs,0),tl=J('fent_testlog_'+d0,[]);
   const mn={session:'session',short:'short break',long:'long break'}[T.mode];
   mount(`<h2>Focus</h2><div class="filt"><label><input type="radio" name="m" ${!inf?'checked':''} onchange="setMode(false)"> Pomodoro (${mn})</label><label><input type="radio" name="m" ${inf?'checked':''} onchange="setMode(true)"> Infinite stopwatch</label></div>
   <div class="focus" style="--sand:${phaseCol()}"><svg class="hg ${fl?'flip':''}" viewBox="0 0 120 200" width="150" role="img" aria-label="hourglass"><defs><clipPath id="ct"><polygon points="${TOPP}"/></clipPath><clipPath id="cb"><polygon points="${BOTP}"/></clipPath></defs>
@@ -746,7 +776,7 @@ function renderFocus(){lastCol='';const pend=tmsgPending;tmsgPending='';const d0
   <line id="stream" x1="60" y1="100" x2="60" y2="188" stroke="#9ca5c6" stroke-width="1.6" stroke-dasharray="2 3"/>
   <polygon points="${TOPP}" fill="none" stroke="#b0b0b0" stroke-width="2.5"/><polygon points="${BOTP}" fill="none" stroke="#b0b0b0" stroke-width="2.5"/></svg>
   <div><div class="clk ${jd?'done':''}" id="clk"></div><div class="ctl" id="ctl">${ctlHTML()}</div><small id="rs"></small>
-  <small>Today: ${Math.round(ses*100)/100} of ${FS.dailyTarget} sessions &middot; ${qs} of ${FS.dailyQuesTarget} questions<br><span id="eta"></span></small></div></div>
+  <small><span id="tdy">${tdyText()}</span><br><span id="eta"></span></small></div></div>
   <h2>What are you studying?</h2><div class="filt"><select id="cs" onchange="pickChange()"><option value="">choose a chapter</option>${opts}</select>
   <select id="ts" onchange="pickChange()"><option value="">choose a task</option>${TASKS.map(([k,l])=>`<option value="${k}" ${T.task===k?'selected':''}>${l}</option>`).join('')}</select></div>
   <small>Time counts toward a chapter only when a chapter and a task are chosen.</small>
@@ -758,13 +788,24 @@ function renderFocus(){lastCol='';const pend=tmsgPending;tmsgPending='';const d0
   <table class="tf"><tr><th></th><th>score</th><th>max</th></tr>${[['phys','Physics'],['chem','Chemistry'],['math','Maths']].map(([k,l])=>`<tr><td>${l}</td><td><input id="ts_${k}" type="number" inputmode="numeric" placeholder="0"></td><td><input id="tm_${k}" type="number" min="1" inputmode="numeric" placeholder="100" value="${TPRE.mains.m}"></td></tr>`).join('')}</table>
   <small>Maximums are filled in for you; change anything you need. Leave a score empty to skip that subject. Totals are scaled to the official maximum. Negative scores are fine.</small>
   <div class="ctl"><button class="b go" onclick="logTest()">Save test</button></div><div id="tmsg" class="msg ok">${esc(pend)}</div></details>
-  <h2>Today's log (${fm(lt/60)})</h2>${log.length?log.map(e=>`<div class="pt"><span style="flex:1">${e.chapName} <small>${e.task}</small></span><span>${fm(e.durationSecs/60)}</span></div>`).join(''):'<p class="dim">Nothing logged yet today.</p>'}
-  ${tl.map(t=>`<div class="pt"><span style="flex:1">${t.testName} <small>test</small></span><span>${t.normalizedTotal}/${t.targetTotal}</span></div>`).join('')}`)}
+  <div id="tlog">${logHTML()}</div>`);syncLive()}
 function manual(){pick();const m=+$('#mm').value;if(!T.chap||!T.task)return toast('Choose a chapter and a task first.');if(!(m>0))return toast('Enter minutes.');addLog(T.chap,T.task,m*60);credit(m/FS.sessionMins,m*60);toast('Logged '+m+' min.');renderFocus()}   /* credit() = daily sessions + real seconds, same as the timers */
 /* ===== STATS / ANALYTICS (computed once, rebuilt only when data changes) */
 let AG=null;
 const chapRec=(m,e)=>{if(!e||!e.subj||e.chapN===undefined)return null;const k=e.subj+'_'+e.chapN;return m[k]||(m[k]={s:e.subj,n:e.chapN,name:e.chapName||'',secs:0,q:0,by:{theory:0,module:0,pyq:0,revision:0},days:new Set()})};
-function agg(){if(AG&&!dirty)return AG;dirty=false;const days={},tests=[],chap={};let sessions=0,ques=0;const bySubj={math:0,chem:0,phys:0},byTask={theory:0,module:0,pyq:0,revision:0},D=d=>days[d]||(days[d]={s:0,q:0,r:null,l:0});
+/* agg() = stored totals (cached, rebuilt only when data changes) + the live overlay of whatever is running right now (never cached, never saved) */
+function agg(){const b=aggBase(),L=liveD();if(!(L.secs>0||L.sg))return b;
+  const d=dk(),days=Object.assign({},b.days),D=Object.assign({s:0,q:0,r:null,l:0},days[d]||{}),o=Object.assign({},b,{days,sessions:b.sessions+L.ses});
+  if(L.sg)D.l+=L.sg.secs;
+  D.s+=L.ses;D.r=D.r!=null?D.r+L.secs:Math.max(D.l,L.secs);   /* day with no credit yet: the running session already contains any seconds it logged earlier */
+  days[d]=D;
+  if(L.sg){const{chap,task,secs}=L.sg,key=chap.s+'_'+chap.n,c0=b.chap[key];
+    o.bySubj=Object.assign({},b.bySubj);o.bySubj[chap.s]=(o.bySubj[chap.s]||0)+secs;
+    o.byTask=Object.assign({},b.byTask);o.byTask[task]=(o.byTask[task]||0)+secs;
+    const c=c0?Object.assign({},c0,{by:Object.assign({},c0.by),days:new Set(c0.days)}):{s:chap.s,n:chap.n,name:chap.name,secs:0,q:0,by:{theory:0,module:0,pyq:0,revision:0},days:new Set()};
+    c.secs+=secs;c.by[task]=(c.by[task]||0)+secs;c.days.add(d);o.chap=Object.assign({},b.chap);o.chap[key]=c}
+  return o}
+function aggBase(){if(AG&&!dirty)return AG;dirty=false;const days={},tests=[],chap={};let sessions=0,ques=0;const bySubj={math:0,chem:0,phys:0},byTask={theory:0,module:0,pyq:0,revision:0},D=d=>days[d]||(days[d]={s:0,q:0,r:null,l:0});
   for(let i=0;i<LS.length;i++){const k=LS.key(i);if(!k||!k.startsWith('fent_'))continue;
     if(k.startsWith('fent_sessions_')){const v=F(k);D(k.slice(14)).s=v;sessions+=v}
     else if(k.startsWith('fent_ques_')){const v=F(k);D(k.slice(10)).q=v;ques+=v}
@@ -795,7 +836,7 @@ function monthChart(A,dim){const W=640,H=180,L=48,B=18,Tp=8,n=dim,bw=(W-L-6)/n,t
   return {svg:s+'</svg>',met,work,avg:past?Math.round(tot/past):0,tot}}
 function glance(A,done,streak){const pa=pstat('A',MAIN),all=pstat(null),mr=pstat(null,MAIN),bx=(v,l)=>`<div class="box"><b>${v}</b>${l}</div>`;
   return `<div class="grid">${bx(all.pct+'%','syllabus ticked')}${bx(mr.pct+'%','JEE Main ready')}${bx(pa.pct+'%','priority A done')}${bx(done,'chapters finished')}${bx(streak,'day streak')}${bx(Math.round(A.sessions*10)/10,'sessions total')}${bx(A.ques,'questions solved')}${bx(wasted(A),'wasted sessions')}</div><div class="mini">Syllabus ticked counts all 4 tasks. Priority A done, chapters finished and every other progress number count theory + PYQ only.</div>`}
-function renderStats(){const A=agg(),now=new Date(),first=new Date(hmY,hmM,1),dim=new Date(hmY,hmM+1,0).getDate(),tk=dk(now);
+function renderStats(){lastStatsSig=statsSig();const A=agg(),now=new Date(),first=new Date(hmY,hmM,1),dim=new Date(hmY,hmM+1,0).getDate(),tk=dk(now);
   let streak=0;for(let i=0;i<400;i++){const d=new Date();d.setDate(d.getDate()-i);const SD=A.days[dk(d)];if(SD&&(SD.s>=.25||dmins(SD)>=10))streak++;else if(i>0)break}
   let rowsH='<tr>'+'<td class="e"></td>'.repeat(first.getDay());let c=first.getDay();
   for(let d=1;d<=dim;d++){const k=dk(new Date(hmY,hmM,d)),D=A.days[k],m=Math.round(dmins(D));rowsH+=`<td class="${hmClass(k,D)} ${hmSel===k?'sel':''} ${k===tk?'today':''}" onclick="hmPick('${k}')"><b>${d}</b><small>${m?fm(m).replace(' ',''):''}</small></td>`;if(++c%7===0&&d<dim)rowsH+='</tr><tr>'}
@@ -838,7 +879,7 @@ function xiHTML(A){const tot=Object.values(A.bySubj).reduce((a,c)=>a+c,0);
   h+=`<div class="leg">${TASKS.map(([k,l])=>`<span><i style="background:${TCOL[k]}"></i>${l}</span>`).join('')}</div>`;
   if(list.length>10)h+=`<button class="b" onclick="xall=!xall;$('#xi').innerHTML=xiHTML(agg())">${xall?'Show top 10':'Show all '+list.length}</button>`;
   return h}
-function dayInfo(k){const A=agg(),D=A.days[k]||{s:0,q:0},log=getLog(k),tl=J('fent_testlog_'+k,[]),dt=new Date(k+'T00:00:00');
+function dayInfo(k){const A=agg(),D=A.days[k]||{s:0,q:0},log=k===dk()?liveLog():getLog(k),tl=J('fent_testlog_'+k,[]),dt=new Date(k+'T00:00:00');
   return `<h2>${DAYN[dt.getDay()]}, ${dt.getDate()} ${MONTHS[dt.getMonth()]}</h2><p>${Math.round(D.s*100)/100} sessions &middot; ${fm(dmins(D))} &middot; ${D.q||0} questions</p>`+log.map(e=>`<div class="pt"><span style="flex:1">${e.chapName} <small>${e.task}</small></span><span>${fm(e.durationSecs/60)}</span></div>`).join('')+tl.map(t=>`<div class="pt"><span style="flex:1">${t.testName} <small>test</small></span><span>${t.normalizedTotal}/${t.targetTotal}</span></div>`).join('')}
 function hmPick(k){hmSel=k;renderStats()}
 function hmNav(n){if(n===0){const d=new Date();hmY=d.getFullYear();hmM=d.getMonth()}else{hmM+=n;if(hmM<0){hmM=11;hmY--}if(hmM>11){hmM=0;hmY++}}hmSel=null;renderStats()}
