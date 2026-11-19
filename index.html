@@ -384,7 +384,7 @@ function qman(){const e=$('#qn'),v=Math.round(+(e&&e.value));if(!v||Math.abs(v)>
 function qadd(n){pick();addQues(n);addQuesChap(n);renderFocus()}
 function addQues(n){const d=dk();put('fent_ques_'+d,Math.max(0,F('fent_ques_'+d)+n));put('fent_dayqtarget_'+d,FS.dailyQuesTarget)}
 /* ===== TIMERS: pomodoro + infinite stopwatch ===== */
-const T={mode:'session',run:false,left:FS.sessionMins*60,total:FS.sessionMins*60,endAt:0,seg:null,cycle:0,chap:null,task:null};
+const T={mode:'session',run:false,left:FS.sessionMins*60,total:FS.sessionMins*60,endAt:0,seg:null,cycle:0,chap:null,task:null,man:0};   /* man = seconds of THIS session that were logged by hand (already stored, so never credited a second time) */
 const I={on:false,run:false,start:0,acc:0,done:0,brk:null};
 const modeSecs=m=>(m==='session'?FS.sessionMins:m==='short'?FS.shortBreakMins:FS.longBreakMins)*60;
 const infSecs=()=>I.acc+(I.run?Math.floor((Date.now()-I.start)/1000):0);
@@ -392,13 +392,13 @@ function seg(cap){const now=Date.now();if(T.seg&&T.chap&&T.task)addLog(T.chap,T.
 /* ===== CRASH RECOVERY: same keys/format as the original tracker */
 const CK='fent_crash_snap',IK='fent_inf_crash_snap',MAXAGE=4*3600e3;
 const cj=c=>c&&{subj:c.s,n:c.n,name:c.name};
-function snap(){try{if(T.run&&!I.on)LS.setItem(CK,JSON.stringify({running:true,mode:T.mode,endAt:T.endAt,totalSeconds:T.total,cycleSessions:T.cycle,segStart:T.seg,currentChap:cj(T.chap),currentTask:T.task,savedAt:Date.now()}));
+function snap(){try{if(T.run&&!I.on)LS.setItem(CK,JSON.stringify({running:true,mode:T.mode,endAt:T.endAt,totalSeconds:T.total,cycleSessions:T.cycle,manSecs:T.man,segStart:T.seg,currentChap:cj(T.chap),currentTask:T.task,savedAt:Date.now()}));
   if(I.run)LS.setItem(IK,JSON.stringify({running:true,elapsedSecs:I.acc,startedAt:I.start,committedSecs:I.done,segStart:T.seg,currentChap:cj(T.chap),currentTask:T.task,savedAt:Date.now()}))}catch{}}
 const unsnap=()=>{try{if(!T.run)LS.removeItem(CK);if(!I.run)LS.removeItem(IK)}catch{}};
 function logSnap(s,secs){if(s.segStart&&s.currentChap&&s.currentTask)addLog({s:s.currentChap.subj,n:s.currentChap.n,name:s.currentChap.name},s.currentTask,secs)}
 function recover(){let s=J(CK,null);try{LS.removeItem(CK)}catch{}
   if(s&&s.running&&s.mode==='session'&&!(s.endAt&&s.savedAt&&s.endAt<=s.savedAt)&&Date.now()-(s.savedAt||0)<=MAXAGE){
-    const tot=s.totalSeconds||FS.sessionMins*60;let el=0;if(s.endAt&&s.savedAt)el=Math.max(0,tot-Math.max(0,(s.endAt-s.savedAt)/1000));const fr=tot>0?el/tot:0;
+    const tot=s.totalSeconds||FS.sessionMins*60;let el=0;if(s.endAt&&s.savedAt)el=Math.max(0,tot-Math.max(0,(s.endAt-s.savedAt)/1000));el=Math.max(0,el-(s.manSecs||0));const fr=tot>0?el/tot:0;
     if(el>5)logSnap(s,Math.floor(Math.min(el,Math.max(0,((s.savedAt||0)-(s.segStart||0))/1000))));
     if(fr>=.95){credit(1,el);toast('Recovered your interrupted session.')}else if(fr>=.05){credit(Math.min(.9,fr),el);toast('Recovered '+fm(el/60)+' from an interrupted session.')}}
   s=J(IK,null);try{LS.removeItem(IK)}catch{}
@@ -406,7 +406,7 @@ function recover(){let s=J(CK,null);try{LS.removeItem(CK)}catch{}
     const live=s.startedAt&&s.savedAt?Math.max(0,Math.floor((s.savedAt-s.startedAt)/1000)):0,unc=Math.max(0,(s.elapsedSecs||0)+live-(s.committedSecs||0));
     if(unc>=5){logSnap(s,Math.min(unc,Math.max(0,Math.floor(((s.savedAt||s.segStart)-s.segStart)/1000))));credit(unc/(FS.sessionMins*60),unc);toast('Recovered '+fm(unc/60)+' from an interrupted Infinite session.')}}}
 /* clocks */
-let flipNext=false,justDone=false;
+let flipNext=false,justDone=false,ROLL=null;   /* ROLL = the clock/sand glide after time is added by hand */
 /* sound: little 2000s handheld-style chimes. One shared AudioContext, unlocked by the first click/key. */
 let AC=null;
 function actx(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch{return null}}
@@ -426,13 +426,13 @@ function ctlHTML(){if(I.on&&I.brk)return `<button class="b go" onclick="iBreakEn
 function refreshCtl(){const c=$('#ctl');if(c){c.innerHTML=ctlHTML();lastTxt='';paint()}else statusR()}
 function pStart(){T.run=true;T.endAt=Date.now()+T.left*1000;T.seg=T.mode==='session'?Date.now():null;snap();refreshCtl()}
 function pPause(){seg();T.left=Math.max(0,Math.ceil((T.endAt-Date.now())/1000));T.run=false;T.seg=null;unsnap();refreshCtl()}
-function pEnd(skip){const el=T.total-T.left;seg(skip?0:T.endAt);T.run=false;T.seg=null;
-  if(T.mode==='session'){if(!skip)credit(1,T.total);else if(el>60)credit(el/T.total,el);T.cycle++;T.mode=T.cycle>=FS.sessionsPerCycle?'long':'short';if(T.mode==='long')T.cycle=0}else T.mode='session';
+function pEnd(skip,hold){const mn=T.man||0,el=T.total-T.left-mn;seg(skip?0:T.endAt);T.run=false;T.seg=null;T.man=0;ROLL=null;
+  if(T.mode==='session'){if(!skip){const rs=Math.max(0,T.total-mn);if(rs>0)credit(rs/T.total,rs)}else if(el>60)credit(el/T.total,el);T.cycle++;T.mode=T.cycle>=FS.sessionsPerCycle?'long':'short';if(T.mode==='long')T.cycle=0}else T.mode='session';
   T.total=T.left=modeSecs(T.mode);unsnap();
   /* auto-start the next phase (also when skipping), with a chime */
-  T.run=true;T.endAt=Date.now()+T.left*1000;T.seg=T.mode==='session'?Date.now():null;snap();chime(T.mode==='session'?'work':'rest');
+  if(!hold){T.run=true;T.endAt=Date.now()+T.left*1000;T.seg=T.mode==='session'?Date.now():null;snap()}chime(T.mode==='session'?'work':'rest');
   justDone=!skip;flipNext=true;if(V==='focus')renderFocus();else{lastTxt='';statusR()}}
-function pReset(){seg();T.run=false;T.seg=null;T.mode='session';T.cycle=0;T.total=T.left=modeSecs('session');unsnap();renderFocus()}
+function pReset(){seg();T.run=false;T.seg=null;T.man=0;T.mode='session';T.cycle=0;T.total=T.left=modeSecs('session');unsnap();renderFocus()}
 function iToggle(){if(I.run){seg();I.acc=infSecs();I.run=false;T.seg=null;iCommit();unsnap()}else{I.start=Date.now();I.run=true;T.seg=Date.now();snap()}refreshCtl()}
 function iCommit(){const s=I.acc-I.done;if(s>60){credit(s/(FS.sessionMins*60),s);I.done=I.acc}}
 function iFinish(){I.brk=null;if(I.run)iToggle();else iCommit();I.acc=0;I.done=0;renderFocus()}
@@ -444,8 +444,8 @@ function pick(){const v=$('#cs')&&$('#cs').value;T.task=($('#ts')&&$('#ts').valu
 function pickChange(){if(T.seg)seg();pick();snap()}
 function etaToday(){const ss=FS.sessionMins*60,per=Math.max(1,FS.sessionsPerCycle),rem0=FS.dailyTarget-F('fent_sessions_'+dk());
   if(I.on){const r=rem0-Math.max(0,infSecs()-I.done)/ss;return r<=0?null:new Date(Date.now()+r*ss*1000+brkLeft()*1000)}
-  if(rem0<=0)return null;let secs=0,rem=rem0,pos=T.cycle;const brk=p=>(p===0?FS.longBreakMins:FS.shortBreakMins)*60;
-  if(T.mode!=='session')secs+=T.left;else{if(rem<1)return new Date(Date.now()+Math.min(T.left,rem*ss)*1000);secs+=T.left;rem-=1;pos=(pos+1)%per;if(rem>0)secs+=brk(pos)}
+  if(rem0<=0)return null;let secs=0,rem=rem0+(T.mode==='session'&&T.total?T.man/T.total:0),pos=T.cycle;const brk=p=>(p===0?FS.longBreakMins:FS.shortBreakMins)*60;
+  if(T.mode!=='session')secs+=T.left;else{if(rem0<1)return new Date(Date.now()+Math.min(T.left,rem0*ss)*1000);secs+=T.left;rem-=1;pos=(pos+1)%per;if(rem>0)secs+=brk(pos)}
   while(rem>0){const s=Math.min(1,rem);secs+=s*ss;rem-=s;if(rem>0){pos=(pos+1)%per;secs+=brk(pos)}}return new Date(Date.now()+secs*1000)}
 const fmtT=d=>{const h=d.getHours();return (h%12||12)+':'+pad(d.getMinutes())+' '+(h>=12?'PM':'AM')};
 let lastTxt='';
@@ -456,7 +456,7 @@ let lastTxt='';
 const pLeft=()=>T.run&&!I.on?Math.max(0,Math.ceil((T.endAt-Date.now())/1000)):T.left;
 function liveD(){let secs=0,ses=0,sg=null;
   if(I.on){secs=Math.max(0,infSecs()-I.done);ses=secs/(FS.sessionMins*60)}
-  else if(T.mode==='session'){secs=Math.max(0,T.total-pLeft());ses=T.total?secs/T.total:0}
+  else if(T.mode==='session'){secs=Math.max(0,T.total-pLeft()-T.man);ses=T.total?secs/T.total:0}
   if(T.seg&&T.chap&&T.task){const now=Date.now(),cap=T.run&&!I.on?Math.min(now,T.endAt):now,s=Math.floor((cap-T.seg)/1000);if(s>5)sg={chap:T.chap,task:T.task,secs:s}}
   return{secs,ses,sg}}
 const todaySes=()=>F('fent_sessions_'+dk())+liveD().ses;
@@ -488,11 +488,11 @@ addEventListener('pagehide',snap);addEventListener('beforeunload',snap);
 const TOPP='20,12 100,12 62,100 58,100',BOTP='58,100 62,100 100,188 20,188';
 const brkLeft=()=>I.brk?Math.max(0,Math.ceil((I.brk.end-Date.now())/1000)):0;
 function statusR(){const r=$('#sbr');if(!r)return;const live=T.run||I.run||!!I.brk;setTxt(r,'today '+Math.round(todaySes()*10)/10+'/'+FS.dailyTarget+(live?'  |  '+(I.brk?mmss(brkLeft()):I.on?hms(infSecs()):mmss(pLeft())):''))}
-function paint(){const el=$('#clk');if(!el)return;const pc=phaseCol();if(pc!==lastCol){lastCol=pc;const fc=$('.focus');if(fc)fc.style.setProperty('--sand',pc)}let f,txt;
-  if(I.on&&I.brk){txt=mmss(brkLeft());f=I.brk.total?brkLeft()/I.brk.total:1}else if(I.on){const s=infSecs();txt=hms(s);f=1-((s%(FS.sessionMins*60))/(FS.sessionMins*60))}else{txt=mmss(T.left);f=T.total?T.left/T.total:1}
+function paint(){const el=$('#clk');if(!el)return;const pc=phaseCol();if(pc!==lastCol){lastCol=pc;const fc=$('.focus');if(fc)fc.style.setProperty('--sand',pc)}let f,txt;const ro=rollOff();
+  if(I.on&&I.brk){txt=mmss(brkLeft());f=I.brk.total?brkLeft()/I.brk.total:1}else if(I.on){const s=Math.max(0,infSecs()-ro);txt=hms(s);f=1-((s%(FS.sessionMins*60))/(FS.sessionMins*60))}else{const lf=T.left+ro;txt=mmss(lf);f=T.total?Math.min(1,lf/T.total):1}
   if(txt!==lastTxt){lastTxt=txt;el.textContent=txt;
     const r=$('#sandT'),b=$('#sandB');r.setAttribute('y',12+88*(1-f));r.setAttribute('height',88*f);b.setAttribute('y',188-88*(1-f));b.setAttribute('height',88*(1-f))}
-  const live=T.run||I.run||!!I.brk;const rs=$('#rs');if(rs){rs.textContent=I.brk?'short break - resumes by itself':live?'running':(I.on?I.acc:T.left<T.total)?'paused':'ready';rs.className=live?'dots':''}statusR();$('#stream').style.display=live&&f>.01&&f<.995?'block':'none';document.title=(live?txt+' · ':'')+'fent'}
+  const live=T.run||I.run||!!I.brk;const rs=$('#rs');if(rs){rs.textContent=I.brk?'short break - resumes by itself':live?'running':(I.on?I.acc:T.left<T.total)?'paused':'ready';rs.className=live?'dots':''}statusR();$('#stream').style.display=(live||ROLL)&&f>.01&&f<.995?'block':'none';document.title=(live?txt+' · ':'')+'fent'}
 /* ===== TEST LOG ===== */
 let testOpen=false,tmsgPending='';
 function tmsg(t,ok){const e=$('#tmsg');if(e){e.textContent=t;e.className='msg '+(ok?'ok':'bad')}}
@@ -789,7 +789,24 @@ function renderFocus(){lastCol='';const pend=tmsgPending;tmsgPending='';const d0
   <small>Maximums are filled in for you; change anything you need. Leave a score empty to skip that subject. Totals are scaled to the official maximum. Negative scores are fine.</small>
   <div class="ctl"><button class="b go" onclick="logTest()">Save test</button></div><div id="tmsg" class="msg ok">${esc(pend)}</div></details>
   <div id="tlog">${logHTML()}</div>`);syncLive()}
-function manual(){pick();const m=+$('#mm').value;if(!T.chap||!T.task)return toast('Choose a chapter and a task first.');if(!(m>0))return toast('Enter minutes.');addLog(T.chap,T.task,m*60);credit(m/FS.sessionMins,m*60);toast('Logged '+m+' min.');renderFocus()}   /* credit() = daily sessions + real seconds, same as the timers */
+function manual(){pick();const m=+$('#mm').value;if(!T.chap||!T.task)return toast('Choose a chapter and a task first.');if(!(m>0))return toast('Enter minutes.');addLog(T.chap,T.task,m*60);credit(m/FS.sessionMins,m*60);toast('Logged '+m+' min.');   /* credit() = daily sessions + real seconds, same as the timers */
+  const i=$('#mm');if(i)i.value='';const dt=document.querySelector('#main details');if(dt)dt.open=false;
+  handClock(m*60);syncLive()}
+/* Time added by hand also moves the clock. The minutes are already stored above (chapter log, sessions, real seconds), so the timers only remember how much of them they absorbed
+   (I.done for the stopwatch, T.man for the pomodoro): liveD() and the end-of-session credit leave that part out and nothing is counted twice.
+   Stopwatch: the reading goes UP. Pomodoro (focus session): the time left goes DOWN; if it covers everything that was left, the session is complete. A break timer is never touched. */
+function handClock(secs){let used=0;
+  if(I.on){I.acc+=secs;I.done+=secs;used=secs}
+  else if(T.mode==='session'){const cur=pLeft();used=Math.min(secs,cur);
+    if(used>0){T.man+=used;T.left=cur-used;if(T.run)T.endAt-=used*1000;
+      if(used>=cur){const idle=!T.run;pEnd(false,idle);lastTxt='';paint();return}   /* whole session covered: counts as done (a break only auto-starts if the clock was running) */
+      snap()}}
+  if(I.on)refreshCtl();handFx(secs,used)}
+function handFx(secs,used){const el=$('#clk');if(!el)return;lastTxt='';
+  if(used>0&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)){ROLL={t0:performance.now(),dur:650,n:13,d:used};rollRun()}else paint()}
+/* the clock and the sand glide from the old reading to the new one in a few quick stepped frames (ease-out, like a 2000s counter rolling over) */
+function rollOff(){if(!ROLL)return 0;const p=(performance.now()-ROLL.t0)/ROLL.dur;if(p>=1){ROLL=null;return 0}const k=Math.floor(p*ROLL.n)/ROLL.n;return Math.round(ROLL.d*(1-k)*(1-k))}
+function rollRun(){paint();if(ROLL)requestAnimationFrame(rollRun)}
 /* ===== STATS / ANALYTICS (computed once, rebuilt only when data changes) */
 let AG=null;
 const chapRec=(m,e)=>{if(!e||!e.subj||e.chapN===undefined)return null;const k=e.subj+'_'+e.chapN;return m[k]||(m[k]={s:e.subj,n:e.chapN,name:e.chapName||'',secs:0,q:0,by:{theory:0,module:0,pyq:0,revision:0},days:new Set()})};
@@ -894,7 +911,7 @@ function renderSet(){const f=[['sessionMins','Session length (min)'],['shortBrea
   mount(`<h2>Focus settings</h2>${f.map(([k,l])=>`<div class="filt"><label style="width:260px">${l}</label><input type="number" min="1" id="s_${k}" value="${FS[k]}" style="width:80px"></div>`).join('')}<button class="b go" onclick="saveSet()">Save settings</button>
   <h2>Backup</h2><p class="dim">Copy the text below somewhere safe. To move to another browser, paste it in and restore.</p><button class="b" onclick="exp()">Show backup text</button> <button class="b" onclick="imp()">Restore from text</button><br><br><label class="dim">Or restore from a backup file (.json): <input type="file" accept=".json,application/json" onchange="impFile(this)" style="width:100%"></label><br><br><textarea id="bk" placeholder="backup text appears here"></textarea>`)}
 function saveSet(){['sessionMins','shortBreakMins','longBreakMins','sessionsPerCycle','dailyTarget','dailyQuesTarget'].forEach(k=>{FS[k]=Math.max(1,parseInt($('#s_'+k).value)||FS[k])});
-  const d=J('fent_focus',{})||{};d.settings=FS;putJ('fent_focus',d);if(!T.run&&T.mode){T.total=T.left=modeSecs(T.mode)}toast('Saved.')}
+  const d=J('fent_focus',{})||{};d.settings=FS;putJ('fent_focus',d);if(!T.run&&T.mode){T.total=T.left=modeSecs(T.mode);T.man=0}toast('Saved.')}
 function exp(){const o={};for(let i=0;i<LS.length;i++){const k=LS.key(i);if(k&&k.startsWith('fent_'))o[k]=LS.getItem(k)}$('#bk').value=JSON.stringify(o);$('#bk').select();toast(Object.keys(o).length+' entries')}
 function restoreText(txt){try{const o=JSON.parse(txt);if(!o||typeof o!=='object'||Array.isArray(o))throw 0;
     const ks=Object.keys(o).filter(k=>k.startsWith('fent_')&&k!==CK&&k!==IK);if(!ks.length)throw 0;
